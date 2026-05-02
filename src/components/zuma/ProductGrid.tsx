@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { resolveImage, type DbProduct } from "@/hooks/useProducts";
 
-const CATEGORIES = ["All", "T-Shirts", "Hoodies", "Accessories"];
+const CATEGORIES = ["All", "T-Shirts"];
 const NEW_THRESHOLD_DAYS = 14;
 
 const badgeFor = (p: DbProduct) => {
