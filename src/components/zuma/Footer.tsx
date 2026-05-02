@@ -1,29 +1,48 @@
+import { motion } from "framer-motion";
+
+const reveal = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.85, delay: 0.38 } },
+};
+
 export const Footer = () => (
-  <footer className="bg-background border-t border-border px-6 md:px-10 pt-16 pb-6">
-    <div className="max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 pb-10">
-        <div>
-          <div className="font-display text-4xl md:text-5xl tracking-[0.15em] text-foreground">ZÜMA</div>
-          <p className="text-xs text-muted-foreground mt-5 max-w-xs leading-relaxed lowercase">
-            brand born between casablanca and elsewhere. we were made to create.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">Navigation</div>
-          <a href="#hero" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Home</a>
-          <a href="#products" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Shop</a>
-          <a href="#archive" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Cart</a>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">Connect</div>
-          <a href="https://www.instagram.com/zumaurbanwear" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Instagram ↗</a>
-          <a href="https://www.tiktok.com/@zumaurbanwear" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">TikTok ↗</a>
-          <a href="https://wa.me/message/KOH2ZXZY6EPHP1" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">WhatsApp ↗</a>
-        </div>
+  <motion.footer
+    className="py-14 px-6 md:px-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-t border-border relative overflow-hidden"
+    variants={reveal}
+    initial="hidden"
+    whileInView="visible"
+    viewport={{ once: true, amount: 0.1 }}
+  >
+    <div>
+      <div className="font-display text-4xl md:text-5xl tracking-[0.15em] text-foreground">
+        ZÜMA
       </div>
-
+      <span className="block font-mono text-[8px] tracking-[0.2em] text-muted-foreground font-normal mt-2">
+        brand born between casablanca and elsewhere. we were made to create.
+      </span>
     </div>
-  </footer>
+
+    <div className="text-left md:text-right relative z-[2]">
+      <div className="flex gap-4 mb-2">
+        {[
+          { label: "Instagram", url: "https://www.instagram.com/zumaurbanwear" },
+          { label: "TikTok", url: "https://www.tiktok.com/@zumaurbanwear" },
+          { label: "WhatsApp", url: "https://wa.me/message/KOH2ZXZY6EPHP1" },
+        ].map((s) => (
+          
+            key={s.label}
+            href={s.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[8px] tracking-[0.16em] text-muted-foreground uppercase no-underline hover:text-accent transition-colors"
+          >
+            {s.label}
+          </a>
+        ))}
+      </div>
+      <p className="text-accent text-[8px] tracking-[0.16em] uppercase">
+        This is the store.
+      </p>
+    </div>
+  </motion.footer>
 );
