@@ -63,8 +63,8 @@ const Index = () => {
               This is actually the store. Every mark, every choice, every silence — ready to be worn.
             </p>
           </div>
-          <a href="#products" className="self-start md:self-auto inline-block text-[10px] tracking-[0.22em] uppercase px-4 py-2 border border-primary text-primary-hi hover:bg-primary hover:text-primary-foreground transition-colors animate-fade-up" style={{ animationDelay: "3.1s" }}>
-            Enter Shop →
+          <a href="https://zumaurbanwear-alt.github.io/ZUMA-INDEX/" target="_blank" rel="noreferrer" className="self-start md:self-auto inline-block text-[10px] tracking-[0.22em] uppercase px-4 py-2 border border-primary text-primary-hi hover:bg-primary hover:text-primary-foreground transition-colors animate-fade-up" style={{ animationDelay: "3.1s" }}>
+            Enter Index →
           </a>
         </div>
       </header>
