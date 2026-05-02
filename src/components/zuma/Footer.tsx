@@ -1,4 +1,3 @@
-export const Footer = () => (
 import { motion } from "framer-motion";
 
 const reveal = {
@@ -49,4 +48,3 @@ export default function Footer() {
     </motion.footer>
   );
 }
-);
