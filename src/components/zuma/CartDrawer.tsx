@@ -1,5 +1,7 @@
 import { X, Minus, Plus } from "lucide-react";
-import type { CartItem } from "@/pages/Index";
+import { resolveImage, type DbProduct } from "@/hooks/useProducts";
+
+export type CartItem = DbProduct & { qty: number };
 
 export const CartDrawer = ({
   open, onClose, cart, updateQty, onCheckout, whatsappLink,
@@ -11,7 +13,7 @@ export const CartDrawer = ({
   onCheckout: () => void;
   whatsappLink: string;
 }) => {
-  const total = cart.reduce((s, i) => s + i.qty * i.price, 0);
+  const total = cart.reduce((s, i) => s + i.qty * Number(i.price), 0);
   return (
     <>
       <div
@@ -35,7 +37,7 @@ export const CartDrawer = ({
             <ul className="flex flex-col gap-5">
               {cart.map(item => (
                 <li key={item.id} className="flex gap-4 border-b border-border pb-5">
-                  <img src={item.image} alt={item.name} className="w-20 h-24 object-cover" />
+                  <img src={resolveImage(item)} alt={item.name} className="w-20 h-24 object-cover" />
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <div className="font-display text-base tracking-[0.18em]">{item.name}</div>
@@ -47,7 +49,7 @@ export const CartDrawer = ({
                         <span className="px-3 text-sm">{item.qty}</span>
                         <button onClick={() => updateQty(item.id, Math.min(item.qty + 1, item.stock))} className="px-2 py-1 hover:text-primary-hi"><Plus className="w-3 h-3" /></button>
                       </div>
-                      <span className="text-sm text-primary-hi">{item.price * item.qty} MAD</span>
+                      <span className="text-sm text-primary-hi">{Number(item.price) * item.qty} MAD</span>
                     </div>
                   </div>
                 </li>

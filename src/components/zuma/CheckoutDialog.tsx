@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { z } from "zod";
 import { X, Check } from "lucide-react";
-import type { CartItem } from "@/pages/Index";
+import type { CartItem } from "@/components/zuma/CartDrawer";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const schema = z.object({
@@ -24,11 +25,12 @@ export const CheckoutDialog = ({
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   if (!open) return null;
-  const total = cart.reduce((s, i) => s + i.qty * i.price, 0);
+  const total = cart.reduce((s, i) => s + i.qty * Number(i.price), 0);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const r = schema.safeParse(form);
     if (!r.success) {
@@ -38,25 +40,53 @@ export const CheckoutDialog = ({
       return;
     }
     setErrors({});
-    // Build WhatsApp confirmation message
-    const lines = [
-      `*New Order — ZÜMA*`,
-      `Name: ${form.name}`,
-      `Phone: ${form.phone}`,
-      `Email: ${form.email}`,
-      `City: ${form.city}`,
-      `Address: ${form.address}`,
-      ``,
-      `*Items:*`,
-      ...cart.map(i => `• ${i.name} × ${i.qty} — ${i.price * i.qty} MAD`),
-      ``,
-      `*Total: ${total} MAD*`,
-      `Payment: Cash on Delivery`,
-    ].join("\n");
-    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-    toast.success("Order placed — we'll WhatsApp you shortly");
-    setDone(true);
+    setBusy(true);
+
+    try {
+      const { data: order, error: orderErr } = await supabase.from("orders").insert({
+        customer_name: form.name,
+        customer_email: form.email,
+        customer_phone: form.phone,
+        customer_city: form.city,
+        customer_address: form.address,
+        total,
+        payment_method: "cash_on_delivery",
+        status: "pending",
+      }).select().single();
+      if (orderErr) throw orderErr;
+
+      const items = cart.map(i => ({
+        order_id: order.id,
+        product_id: i.id,
+        product_name: i.name,
+        unit_price: Number(i.price),
+        quantity: i.qty,
+      }));
+      const { error: itemsErr } = await supabase.from("order_items").insert(items);
+      if (itemsErr) throw itemsErr;
+
+      const lines = [
+        `*New Order — ZÜMA*`,
+        `Order: ${order.id.slice(0, 8)}`,
+        `Name: ${form.name}`,
+        `Phone: ${form.phone}`,
+        `Email: ${form.email}`,
+        `City: ${form.city}`,
+        `Address: ${form.address}`,
+        ``,
+        `*Items:*`,
+        ...cart.map(i => `• ${i.name} × ${i.qty} — ${Number(i.price) * i.qty} MAD`),
+        ``,
+        `*Total: ${total} MAD*`,
+        `Payment: Cash on Delivery`,
+      ].join("\n");
+      const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success("Order placed");
+      setDone(true);
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not place order");
+    } finally { setBusy(false); }
   };
 
   return (
@@ -112,8 +142,8 @@ export const CheckoutDialog = ({
               <span className="font-display text-2xl tracking-[0.1em]">{total} MAD</span>
             </div>
 
-            <button type="submit" className="w-full py-4 bg-primary text-primary-foreground text-[11px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors">
-              Confirm Order
+            <button type="submit" disabled={busy} className="w-full py-4 bg-primary text-primary-foreground text-[11px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-50">
+              {busy ? "Placing..." : "Confirm Order"}
             </button>
           </form>
         )}
