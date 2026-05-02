@@ -68,7 +68,7 @@ export const CartDrawer = ({
             onClick={onCheckout}
             className="w-full py-3 bg-primary text-primary-foreground text-[11px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-40"
           >
-            Checkout — Cash on Delivery
+            Checkout
           </button>
           <a
             href={whatsappLink}
