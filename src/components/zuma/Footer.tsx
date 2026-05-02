@@ -10,13 +10,6 @@ export const Footer = () => (
         </div>
 
         <div className="flex flex-col gap-3">
-          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">Navigation</div>
-          <a href="#hero" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Home</a>
-          <a href="#products" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Shop</a>
-          <a href="#archive" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Cart</a>
-        </div>
-
-        <div className="flex flex-col gap-3">
           <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">Connect</div>
           <a href="https://www.instagram.com/zumaurbanwear" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Instagram ↗</a>
           <a href="https://www.tiktok.com/@zumaurbanwear" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">TikTok ↗</a>
