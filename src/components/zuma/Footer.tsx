@@ -1,18 +1,5 @@
-import { motion } from "framer-motion";
-
-const reveal = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.85, delay: 0.38 } },
-};
-
 export const Footer = () => (
-  <motion.footer
-    className="py-14 px-6 md:px-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-t border-border relative overflow-hidden"
-    variants={reveal}
-    initial="hidden"
-    whileInView="visible"
-    viewport={{ once: true, amount: 0.1 }}
-  >
+  <footer className="py-14 px-6 md:px-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-t border-border relative overflow-hidden">
     <div>
       <div className="font-display text-4xl md:text-5xl tracking-[0.15em] text-foreground">
         ZÜMA
@@ -44,5 +31,5 @@ export const Footer = () => (
         This is the store.
       </p>
     </div>
-  </motion.footer>
+  </footer>
 );
