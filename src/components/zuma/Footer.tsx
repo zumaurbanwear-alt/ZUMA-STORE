@@ -10,17 +10,24 @@ export const Footer = () => (
         </div>
 
         <div className="flex flex-col gap-3">
+          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">Navigation</div>
+          <a href="#hero" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Home</a>
+          <a href="#products" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Shop</a>
+          <a href="#archive" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Cart</a>
+        </div>
+
+        <div className="flex flex-col gap-3">
           <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">Connect</div>
           <a href="https://www.instagram.com/zumaurbanwear" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Instagram ↗</a>
           <a href="https://www.tiktok.com/@zumaurbanwear" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">TikTok ↗</a>
           <a href="https://wa.me/message/KOH2ZXZY6EPHP1" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">WhatsApp ↗</a>
         </div>
+      </div>
 
-        </div>
-        <p className="text-accent text-[8px] tracking-[0.16em] uppercase">
-          This is the store.
-        </p>
+      <div className="border-t border-border pt-6 flex flex-col md:flex-row md:justify-between gap-2 text-[10px] tracking-[0.22em] uppercase text-muted-foreground">
+        <p>© {new Date().getFullYear()} zuma — all rights reserved</p>
+        <p>system v2.0 // phase active</p>
       </div>
-      </div>
+    </div>
   </footer>
 );
