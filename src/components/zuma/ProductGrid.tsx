@@ -5,10 +5,10 @@ const CATEGORIES = ["All", "T-Shirts", "Hoodies", "Accessories"];
 const NEW_THRESHOLD_DAYS = 14;
 
 const badgeFor = (p: DbProduct) => {
-  if (p.stock === 0) return { label: "SOLD OUT", className: "bg-foreground text-background" };
-  if (p.stock <= 3) return { label: "FEW REMAINING", className: "bg-primary text-primary-foreground" };
+  if (p.stock === 0) return { label: "SOLD OUT", className: "bg-black text-white" };
+  if (p.stock <= 3) return { label: "FEW LEFT", className: "bg-primary text-primary-foreground" };
   const ageDays = (Date.now() - new Date(p.created_at).getTime()) / 86400000;
-  if (ageDays <= NEW_THRESHOLD_DAYS) return { label: "NEW", className: "bg-primary-hi text-primary-foreground" };
+  if (ageDays <= NEW_THRESHOLD_DAYS) return { label: "NEW", className: "bg-black text-white" };
   return null;
 };
 
@@ -32,9 +32,9 @@ export const ProductGrid = ({
           <button
             key={c}
             onClick={() => setCat(c)}
-            className={`px-4 py-2 text-[10px] tracking-[0.22em] uppercase border transition-colors ${
-              cat === c ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border text-muted-foreground hover:border-primary hover:text-primary-hi"
+            className={`px-5 py-2.5 text-[10px] tracking-[0.22em] uppercase border transition-colors ${
+              cat === c ? "border-foreground bg-foreground text-background"
+                        : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
             }`}
           >
             {c}
@@ -47,13 +47,17 @@ export const ProductGrid = ({
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">No products in this category yet.</p>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
         {filtered.map(p => {
           const badge = badgeFor(p);
           const soldOut = p.stock === 0;
           return (
-            <article key={p.id} className="group border border-border bg-card hover:border-primary-hi transition-colors flex flex-col">
-              <div className="relative aspect-[4/5] overflow-hidden bg-background">
+            <article
+              key={p.id}
+              onClick={() => !soldOut && onAdd(p)}
+              className="group bg-[#e8e6df] text-black flex flex-col cursor-pointer transition-transform hover:-translate-y-1"
+            >
+              <div className="relative aspect-[4/5] overflow-hidden">
                 <img
                   src={resolveImage(p)}
                   alt={p.name}
@@ -66,20 +70,12 @@ export const ProductGrid = ({
                   </span>
                 )}
               </div>
-              <div className="p-5 flex flex-col gap-3">
-                <div className="flex justify-between items-start gap-3">
-                  <h3 className="font-display text-xl md:text-2xl tracking-[0.18em] text-foreground">{p.name}</h3>
-                  <span className="text-sm text-primary-hi whitespace-nowrap">{p.price} MAD</span>
+              <div className="px-4 py-3 flex justify-between items-center gap-3 bg-[#dedbd1]">
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <h3 className="font-mono text-[11px] tracking-[0.18em] uppercase text-black truncate">{p.name}</h3>
+                  <span className="text-[9px] tracking-[0.2em] uppercase text-black/60">{p.category}</span>
                 </div>
-                <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground">{p.category}</div>
-                {p.description && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{p.description}</p>}
-                <button
-                  disabled={soldOut}
-                  onClick={() => onAdd(p)}
-                  className="mt-2 self-start px-4 py-2.5 border border-primary text-primary text-[10px] tracking-[0.22em] uppercase hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {soldOut ? "Sold Out" : "Add to Cart"}
-                </button>
+                <span className="text-[11px] font-mono tracking-[0.1em] text-black whitespace-nowrap">{p.price} MAD</span>
               </div>
             </article>
           );
@@ -88,3 +84,4 @@ export const ProductGrid = ({
     </div>
   );
 };
+
