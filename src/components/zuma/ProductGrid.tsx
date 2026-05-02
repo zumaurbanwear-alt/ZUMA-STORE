@@ -47,17 +47,13 @@ export const ProductGrid = ({
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">No products in this category yet.</p>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
         {filtered.map(p => {
           const badge = badgeFor(p);
           const soldOut = p.stock === 0;
           return (
-            <article
-              key={p.id}
-              onClick={() => !soldOut && onAdd(p)}
-              className="group bg-[#e8e6df] text-black flex flex-col cursor-pointer transition-transform hover:-translate-y-1"
-            >
-              <div className="relative aspect-[4/5] overflow-hidden">
+            <article key={p.id} className="group border border-border bg-card hover:border-primary-hi transition-colors flex flex-col">
+              <div className="relative aspect-[4/5] overflow-hidden bg-background">
                 <img
                   src={resolveImage(p)}
                   alt={p.name}
@@ -70,12 +66,20 @@ export const ProductGrid = ({
                   </span>
                 )}
               </div>
-              <div className="px-4 py-3 flex justify-between items-center gap-3 bg-[#dedbd1]">
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <h3 className="font-mono text-[11px] tracking-[0.18em] uppercase text-black truncate">{p.name}</h3>
-                  <span className="text-[9px] tracking-[0.2em] uppercase text-black/60">{p.category}</span>
+              <div className="p-4 md:p-5 flex flex-col gap-2 md:gap-3">
+                <div className="flex justify-between items-start gap-3">
+                  <h3 className="font-display text-lg md:text-2xl tracking-[0.18em] text-foreground">{p.name}</h3>
+                  <span className="text-xs md:text-sm text-primary-hi whitespace-nowrap">{p.price} MAD</span>
                 </div>
-                <span className="text-[11px] font-mono tracking-[0.1em] text-black whitespace-nowrap">{p.price} MAD</span>
+                <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground">{p.category}</div>
+                {p.description && <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2 hidden md:block">{p.description}</p>}
+                <button
+                  disabled={soldOut}
+                  onClick={() => onAdd(p)}
+                  className="mt-2 self-start px-3 py-2 md:px-4 md:py-2.5 border border-primary text-primary text-[9px] md:text-[10px] tracking-[0.22em] uppercase hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {soldOut ? "Sold Out" : "Add to Cart"}
+                </button>
               </div>
             </article>
           );
