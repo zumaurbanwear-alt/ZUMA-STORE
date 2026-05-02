@@ -32,11 +32,7 @@ export const Footer = () => (
         </p>
       </div>
       </div>
-
-      <div className="border-t border-border pt-6 flex flex-col md:flex-row md:justify-between gap-2 text-[10px] tracking-[0.22em] uppercase text-muted-foreground">
-        <p>© {new Date().getFullYear()} zuma — all rights reserved</p>
-        <p>system v2.0 // phase active</p>
-      </div>
+      
     </div>
   </footer>
 );
