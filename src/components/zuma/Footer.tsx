@@ -9,12 +9,28 @@ export const Footer = () => (
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">Connect</div>
-          <a href="https://www.instagram.com/zumaurbanwear" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">Instagram ↗</a>
-          <a href="https://www.tiktok.com/@zumaurbanwear" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">TikTok ↗</a>
-          <a href="https://wa.me/message/KOH2ZXZY6EPHP1" target="_blank" rel="noreferrer" className="text-xs tracking-[0.22em] uppercase text-foreground hover:text-primary-hi transition-colors">WhatsApp ↗</a>
+              <div className="text-left md:text-right relative z-[2]">
+        <div className="flex gap-4 mb-2">
+          {[
+            { label: "Instagram", url: "https://www.instagram.com/zumaurbanwear" },
+            { label: "TikTok", url: "https://www.tiktok.com/@zumaurbanwear" },
+            { label: "WhatsApp", url: "https://wa.me/message/KOH2ZXZY6EPHP1" },
+          ].map((s) => (
+            <a
+              key={s.label}
+              href={s.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[8px] tracking-[0.16em] text-muted-foreground uppercase no-underline hover:text-accent transition-colors"
+            >
+              {s.label}
+            </a>
+          ))}
         </div>
+        <p className="text-accent text-[8px] tracking-[0.16em] uppercase">
+          This is the store.
+        </p>
+      </div>
       </div>
 
       <div className="border-t border-border pt-6 flex flex-col md:flex-row md:justify-between gap-2 text-[10px] tracking-[0.22em] uppercase text-muted-foreground">
