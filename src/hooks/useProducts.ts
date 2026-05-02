@@ -1,0 +1,61 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import p1 from "@/assets/product-1.jpg";
+import p2 from "@/assets/product-2.jpg";
+import p3 from "@/assets/product-3.jpg";
+import p4 from "@/assets/product-4.jpg";
+
+// Fallback bundled images keyed by slug. Admin can override via image_url (hosted URL).
+const BUNDLED: Record<string, string> = {
+  "muerted-zephyr": p1,
+  "the-gaze": p4,
+  "voidwalker": p2,
+  "z-mark-cap": p3,
+  "ipseity-tee": p1,
+  "shadow-hw": p2,
+};
+
+export type DbProduct = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category: string;
+  image_url: string;
+  stock: number;
+  is_visible: boolean;
+  sort_order: number;
+  created_at: string;
+};
+
+export const resolveImage = (p: Pick<DbProduct, "slug" | "image_url">) => {
+  if (p.image_url && /^https?:\/\//.test(p.image_url)) return p.image_url;
+  return BUNDLED[p.slug] ?? p1;
+};
+
+export const useProducts = (opts: { adminMode?: boolean } = {}) => {
+  const [products, setProducts] = useState<DbProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      let q = supabase.from("products").select("*").order("created_at", { ascending: false });
+      if (!opts.adminMode) q = q.eq("is_visible", true);
+      const { data, error } = await q;
+      if (!active) return;
+      if (!error && data) setProducts(data as DbProduct[]);
+      setLoading(false);
+    };
+    load();
+
+    const ch = supabase
+      .channel("products-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => load())
+      .subscribe();
+    return () => { active = false; supabase.removeChannel(ch); };
+  }, [opts.adminMode]);
+
+  return { products, loading };
+};
