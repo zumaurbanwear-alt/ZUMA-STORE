@@ -61,7 +61,7 @@ const Product = () => {
           </button>
 
           <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
-            <div className="bg-card border border-border aspect-[4/5] overflow-hidden self-start">
+            <div className="bg-card border border-border aspect-[3/4] overflow-hidden self-start max-h-[600px]">
               <img
                 src={resolveImage(product)}
                 alt={product.name}
