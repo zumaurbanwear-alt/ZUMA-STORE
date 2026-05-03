@@ -5,7 +5,6 @@ import p2 from "@/assets/product-2.jpg";
 import p3 from "@/assets/product-3.jpg";
 import p4 from "@/assets/product-4.jpg";
 
-// Fallback bundled images keyed by slug. Admin can override via image_url (hosted URL).
 const BUNDLED: Record<string, string> = {
   "muerted-zephyr": p1,
   "the-gaze": p4,
@@ -29,6 +28,14 @@ export type DbProduct = {
   created_at: string;
 };
 
+export type ProductImage = {
+  id: string;
+  product_id: string;
+  url: string;
+  color: string | null;
+  position: number;
+};
+
 export const resolveImage = (p: Pick<DbProduct, "slug" | "image_url">) => {
   if (p.image_url && /^https?:\/\//.test(p.image_url)) return p.image_url;
   return BUNDLED[p.slug] ?? p1;
@@ -37,7 +44,6 @@ export const resolveImage = (p: Pick<DbProduct, "slug" | "image_url">) => {
 export const useProducts = (opts: { adminMode?: boolean } = {}) => {
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     let active = true;
     const load = async () => {
@@ -49,13 +55,30 @@ export const useProducts = (opts: { adminMode?: boolean } = {}) => {
       setLoading(false);
     };
     load();
-
     const ch = supabase
       .channel("products-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => load())
       .subscribe();
     return () => { active = false; supabase.removeChannel(ch); };
   }, [opts.adminMode]);
-
   return { products, loading };
+};
+
+export const useProductImages = (productId: string | undefined) => {
+  const [images, setImages] = useState<ProductImage[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!productId) return;
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("product_images")
+        .select("*")
+        .eq("product_id", productId)
+        .order("position", { ascending: true });
+      if (!error && data) setImages(data as ProductImage[]);
+      setLoading(false);
+    };
+    load();
+  }, [productId]);
+  return { images, loading };
 };
