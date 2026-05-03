@@ -4,7 +4,7 @@
 @tailwind utilities;
 @layer base {
   :root {
-    --background: 0 0% 85%;
+    --background: 60 8% 84%;
     --foreground: 0 0% 0%;
     --card: 0 0% 82%;
     --card-foreground: 0 0% 0%;
@@ -28,7 +28,7 @@
     --radius: 0px;
   }
   .dark {
-    --background: 0 0% 85%;
+    --background: 60 8% 84%;
     --foreground: 0 0% 0%;
   }
 }
