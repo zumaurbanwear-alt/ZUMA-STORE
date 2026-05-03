@@ -93,7 +93,7 @@ export const ProductGrid = ({
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">No products in this category yet.</p>
       )}
 
-      <div className="grid grid-cols-2 gap-4 max-w-[600px] mx-auto">
+      <div className="grid grid-cols-2 gap-4 max-w-[600px]">
         {filtered.map(p => <ProductCard key={p.id} p={p} />)}
       </div>
     </div>
