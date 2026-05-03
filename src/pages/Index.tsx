@@ -50,7 +50,7 @@ const Index = () => {
 
       <TextureBand label="DROP 001 — New Arrivals" right="↓ New Arrivals" ghost="NEW ARRIVALS" />
 
-      <section id="products" className="px-6 md:px-10 py-20 border-b border-border reveal">
+      <section id="products" className="px-20 md:px-40 py-20 border-b border-border reveal">
         <div className="max-w-[1200px] mx-auto flex justify-between items-end mb-12 gap-4">
           <div>
             <div className="text-[10px] tracking-[0.25em] uppercase text-primary-hi mb-3">NEW</div>
