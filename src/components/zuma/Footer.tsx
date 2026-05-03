@@ -1,10 +1,10 @@
 export const Footer = () => (
   <footer className="py-14 px-6 md:px-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-t border-border relative overflow-hidden">
     <div>
-      <div className="font-display text-4xl md:text-5xl tracking-[0.15em] text-foreground">
+      <div className="font-display text-[18px] tracking-[0.3em] text-foreground">
         ZÜMA
       </div>
-      <span className="block font-mono text-[8px] tracking-[0.2em] text-muted-foreground font-normal mt-2">
+      <span className="block font-mono text-[8px] tracking-[0.16em] text-muted-foreground font-normal mt-2">
         brand born between casablanca and elsewhere. we were made to create.
       </span>
     </div>
@@ -16,18 +16,18 @@ export const Footer = () => (
           { label: "TikTok", url: "https://www.tiktok.com/@zumaurbanwear" },
           { label: "WhatsApp", url: "https://wa.me/message/KOH2ZXZY6EPHP1" },
         ].map((s) => (
-          
+          <a
             key={s.label}
             href={s.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[8px] tracking-[0.16em] text-muted-foreground uppercase no-underline hover:text-accent transition-colors"
+            className="text-[8px] tracking-[0.16em] text-muted-foreground uppercase no-underline hover:text-primary-hi transition-colors"
           >
             {s.label}
           </a>
         ))}
       </div>
-      <p className="text-accent text-[8px] tracking-[0.16em] uppercase">
+      <p className="text-primary-hi text-[8px] tracking-[0.16em] uppercase">
         This is the store.
       </p>
     </div>
