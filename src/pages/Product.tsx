@@ -51,7 +51,7 @@ const Product = () => {
 
   return (
     <SiteLayout>
-      <div style={{ paddingTop: "120px", paddingBottom: "80px" }} className="px-6 md:px-10">
+      <div style={{ paddingTop: "160px", paddingBottom: "80px" }} className="px-6 md:px-10">
         <div className="max-w-[1200px] mx-auto">
           <button
             onClick={() => navigate(-1)}
