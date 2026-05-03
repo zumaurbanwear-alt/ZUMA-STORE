@@ -30,7 +30,7 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
           </span>
         )}
       </div>
-      <div className="px-4 py-3 flex justify-between items-start gap-3 border-t border-border">
+      <div className="px-4 py-3 flex justify-between items-start gap-3 border-t border-border h-20">
         <div className="flex flex-col gap-1 min-w-0 flex-1">
           <h3 className="font-display text-base md:text-lg tracking-[0.18em] text-foreground">{p.name}</h3>
           <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{p.category}</span>
