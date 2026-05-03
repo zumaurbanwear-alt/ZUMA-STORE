@@ -12,7 +12,7 @@ const Index = () => {
   const { products, loading } = useProducts();
 
   useEffect(() => {
-    document.title = "ZÜMA — Drop 001 | Streetwear Born Between";
+    document.title = "ZÜMA — SHOP";
     const meta = document.querySelector('meta[name="description"]') ?? (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
