@@ -30,12 +30,14 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
           </span>
         )}
       </div>
-      <div className="px-4 py-3 flex justify-between items-start gap-3 border-t border-border h-20">
-        <div className="flex flex-col gap-1 min-w-0 flex-1" style={{ minHeight: "48px" }}>
-          <h3 className="font-display text-base md:text-lg tracking-[0.18em] text-foreground">{p.name}</h3>
+      <div className="px-4 py-3 flex justify-between items-start gap-3 border-t border-border">
+        <div className="flex flex-col gap-1 min-w-0 flex-1">
+          <h3 className="font-display text-base md:text-lg tracking-[0.18em] text-foreground" style={{ minHeight: "2.8em" }}>
+            {p.name}
+          </h3>
           <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{p.category}</span>
         </div>
-        <span className="text-[9px] tracking-[0.18em] text-primary-hi whitespace-nowrap">{p.price} MAD</span>
+        <span className="text-[9px] tracking-[0.18em] text-primary-hi whitespace-nowrap mt-1">{p.price} MAD</span>
       </div>
     </Link>
   );
@@ -53,13 +55,11 @@ export const ProductGrid = ({
   limit?: number;
 }) => {
   const [cat, setCat] = useState("All");
-
   const categories = useMemo(() => {
     const set = new Set<string>();
     products.forEach(p => set.add(p.category));
     return ["All", ...Array.from(set)];
   }, [products]);
-
   const filtered = useMemo(() => {
     const list = cat === "All" ? products : products.filter(p => p.category === cat);
     const sorted = [...list].sort((a, b) => {
@@ -87,12 +87,10 @@ export const ProductGrid = ({
           ))}
         </div>
       )}
-
       {loading && <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">Loading inventory...</p>}
       {!loading && filtered.length === 0 && (
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">No products in this category yet.</p>
       )}
-
       <div className="grid grid-cols-2 gap-4 max-w-[600px]">
         {filtered.map(p => <ProductCard key={p.id} p={p} />)}
       </div>
