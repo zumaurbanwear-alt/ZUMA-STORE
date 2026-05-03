@@ -66,7 +66,7 @@ export const CartDrawer = ({
           >
             Checkout
           </button>
-          
+          <a
             href={whatsappLink}
             target="_blank"
             rel="noreferrer"
