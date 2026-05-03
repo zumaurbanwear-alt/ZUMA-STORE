@@ -75,8 +75,8 @@ const Index = () => {
 
       <section id="products" className="px-6 md:px-10 py-20 border-b border-border reveal">
         <div className="text-center mb-14">
-          <h2 className="font-display text-4xl md:text-5xl tracking-[0.35em] text-foreground mb-3">SHOP</h2>
-          <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground">New arrivals first · Live inventory</p>
+          <h2 className="font-display text-[48px] tracking-[0.35em] text-foreground mb-4">SHOP</h2>
+          <p className="text-[12px] tracking-[0.2em] uppercase text-muted-foreground">New arrivals first · Live inventory</p>
         </div>
         <ProductGrid products={products} onAdd={addToCart} loading={loading} />
       </section>
