@@ -70,7 +70,7 @@ export const ProductGrid = ({
   }, [products, cat, limit]);
 
   return (
-    <div className="max-w-[1200px] mx-auto">
+    <div>
       {showFilters && categories.length > 2 && (
         <div className="flex flex-wrap justify-center gap-2 mb-12">
           {categories.map(c => (
