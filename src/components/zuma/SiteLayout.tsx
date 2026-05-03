@@ -6,7 +6,7 @@ import { CheckoutDialog } from "@/components/zuma/CheckoutDialog";
 import { WhatsAppFab } from "@/components/zuma/WhatsAppFab";
 import { useCart } from "@/context/CartContext";
 
-export const WHATSAPP_NUMBER = "212600000000";
+export const WHATSAPP_NUMBER = "212600365283";
 export const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
 
 export const SiteLayout = ({ children }: { children: ReactNode }) => {
