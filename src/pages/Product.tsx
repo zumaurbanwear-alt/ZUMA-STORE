@@ -60,7 +60,7 @@ const Product = () => {
             <ChevronLeft className="w-3.5 h-3.5" /> Back
           </button>
 
-          <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
+          <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
             <div className="bg-card border border-border aspect-[3/4] overflow-hidden self-start max-h-[600px]">
               <img
                 src={resolveImage(product)}
@@ -69,7 +69,7 @@ const Product = () => {
               />
             </div>
 
-            <div className="flex flex-col justify-between" style={{ minHeight: "500px" }}>
+            <div className="flex flex-col justify-between h-full">
               <div>
                 <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi mb-2">
                   {product.category} · {product.stock > 0 ? `${product.stock} in stock` : "SOLD OUT"}
