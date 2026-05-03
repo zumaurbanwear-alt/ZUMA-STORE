@@ -93,30 +93,30 @@ export const CheckoutDialog = ({
     <div className="fixed inset-0 z-[300] bg-background/90 flex items-center justify-center p-4 overflow-y-auto">
       <div className="relative w-full max-w-2xl bg-card border border-border my-10">
         <button onClick={() => { setDone(false); onClose(); }} aria-label="Close" className="absolute top-4 right-4 text-muted-foreground hover:text-primary-hi z-10">
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
         {done ? (
           <div className="p-10 text-center flex flex-col items-center gap-5">
-            <div className="w-14 h-14 border border-primary flex items-center justify-center">
-              <Check className="w-6 h-6 text-primary-hi" />
+            <div className="w-12 h-12 border border-primary flex items-center justify-center">
+              <Check className="w-5 h-5 text-primary-hi" />
             </div>
-            <h2 className="font-display text-3xl tracking-[0.25em]">ORDER RECEIVED</h2>
-            <p className="text-xs tracking-[0.18em] uppercase text-muted-foreground max-w-md leading-relaxed">
+            <h2 className="font-display text-xl tracking-[0.25em]">ORDER RECEIVED</h2>
+            <p className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground max-w-md leading-relaxed">
               <span className="text-foreground">PAYMENT: Cash on Delivery.</span> No upfront payment is needed.
               Our delivery partner will send you a{" "}
               <span className="text-primary-hi font-bold">WhatsApp text on the day of delivery</span>.
               Please ensure your phone number is correct.
             </p>
-            <button onClick={() => { setDone(false); onSuccess(); }} className="mt-4 px-6 py-3 bg-primary text-primary-foreground text-[11px] tracking-[0.3em] uppercase hover:bg-primary-hi">
+            <button onClick={() => { setDone(false); onSuccess(); }} className="mt-4 px-6 py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi">
               Continue
             </button>
           </div>
         ) : (
-          <form onSubmit={submit} className="p-6 md:p-10 flex flex-col gap-6">
+          <form onSubmit={submit} className="p-6 md:p-10 flex flex-col gap-5">
             <header>
-              <h2 className="font-display text-3xl tracking-[0.25em] mb-2">CHECKOUT</h2>
-              <p className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground">Cash on delivery only</p>
+              <h2 className="font-display text-xl tracking-[0.25em] mb-2">CHECKOUT</h2>
+              <p className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Cash on delivery only</p>
             </header>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -127,9 +127,9 @@ export const CheckoutDialog = ({
               <Field label="City" v={form.city} set={v => setForm({ ...form, city: v })} err={errors.city} className="sm:col-span-2" />
             </div>
 
-            <div className="border border-border p-5 bg-background/50">
-              <div className="text-[10px] tracking-[0.25em] uppercase text-primary-hi mb-3">Payment</div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
+            <div className="border border-border p-4 bg-background/50">
+              <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi mb-2">Payment</div>
+              <p className="text-[10px] leading-relaxed text-muted-foreground">
                 <span className="text-foreground">PAYMENT: Cash on Delivery.</span> No upfront payment is needed.
                 Our delivery partner will send you a{" "}
                 <span className="text-primary-hi font-bold">WhatsApp text on the day of delivery</span>.
@@ -138,11 +138,11 @@ export const CheckoutDialog = ({
             </div>
 
             <div className="flex justify-between items-center pt-2 border-t border-border">
-              <span className="tracking-[0.22em] uppercase text-muted-foreground text-xs">Total</span>
-              <span className="font-display text-2xl tracking-[0.1em]">{total} MAD</span>
+              <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Total</span>
+              <span className="font-display text-sm tracking-[0.1em]">{total} MAD</span>
             </div>
 
-            <button type="submit" disabled={busy} className="w-full py-4 bg-primary text-primary-foreground text-[11px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-50">
+            <button type="submit" disabled={busy} className="w-full py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-50">
               {busy ? "Placing..." : "Confirm Order"}
             </button>
           </form>
@@ -164,8 +164,8 @@ const Field = ({
       value={v}
       onChange={e => set(e.target.value)}
       placeholder={placeholder}
-      className="bg-background border border-border px-3 py-2.5 text-sm text-foreground focus:border-primary outline-none transition-colors"
+      className="bg-background border border-border px-3 py-2 text-[10px] text-foreground focus:border-primary outline-none transition-colors"
     />
-    {err && <span className="text-[10px] text-destructive">{err}</span>}
+    {err && <span className="text-[9px] text-destructive">{err}</span>}
   </label>
 );
