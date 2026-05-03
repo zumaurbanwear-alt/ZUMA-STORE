@@ -17,7 +17,7 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
   const soldOut = p.stock === 0;
   return (
     <Link to={`/product/${p.slug}`} className="group block bg-card hover:bg-secondary transition-colors">
-      <div className="relative aspect-[4/5] overflow-hidden bg-background">
+      <div className="relative aspect-[3/4] overflow-hidden bg-background">
         <img
           src={resolveImage(p)}
           alt={p.name}
@@ -93,7 +93,7 @@ export const ProductGrid = ({
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">No products in this category yet.</p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[800px] mx-auto">
         {filtered.map(p => <ProductCard key={p.id} p={p} />)}
       </div>
     </div>
