@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import heroImg from "@/assets/zuma-hero.jpg";
+import heroImg from "@/assets/fw000-modeled.jpg";
 import { Loader } from "@/components/zuma/Loader";
 import { Countdown } from "@/components/zuma/Countdown";
 import { TextureBand } from "@/components/zuma/TextureBand";
