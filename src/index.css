@@ -64,3 +64,10 @@ body::before{
 .reveal.visible{opacity:1;transform:translateY(0);}
 .font-display { font-family: 'Bebas Neue', sans-serif; }
 .font-mono { font-family: 'Space Mono', monospace; }
+
+/* Hide Lovable badge */
+[data-lovable-badge],
+iframe[src*="lovable"],
+div[class*="lovable-badge"] {
+  display: none !important;
+}
