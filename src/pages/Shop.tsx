@@ -15,7 +15,7 @@ const Shop = () => {
 
   return (
     <SiteLayout>
-      <div className="pt-32 pb-20 px-20 md:px-40">
+      <div className="pt-32 pb-20 px-6 md:px-10">
         <div className="max-w-[1200px] mx-auto mb-12">
           <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-4">
             INVENTORY VAULT // {count} ITEMS
