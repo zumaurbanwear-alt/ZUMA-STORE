@@ -58,12 +58,12 @@ const Index = () => {
         <div className="relative z-10 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
           <div>
             <div className="text-[8px] tracking-[0.25em] text-primary-hi mb-3 animate-fade-up" style={{ animationDelay: "2.5s" }}>001 / STORE</div>
-            <h1 className="font-display text-3xl md:text-5xl text-foreground animate-fade-up" style={{ animationDelay: "2.7s" }}>ZÜMA — DROP 001</h1>
-            <p className="max-w-sm text-[10px] md:text-xs leading-[1.95] tracking-wide text-muted-foreground mt-3 animate-fade-up" style={{ animationDelay: "2.9s" }}>
-              This is actually the store. Every mark, every choice, every silence — ready to be worn.
+            <h1 className="font-display text-foreground animate-fade-up" style={{ animationDelay: "2.7s", fontSize: "clamp(11px,1.4vw,16px)", letterSpacing: "0.35em" }}>ZÜMA — STORE</h1>
+            <p className="max-w-[340px] text-[9px] leading-[1.95] tracking-[0.04em] text-muted-foreground mt-3 animate-fade-up" style={{ animationDelay: "2.9s" }}>
+              This is actually the store. Here is the inventory — every mark, every choice, every silence, ready to be worn.
             </p>
           </div>
-          <a href="https://zumaurbanwear-alt.github.io/ZUMA-INDEX/" target="_blank" rel="noreferrer" className="self-start md:self-auto inline-block text-[10px] tracking-[0.22em] uppercase px-4 py-2 border border-primary text-primary-hi hover:bg-primary hover:text-primary-foreground transition-colors animate-fade-up" style={{ animationDelay: "3.1s" }}>
+          <a href="https://zumaurbanwear-alt.github.io/ZUMA-INDEX/" target="_blank" rel="noreferrer" className="self-start md:self-auto inline-block text-[7px] tracking-[0.22em] uppercase px-4 py-2 border border-primary text-primary-hi hover:bg-primary hover:text-primary-foreground transition-colors animate-fade-up" style={{ animationDelay: "3.1s" }}>
             Enter Index →
           </a>
         </div>
