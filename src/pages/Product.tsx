@@ -22,6 +22,14 @@ const Product = () => {
     if (product) document.title = `ZÜMA — ${product.name}`;
   }, [product]);
 
+  // Précharger toutes les images couleur
+  useEffect(() => {
+    images.forEach(img => {
+      const image = new Image();
+      image.src = img.url;
+    });
+  }, [images]);
+
   const currentImage = useMemo(() => {
     if (color && images.length > 0) {
       const match = images.find(img => img.color?.toUpperCase() === color);
