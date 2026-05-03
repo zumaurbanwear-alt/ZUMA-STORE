@@ -60,8 +60,8 @@ const Product = () => {
             <ChevronLeft className="w-3.5 h-3.5" /> Back
           </button>
 
-          <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
-            <div className="bg-card border border-border aspect-[3/4] overflow-hidden self-start max-h-[600px]">
+          <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
+            <div className="bg-card border border-border aspect-[4/5] overflow-hidden">
               <img
                 src={resolveImage(product)}
                 alt={product.name}
