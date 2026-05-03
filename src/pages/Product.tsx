@@ -135,7 +135,7 @@ const Product = () => {
                   {soldOut ? "Sold Out" : "Add to Cart"}
                 </button>
                 
-                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
+                  <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full text-center py-3 border border-border text-[10px] tracking-[0.3em] uppercase text-muted-foreground hover:text-primary-hi hover:border-primary-hi transition-colors"
