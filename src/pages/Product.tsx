@@ -69,15 +69,15 @@ const Product = () => {
               />
             </div>
 
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
               <div>
-                <div className="text-[10px] tracking-[0.25em] uppercase text-primary-hi mb-3">
+                <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi mb-2">
                   {product.category} · {product.stock > 0 ? `${product.stock} in stock` : "SOLD OUT"}
                 </div>
-                <h1 className="font-display text-foreground" style={{ fontSize: "clamp(36px, 6vw, 72px)", letterSpacing: "0.12em" }}>
+                <h1 className="font-display text-foreground" style={{ fontSize: "clamp(20px, 3.5vw, 42px)", letterSpacing: "0.12em" }}>
                   {product.name}
                 </h1>
-                <div className="font-display text-base tracking-[0.18em] text-primary-hi mt-3">
+                <div className="font-display text-[16px] tracking-[0.18em] text-primary-hi mt-2">
                   {product.price} MAD
                 </div>
               </div>
@@ -89,10 +89,13 @@ const Product = () => {
               )}
 
               <div>
-                <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3">SELECT SIZE</div>
+                <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">SELECT SIZE</div>
                 <div className="flex flex-wrap gap-2">
                   {SIZES.map(s => (
-                    <button key={s} onClick={() => setSize(s)} className={`px-4 py-2 text-[9px] tracking-[0.22em] uppercase border transition-colors ${
+                    <button
+                      key={s}
+                      onClick={() => setSize(s)}
+                      className={`px-4 py-2 text-[9px] tracking-[0.22em] uppercase border transition-colors ${
                         size === s
                           ? "border-foreground bg-foreground text-background"
                           : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
@@ -105,10 +108,13 @@ const Product = () => {
               </div>
 
               <div>
-                <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3">SELECT COLOR</div>
+                <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">SELECT COLOR</div>
                 <div className="flex flex-wrap gap-2">
                   {COLORS.map(c => (
-                    <button key={s} onClick={() => setColor(s)} className={`px-4 py-2 text-[9px] tracking-[0.22em] uppercase border transition-colors ${
+                    <button
+                      key={c}
+                      onClick={() => setColor(c)}
+                      className={`px-4 py-2 text-[9px] tracking-[0.22em] uppercase border transition-colors ${
                         color === c
                           ? "border-foreground bg-foreground text-background"
                           : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
@@ -120,19 +126,19 @@ const Product = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 pt-2">
+              <div className="flex flex-col gap-2 pt-2">
                 <button
                   disabled={soldOut}
                   onClick={() => addToCart(product)}
-                  className="w-full py-4 bg-primary text-primary-foreground text-[11px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {soldOut ? "Sold Out" : "Add to Cart"}
                 </button>
-                <a
+                
                   href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full text-center py-4 border border-border text-[11px] tracking-[0.3em] uppercase text-muted-foreground hover:text-primary-hi hover:border-primary-hi transition-colors"
+                  className="w-full text-center py-3 border border-border text-[10px] tracking-[0.3em] uppercase text-muted-foreground hover:text-primary-hi hover:border-primary-hi transition-colors"
                 >
                   Ask via WhatsApp
                 </a>
