@@ -69,7 +69,7 @@ const Product = () => {
               />
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col justify-between" style={{ minHeight: "500px" }}>
               <div>
                 <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi mb-2">
                   {product.category} · {product.stock > 0 ? `${product.stock} in stock` : "SOLD OUT"}
