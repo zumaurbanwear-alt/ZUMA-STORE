@@ -52,7 +52,7 @@ const Product = () => {
   return (
     <SiteLayout>
       <div style={{ paddingTop: "100px", paddingBottom: "80px" }} className="px-6 md:px-10">
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-[1200px] mx-auto min-h-screen">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-1 text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi transition-colors mb-8"
