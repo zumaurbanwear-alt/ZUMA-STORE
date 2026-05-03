@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { resolveImage, useProducts, useProductImages } from "@/hooks/useProducts";
 import { SiteLayout, WHATSAPP_NUMBER } from "@/components/zuma/SiteLayout";
 import { useCart } from "@/context/CartContext";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const SIZES = ["S", "M", "L"];
 const COLORS = ["WHITE", "GREY", "BLACK"];
@@ -17,12 +17,13 @@ const Product = () => {
   const { addToCart } = useCart();
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
+  const [slide, setSlide] = useState(0);
 
   useEffect(() => {
     if (product) document.title = `ZÜMA — ${product.name}`;
   }, [product]);
 
-  // Précharger toutes les images couleur
+  // Précharger toutes les images
   useEffect(() => {
     images.forEach(img => {
       const image = new Image();
@@ -30,13 +31,25 @@ const Product = () => {
     });
   }, [images]);
 
-  const currentImage = useMemo(() => {
+  // Reset slide when color changes
+  useEffect(() => {
+    setSlide(0);
+  }, [color]);
+
+  const carouselImages = useMemo(() => {
     if (color && images.length > 0) {
-      const match = images.find(img => img.color?.toUpperCase() === color);
-      if (match) return match.url;
+      const colorImgs = images.filter(img => img.color?.toUpperCase() === color);
+      const front = colorImgs.find(img => img.side === 'front');
+      const back = colorImgs.find(img => img.side === 'back');
+      const result = [];
+      if (front) result.push(front.url);
+      if (back) result.push(back.url);
+      if (result.length > 0) return result;
     }
-    return product ? resolveImage(product) : null;
+    return product ? [resolveImage(product)] : [];
   }, [color, images, product]);
+
+  const currentImage = carouselImages[slide] ?? carouselImages[0] ?? "";
 
   if (loading) {
     return (
@@ -78,12 +91,44 @@ const Product = () => {
           </button>
 
           <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
-            <div className="border border-border aspect-[4/5] overflow-hidden" style={{ background: "#DBDBD0" }}>
-              <img
-                src={currentImage ?? ""}
-                alt={product.name}
-                className={`w-full h-full object-cover transition-opacity duration-300 ${soldOut ? "opacity-40 grayscale" : ""}`}
-              />
+            <div className="flex flex-col gap-3">
+              <div className="relative border border-border aspect-[4/5] overflow-hidden" style={{ background: "#DBDBD0" }}>
+                <img
+                  src={currentImage}
+                  alt={product.name}
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${soldOut ? "opacity-40 grayscale" : ""}`}
+                />
+                {carouselImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setSlide(s => (s - 1 + carouselImages.length) % carouselImages.length)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/70 hover:bg-background p-1 transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-foreground" />
+                    </button>
+                    <button
+                      onClick={() => setSlide(s => (s + 1) % carouselImages.length)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/70 hover:bg-background p-1 transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4 text-foreground" />
+                    </button>
+                  </>
+                )}
+              </div>
+              {carouselImages.length > 1 && (
+                <div className="flex gap-2">
+                  {carouselImages.map((url, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSlide(i)}
+                      className={`border aspect-square w-16 overflow-hidden transition-all ${slide === i ? "border-foreground" : "border-border opacity-50"}`}
+                      style={{ background: "#DBDBD0" }}
+                    >
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-4">
