@@ -1,7 +1,7 @@
 export const TextureBand = ({ label, right, ghost }: { label: string; right: string; ghost: string }) => (
   <div
     className="w-full relative overflow-hidden border-y border-border reveal"
-    style={{ height: "clamp(140px,22vw,320px)", background: "linear-gradient(135deg,#DADADA 0%,#c8c8c8 30%,#DADADA 60%,hsl(var(--primary-dim)) 100%)" }}
+    style={{ height: "clamp(140px,22vw,320px)", background: "linear-gradient(135deg,#DBDBD0 0%,#ccccc1 30%,#DBDBD0 60%,hsl(var(--primary-dim)) 100%)" }}
   >
     <div
       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-display whitespace-nowrap leading-none pointer-events-none"
