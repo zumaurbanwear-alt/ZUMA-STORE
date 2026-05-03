@@ -72,7 +72,7 @@ const Product = () => {
             <div className="flex flex-col gap-4">
               <div>
                 <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi mb-2">
-                  {product.category} · {product.stock > 0 ? `${product.stock} in stock` : "SOLD OUT"}
+                  {product.category}
                 </div>
                 <h1 className="font-display text-foreground" style={{ fontSize: "clamp(20px, 3.5vw, 42px)", letterSpacing: "0.12em" }}>
                   {product.name}
