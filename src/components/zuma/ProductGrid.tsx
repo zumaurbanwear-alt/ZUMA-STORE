@@ -35,7 +35,7 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
           <h3 className="font-display text-base md:text-lg tracking-[0.18em] text-foreground">{p.name}</h3>
           <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{p.category}</span>
         </div>
-        <span className="text-[11px] tracking-[0.18em] text-primary-hi whitespace-nowrap">{p.price} MAD</span>
+        <span className="text-[9px] tracking-[0.18em] text-primary-hi whitespace-nowrap">{p.price} MAD</span>
       </div>
     </Link>
   );
