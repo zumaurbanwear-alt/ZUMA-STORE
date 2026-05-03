@@ -5,7 +5,7 @@ import { SiteLayout, WHATSAPP_NUMBER } from "@/components/zuma/SiteLayout";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft } from "lucide-react";
 
-const SIZES = ["S", "M", "L", "XL"];
+const SIZES = ["S", "M", "L"];
 const COLORS = ["WHITE", "GREY", "BLACK"];
 
 const Product = () => {
@@ -77,13 +77,13 @@ const Product = () => {
                 <h1 className="font-display text-foreground" style={{ fontSize: "clamp(36px, 6vw, 72px)", letterSpacing: "0.12em" }}>
                   {product.name}
                 </h1>
-                <div className="font-display text-2xl tracking-[0.18em] text-primary-hi mt-3">
+                <div className="font-display text-base tracking-[0.18em] text-primary-hi mt-3">
                   {product.price} MAD
                 </div>
               </div>
 
               {product.description && (
-                <p className="text-[12px] leading-[1.95] tracking-[0.04em] text-muted-foreground max-w-md">
+                <p className="text-[10px] leading-[1.95] tracking-[0.04em] text-muted-foreground max-w-md">
                   {product.description}
                 </p>
               )}
@@ -92,10 +92,7 @@ const Product = () => {
                 <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3">SELECT SIZE</div>
                 <div className="flex flex-wrap gap-2">
                   {SIZES.map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setSize(s)}
-                      className={`px-5 py-2.5 text-[11px] tracking-[0.22em] uppercase border transition-colors ${
+                    <button key={s} onClick={() => setSize(s)} className={`px-4 py-2 text-[9px] tracking-[0.22em] uppercase border transition-colors ${
                         size === s
                           ? "border-foreground bg-foreground text-background"
                           : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
@@ -111,10 +108,7 @@ const Product = () => {
                 <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3">SELECT COLOR</div>
                 <div className="flex flex-wrap gap-2">
                   {COLORS.map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setColor(c)}
-                      className={`px-5 py-2.5 text-[11px] tracking-[0.22em] uppercase border transition-colors ${
+                    <button key={s} onClick={() => setColor(s)} className={`px-4 py-2 text-[9px] tracking-[0.22em] uppercase border transition-colors ${
                         color === c
                           ? "border-foreground bg-foreground text-background"
                           : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
