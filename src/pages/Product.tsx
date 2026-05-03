@@ -51,7 +51,7 @@ const Product = () => {
 
   return (
     <SiteLayout>
-      <div className="pt-16 pb-20 px-6 md:px-10">
+      <div className="pt-28 pb-20 px-6 md:px-10">
         <div className="max-w-[1200px] mx-auto">
           <button
             onClick={() => navigate(-1)}
