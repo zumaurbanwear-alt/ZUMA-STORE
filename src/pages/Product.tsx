@@ -70,7 +70,7 @@ const Product = () => {
           </button>
 
           <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
-            <div className="bg-card border border-border aspect-[4/5] overflow-hidden">
+            <div className="border border-border aspect-[4/5] overflow-hidden" style={{ background: "#DBDBD0" }}>
               <img
                 src={currentImage ?? ""}
                 alt={product.name}
