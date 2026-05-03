@@ -12,7 +12,7 @@ export const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
 export const SiteLayout = ({ children }: { children: ReactNode }) => {
   const { cart, cartCount, cartOpen, setCartOpen, checkoutOpen, setCheckoutOpen, updateQty, clear } = useCart();
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Nav cartCount={cartCount} onCartClick={() => setCartOpen(true)} />
       {children}
       <Footer />
