@@ -16,7 +16,6 @@ export const SiteLayout = ({ children }: { children: ReactNode }) => {
       <Nav cartCount={cartCount} onCartClick={() => setCartOpen(true)} />
       {children}
       <Footer />
-      <WhatsAppFab href={WHATSAPP_LINK} />
       <CartDrawer
         open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} updateQty={updateQty}
         onCheckout={() => { setCartOpen(false); setCheckoutOpen(true); }}
