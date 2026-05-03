@@ -47,7 +47,7 @@ export const ProductGrid = ({
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">No products in this category yet.</p>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid gap-10 max-w-[1200px] mx-auto" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
         {filtered.map(p => {
           const badge = badgeFor(p);
           const soldOut = p.stock === 0;
