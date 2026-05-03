@@ -1,14 +1,15 @@
 import { ShoppingBag } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const Nav = ({ cartCount, onCartClick }: { cartCount: number; onCartClick: () => void }) => (
   <nav className="fixed top-0 left-0 right-0 z-[100] flex justify-between items-start px-6 md:px-10 py-7">
-    <a href="#" className="font-display text-lg tracking-[0.3em] text-foreground animate-fade-up" style={{ animationDelay: "2.8s" }}>
+    <Link to="/" className="font-display text-lg tracking-[0.3em] text-foreground">
       ZÜMA
-    </a>
-    <div className="flex items-center gap-6 animate-fade-up" style={{ animationDelay: "3s" }}>
+    </Link>
+    <div className="flex items-center gap-6">
       <div className="hidden md:flex flex-col items-end gap-1 text-[8px] tracking-[0.22em] uppercase text-muted-foreground">
-        <a href="#products" className="hover:text-primary-hi transition-colors">Shop</a>
-        <a href="#archive" className="hover:text-primary-hi transition-colors">Archive</a>
+        <Link to="/shop" className="hover:text-primary-hi transition-colors">Shop</Link>
+        <Link to="/#archive" className="hover:text-primary-hi transition-colors">Archive</Link>
         <a href="https://www.instagram.com/zumaurbanwear" target="_blank" rel="noreferrer" className="hover:text-primary-hi transition-colors">Instagram</a>
       </div>
       <button
