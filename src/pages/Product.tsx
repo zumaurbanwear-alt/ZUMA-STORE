@@ -52,7 +52,7 @@ const Product = () => {
   return (
     <SiteLayout>
       <div style={{ paddingTop: "120px", paddingBottom: "80px" }} className="px-6 md:px-10 flex-1">
-        <div className="max-w-[1200px] mx-auto min-h-screen">
+        <div className="max-w-[1200px] mx-auto">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-1 text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi transition-colors mb-8"
@@ -60,7 +60,7 @@ const Product = () => {
             <ChevronLeft className="w-3.5 h-3.5" /> Back
           </button>
 
-          <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start max-h-[80vh]">
+          <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
             <div className="bg-card border border-border aspect-[4/5] overflow-hidden">
               <img
                 src={resolveImage(product)}
