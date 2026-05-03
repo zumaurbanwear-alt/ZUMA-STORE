@@ -93,7 +93,7 @@ export const ProductGrid = ({
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">No products in this category yet.</p>
       )}
 
-      <div className="grid gap-10" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         {filtered.map(p => <ProductCard key={p.id} p={p} />)}
       </div>
     </div>
