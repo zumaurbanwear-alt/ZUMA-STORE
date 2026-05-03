@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { resolveImage, useProducts } from "@/hooks/useProducts";
+import { resolveImage, useProducts, useProductImages } from "@/hooks/useProducts";
 import { SiteLayout, WHATSAPP_NUMBER } from "@/components/zuma/SiteLayout";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft } from "lucide-react";
@@ -13,6 +13,7 @@ const Product = () => {
   const navigate = useNavigate();
   const { products, loading } = useProducts();
   const product = useMemo(() => products.find(p => p.slug === slug), [products, slug]);
+  const { images } = useProductImages(product?.id);
   const { addToCart } = useCart();
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
@@ -20,6 +21,14 @@ const Product = () => {
   useEffect(() => {
     if (product) document.title = `ZÜMA — ${product.name}`;
   }, [product]);
+
+  const currentImage = useMemo(() => {
+    if (color && images.length > 0) {
+      const match = images.find(img => img.color?.toUpperCase() === color);
+      if (match) return match.url;
+    }
+    return product ? resolveImage(product) : null;
+  }, [color, images, product]);
 
   if (loading) {
     return (
@@ -63,9 +72,9 @@ const Product = () => {
           <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
             <div className="bg-card border border-border aspect-[4/5] overflow-hidden">
               <img
-                src={resolveImage(product)}
+                src={currentImage ?? ""}
                 alt={product.name}
-                className={`w-full h-full object-cover ${soldOut ? "opacity-40 grayscale" : ""}`}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${soldOut ? "opacity-40 grayscale" : ""}`}
               />
             </div>
 
@@ -135,7 +144,7 @@ const Product = () => {
                   {soldOut ? "Sold Out" : "Add to Cart"}
                 </button>
                 
-                  <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full text-center py-3 border border-border text-[10px] tracking-[0.3em] uppercase text-muted-foreground hover:text-primary-hi hover:border-primary-hi transition-colors"
