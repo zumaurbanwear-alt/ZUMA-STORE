@@ -21,6 +21,7 @@ export type DbProduct = {
   description: string | null;
   price: number;
   category: string;
+  collection: string | null;
   image_url: string;
   stock: number;
   is_visible: boolean;
