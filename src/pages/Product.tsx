@@ -91,8 +91,8 @@ const Product = () => {
           </button>
 
           <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-stretch">
-            <div className="flex flex-col gap-3 h-full min-h-0">
-              <div className="relative border border-border flex-1 min-h-0 overflow-hidden">
+            <div className="relative h-full">
+              <div className="relative border border-border w-full h-full overflow-hidden">
                 <img
                   src={currentImage}
                   alt={product.name}
@@ -116,7 +116,7 @@ const Product = () => {
                 )}
               </div>
               {carouselImages.length > 1 && (
-                <div className="flex gap-2 shrink-0">
+                <div className="absolute left-0 right-0 top-full mt-3 flex gap-2">
                   {carouselImages.map((url, i) => (
                     <button
                       key={i}
