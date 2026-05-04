@@ -48,6 +48,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_full"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "order_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -66,6 +73,7 @@ export type Database = {
           customer_phone: string
           id: string
           notes: string | null
+          order_number: number
           payment_method: string
           status: string
           total: number
@@ -79,6 +87,7 @@ export type Database = {
           customer_phone: string
           id?: string
           notes?: string | null
+          order_number?: number
           payment_method?: string
           status?: string
           total: number
@@ -92,11 +101,50 @@ export type Database = {
           customer_phone?: string
           id?: string
           notes?: string | null
+          order_number?: number
           payment_method?: string
           status?: string
           total?: number
         }
         Relationships: []
+      }
+      product_images: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          position: number | null
+          product_id: string
+          side: string | null
+          url: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          position?: number | null
+          product_id: string
+          side?: string | null
+          url: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          position?: number | null
+          product_id?: string
+          side?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -166,7 +214,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      orders_full: {
+        Row: {
+          created_at: string | null
+          customer_address: string | null
+          customer_city: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          order_id: string | null
+          order_number: number | null
+          payment_method: string | null
+          product_name: string | null
+          quantity: number | null
+          status: string | null
+          total: number | null
+          unit_price: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
