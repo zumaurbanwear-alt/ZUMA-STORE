@@ -37,7 +37,7 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
           </h3>
           <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{p.category}</span>
           {p.collection && (
-            <span className="text-[9px] tracking-[0.22em] uppercase" style={{ color: "#DC143C" }}>
+            <span className="text-[9px] tracking-[0.22em] uppercase text-primary-hi">
               {p.collection}
             </span>
           )}
