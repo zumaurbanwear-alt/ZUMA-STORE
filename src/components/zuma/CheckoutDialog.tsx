@@ -49,7 +49,7 @@ export const CheckoutDialog = ({
         customer_phone: form.phone,
         customer_city: form.city,
         customer_address: form.address,
-        total,
+        total: 0, // server-side trigger recomputes from order_items
         payment_method: "cash_on_delivery",
         status: "pending",
       }).select().single();
