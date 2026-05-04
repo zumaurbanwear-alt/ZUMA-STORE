@@ -48,17 +48,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "order_items_order_id_fkey"
-            columns: ["order_id"]
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "orders_full"
-            referencedColumns: ["order_id"]
+            referencedRelation: "products"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "order_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "products"
+            referencedRelation: "products_public"
             referencedColumns: ["id"]
           },
         ]
@@ -144,6 +144,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       products: {
@@ -214,22 +221,45 @@ export type Database = {
       }
     }
     Views: {
-      orders_full: {
+      products_public: {
         Row: {
+          category: string | null
           created_at: string | null
-          customer_address: string | null
-          customer_city: string | null
-          customer_email: string | null
-          customer_name: string | null
-          customer_phone: string | null
-          order_id: string | null
-          order_number: number | null
-          payment_method: string | null
-          product_name: string | null
-          quantity: number | null
-          status: string | null
-          total: number | null
-          unit_price: number | null
+          description: string | null
+          id: string | null
+          image_url: string | null
+          is_visible: boolean | null
+          name: string | null
+          price: number | null
+          slug: string | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_visible?: boolean | null
+          name?: string | null
+          price?: number | null
+          slug?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_visible?: boolean | null
+          name?: string | null
+          price?: number | null
+          slug?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
