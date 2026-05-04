@@ -36,6 +36,11 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
             {p.name}
           </h3>
           <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{p.category}</span>
+          {p.collection && (
+            <span className="text-[9px] tracking-[0.22em] uppercase" style={{ color: "#DC143C" }}>
+              {p.collection}
+            </span>
+          )}
         </div>
         <span className="text-[9px] tracking-[0.18em] text-primary-hi whitespace-nowrap mt-1">{p.price} MAD</span>
       </div>
