@@ -30,12 +30,13 @@ const Admin = () => {
   }, [isAdmin]);
 
   if (loading) return <div className="min-h-screen bg-background grid place-items-center text-muted-foreground text-xs">Loading...</div>;
-  if (user && !isAdmin) return (
+  if (!user) return null; // navigate effect will redirect
+  if (!isAdmin) return (
     <div className="min-h-screen bg-background grid place-items-center px-6">
       <div className="text-center max-w-md">
         <h1 className="font-display text-2xl tracking-[0.25em] mb-3">ACCESS DENIED</h1>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Your account isn't an admin. Open the backend, find your user in <code>user_roles</code>, and add a row with <code>role = 'admin'</code>.
+          Your account does not have admin privileges. Contact the store owner.
         </p>
         <button onClick={() => supabase.auth.signOut().then(() => nav("/auth"))} className="mt-6 px-5 py-2 border border-primary text-primary text-[10px] tracking-[0.22em] uppercase hover:bg-primary hover:text-primary-foreground">Sign out</button>
       </div>
