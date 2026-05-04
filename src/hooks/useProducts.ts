@@ -33,6 +33,7 @@ export type ProductImage = {
   product_id: string;
   url: string;
   color: string | null;
+  side: string | null;
   position: number;
 };
 
