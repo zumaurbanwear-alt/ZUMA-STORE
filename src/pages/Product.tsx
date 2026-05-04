@@ -139,6 +139,11 @@ const Product = () => {
                 <h1 className="font-display text-foreground" style={{ fontSize: "clamp(20px, 3.5vw, 42px)", letterSpacing: "0.12em" }}>
                   {product.name}
                 </h1>
+                {product.collection && (
+                  <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi mt-2">
+                    {product.collection}
+                  </div>
+                )}
                 <div className="font-display text-[16px] tracking-[0.18em] text-primary-hi mt-2">
                   {product.price} MAD
                 </div>
