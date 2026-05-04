@@ -90,9 +90,9 @@ const Product = () => {
             <ChevronLeft className="w-3.5 h-3.5" /> Back
           </button>
 
-          <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
-            <div className="flex flex-col gap-3">
-              <div className="relative border border-border aspect-[4/5] overflow-hidden">
+          <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-stretch">
+            <div className="flex flex-col gap-3 h-full min-h-0">
+              <div className="relative border border-border flex-1 min-h-0 overflow-hidden">
                 <img
                   src={currentImage}
                   alt={product.name}
@@ -116,7 +116,7 @@ const Product = () => {
                 )}
               </div>
               {carouselImages.length > 1 && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 shrink-0">
                   {carouselImages.map((url, i) => (
                     <button
                       key={i}
