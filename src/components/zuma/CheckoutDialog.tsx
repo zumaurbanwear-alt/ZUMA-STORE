@@ -4,6 +4,7 @@ import { X, Check } from "lucide-react";
 import type { CartItem } from "@/components/zuma/CartDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLang } from "@/context/LanguageContext";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name required").max(80),
@@ -22,6 +23,7 @@ export const CheckoutDialog = ({
   whatsappNumber: string;
   onSuccess: () => void;
 }) => {
+  const { t } = useLang();
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
@@ -101,49 +103,45 @@ export const CheckoutDialog = ({
             <div className="w-12 h-12 border border-primary flex items-center justify-center">
               <Check className="w-5 h-5 text-primary-hi" />
             </div>
-            <h2 className="font-display text-xl tracking-[0.25em]">ORDER RECEIVED</h2>
+            <h2 className="font-display text-xl tracking-[0.25em]">{t("orderReceived")}</h2>
             <p className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground max-w-md leading-relaxed">
-              <span className="text-foreground">PAYMENT: Cash on Delivery.</span> No upfront payment is needed.
-              Our delivery partner will send you a{" "}
-              <span className="text-primary-hi font-bold">WhatsApp text on the day of delivery</span>.
-              Please ensure your phone number is correct.
+              <span className="text-foreground">{t("paymentInfo1")}</span> {t("paymentInfo2")}{" "}
+              <span className="text-primary-hi font-bold">{t("paymentInfo3")}</span>{t("paymentInfo4")}
             </p>
             <button onClick={() => { setDone(false); onSuccess(); }} className="mt-4 px-6 py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi">
-              Continue
+              {t("continueBtn")}
             </button>
           </div>
         ) : (
           <form onSubmit={submit} className="p-6 md:p-10 flex flex-col gap-5">
             <header>
-              <h2 className="font-display text-xl tracking-[0.25em] mb-2">CHECKOUT</h2>
-              <p className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Cash on delivery only</p>
+              <h2 className="font-display text-xl tracking-[0.25em] mb-2">{t("checkout").toUpperCase()}</h2>
+              <p className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("cashOnly")}</p>
             </header>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Full Name" v={form.name} set={v => setForm({ ...form, name: v })} err={errors.name} />
-              <Field label="Phone (WhatsApp)" v={form.phone} set={v => setForm({ ...form, phone: v })} err={errors.phone} placeholder="+212 6 ..." />
-              <Field label="Email" type="email" v={form.email} set={v => setForm({ ...form, email: v })} err={errors.email} className="sm:col-span-2" />
-              <Field label="Address" v={form.address} set={v => setForm({ ...form, address: v })} err={errors.address} className="sm:col-span-2" />
-              <Field label="City" v={form.city} set={v => setForm({ ...form, city: v })} err={errors.city} className="sm:col-span-2" />
+              <Field label={t("fullName")} v={form.name} set={v => setForm({ ...form, name: v })} err={errors.name} />
+              <Field label={t("phoneWhatsApp")} v={form.phone} set={v => setForm({ ...form, phone: v })} err={errors.phone} placeholder="+212 6 ..." />
+              <Field label={t("email")} type="email" v={form.email} set={v => setForm({ ...form, email: v })} err={errors.email} className="sm:col-span-2" />
+              <Field label={t("address")} v={form.address} set={v => setForm({ ...form, address: v })} err={errors.address} className="sm:col-span-2" />
+              <Field label={t("city")} v={form.city} set={v => setForm({ ...form, city: v })} err={errors.city} className="sm:col-span-2" />
             </div>
 
             <div className="border border-border p-4 bg-background/50">
-              <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi mb-2">Payment</div>
+              <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi mb-2">{t("payment")}</div>
               <p className="text-[10px] leading-relaxed text-muted-foreground">
-                <span className="text-foreground">PAYMENT: Cash on Delivery.</span> No upfront payment is needed.
-                Our delivery partner will send you a{" "}
-                <span className="text-primary-hi font-bold">WhatsApp text on the day of delivery</span>.
-                Please ensure your phone number is correct.
+                <span className="text-foreground">{t("paymentInfo1")}</span> {t("paymentInfo2")}{" "}
+                <span className="text-primary-hi font-bold">{t("paymentInfo3")}</span>{t("paymentInfo4")}
               </p>
             </div>
 
             <div className="flex justify-between items-center pt-2 border-t border-border">
-              <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Total</span>
+              <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("total")}</span>
               <span className="font-display text-sm tracking-[0.1em]">{total} MAD</span>
             </div>
 
             <button type="submit" disabled={busy} className="w-full py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-50">
-              {busy ? "Placing..." : "Confirm Order"}
+              {busy ? t("placing") : t("confirmOrder")}
             </button>
           </form>
         )}

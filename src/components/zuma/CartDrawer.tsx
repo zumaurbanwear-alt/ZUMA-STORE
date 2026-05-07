@@ -1,5 +1,6 @@
 import { X, Minus, Plus } from "lucide-react";
 import { resolveImage, type DbProduct } from "@/hooks/useProducts";
+import { useLang } from "@/context/LanguageContext";
 export type CartItem = DbProduct & { qty: number };
 export const CartDrawer = ({
   open, onClose, cart, updateQty, onCheckout, whatsappLink,
@@ -11,6 +12,7 @@ export const CartDrawer = ({
   onCheckout: () => void;
   whatsappLink: string;
 }) => {
+  const { t } = useLang();
   const total = cart.reduce((s, i) => s + i.qty * Number(i.price), 0);
   return (
     <>
@@ -22,14 +24,14 @@ export const CartDrawer = ({
         className={`fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-card border-l border-border z-[201] flex flex-col transition-transform duration-500 ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         <header className="flex justify-between items-center px-6 py-5 border-b border-border">
-          <h2 className="font-display text-sm tracking-[0.3em]">CART</h2>
+          <h2 className="font-display text-sm tracking-[0.3em]">{t("cart")}</h2>
           <button onClick={onClose} aria-label="Close cart" className="text-muted-foreground hover:text-primary-hi">
             <X className="w-4 h-4" />
           </button>
         </header>
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {cart.length === 0 ? (
-            <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground text-center mt-12">Your cart is empty</p>
+            <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground text-center mt-12">{t("cartEmpty")}</p>
           ) : (
             <ul className="flex flex-col gap-5">
               {cart.map(item => (
@@ -56,7 +58,7 @@ export const CartDrawer = ({
         </div>
         <footer className="border-t border-border px-6 py-5 flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Total</span>
+            <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("total")}</span>
             <span className="font-display text-sm tracking-[0.1em]">{total} MAD</span>
           </div>
           <button
@@ -64,7 +66,7 @@ export const CartDrawer = ({
             onClick={onCheckout}
             className="w-full py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-40"
           >
-            Checkout
+            {t("checkout")}
           </button>
           <a
             href={whatsappLink}
@@ -72,7 +74,7 @@ export const CartDrawer = ({
             rel="noreferrer"
             className="w-full text-center py-2.5 border border-border text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi hover:border-primary-hi transition-colors"
           >
-            Order via WhatsApp
+            {t("orderWhatsApp")}
           </a>
         </footer>
       </aside>
