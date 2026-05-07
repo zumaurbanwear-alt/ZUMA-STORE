@@ -1,11 +1,15 @@
-export const Footer = () => (
+import { useLang } from "@/context/LanguageContext";
+
+export const Footer = () => {
+  const { t } = useLang();
+  return (
   <footer className="py-14 px-6 md:px-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-t border-border relative overflow-hidden">
     <div>
       <div className="font-display text-[18px] tracking-[0.3em] text-foreground">
         ZÜMA
       </div>
       <span className="block font-mono text-[8px] tracking-[0.16em] text-muted-foreground font-normal mt-2">
-        brand born between casablanca and elsewhere. we were made to create.
+        {t("footerTagline")}
       </span>
     </div>
 
@@ -32,4 +36,5 @@ export const Footer = () => (
       </p>
     </div>
   </footer>
-);
+  );
+};
