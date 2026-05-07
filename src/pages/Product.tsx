@@ -158,7 +158,7 @@ const Product = () => {
               )}
 
               <div>
-                <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">SELECT SIZE</div>
+                <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">{t("selectSize")}</div>
                 <div className="flex flex-wrap gap-2">
                   {SIZES.map(s => (
                     <button
@@ -177,7 +177,7 @@ const Product = () => {
               </div>
 
               <div>
-                <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">SELECT COLOR</div>
+                <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">{t("selectColor")}</div>
                 <div className="flex flex-wrap gap-2">
                   {COLORS.map(c => (
                     <button
@@ -201,7 +201,7 @@ const Product = () => {
                   onClick={() => addToCart(product)}
                   className="w-full py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {soldOut ? "Sold Out" : "Add to Cart"}
+                  {soldOut ? t("soldOut") : t("addToCart")}
                 </button>
                 
                   <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
@@ -209,7 +209,7 @@ const Product = () => {
                   rel="noreferrer"
                   className="w-full text-center py-3 border border-border text-[10px] tracking-[0.3em] uppercase text-muted-foreground hover:text-primary-hi hover:border-primary-hi transition-colors"
                 >
-                  Ask via WhatsApp
+                  {t("askWhatsApp")}
                 </a>
               </div>
             </div>
