@@ -4,12 +4,14 @@ import { resolveImage, useProducts, useProductImages } from "@/hooks/useProducts
 import { SiteLayout, WHATSAPP_NUMBER } from "@/components/zuma/SiteLayout";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLang } from "@/context/LanguageContext";
 
 const SIZES = ["S", "M", "L"];
 const COLORS = ["WHITE", "GREY", "BLACK"];
 
 const Product = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { t } = useLang();
   const navigate = useNavigate();
   const { products, loading } = useProducts();
   const product = useMemo(() => products.find(p => p.slug === slug), [products, slug]);
@@ -55,7 +57,7 @@ const Product = () => {
     return (
       <SiteLayout>
         <div className="pt-40 pb-20 px-6 text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">
-          Loading product...
+          {t("loadingProduct")}
         </div>
       </SiteLayout>
     );
@@ -65,9 +67,9 @@ const Product = () => {
     return (
       <SiteLayout>
         <div className="pt-40 pb-20 px-6 text-center">
-          <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground mb-6">Product not found</p>
+          <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground mb-6">{t("productNotFound")}</p>
           <Link to="/shop" className="inline-block px-5 py-2.5 border border-primary text-primary text-[10px] tracking-[0.22em] uppercase hover:bg-primary hover:text-primary-foreground transition-colors">
-            Back to shop
+            {t("backToShop")}
           </Link>
         </div>
       </SiteLayout>
