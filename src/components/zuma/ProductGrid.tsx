@@ -79,6 +79,7 @@ export const ProductGrid = ({
     return limit ? sorted.slice(0, limit) : sorted;
   }, [products, cat, limit]);
 
+  const { t } = useLang();
   return (
     <div>
       {showFilters && categories.length > 2 && (
@@ -97,9 +98,9 @@ export const ProductGrid = ({
           ))}
         </div>
       )}
-      {loading && <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">Loading inventory...</p>}
+      {loading && <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">{t("loading")}</p>}
       {!loading && filtered.length === 0 && (
-        <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">No products in this category yet.</p>
+        <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">{t("noProducts")}</p>
       )}
       <div className="grid grid-cols-2 gap-4 max-w-[600px]">
         {filtered.map(p => <ProductCard key={p.id} p={p} />)}
