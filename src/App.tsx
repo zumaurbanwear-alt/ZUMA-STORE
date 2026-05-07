@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import Index from "./pages/Index.tsx";
 import Shop from "./pages/Shop.tsx";
 import Product from "./pages/Product.tsx";
@@ -19,6 +20,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+       <LanguageProvider>
         <CartProvider>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -30,6 +32,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </CartProvider>
+       </LanguageProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
