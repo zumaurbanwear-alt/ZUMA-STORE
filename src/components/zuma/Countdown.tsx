@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLang } from "@/context/LanguageContext";
 
 const calc = (target: number) => {
   const d = target - Date.now();
@@ -12,28 +13,29 @@ const calc = (target: number) => {
 };
 
 export const Countdown = ({ targetIso, headline }: { targetIso: string; headline: string }) => {
+  const { t } = useLang();
   const target = new Date(targetIso).getTime();
-  const [t, setT] = useState(() => calc(target));
+  const [tt, setT] = useState(() => calc(target));
   useEffect(() => {
     const i = setInterval(() => setT(calc(target)), 1000);
     return () => clearInterval(i);
   }, [target]);
 
   // Conditional: only render if drop is in the future
-  if (!t) return null;
+  if (!tt) return null;
 
   const items = [
-    { v: t.days, l: "DAYS" },
-    { v: t.hours, l: "HRS" },
-    { v: t.minutes, l: "MIN" },
-    { v: t.seconds, l: "SEC" },
+    { v: tt.days, l: t("days") },
+    { v: tt.hours, l: t("hrs") },
+    { v: tt.minutes, l: t("min") },
+    { v: tt.seconds, l: t("sec") },
   ];
 
   return (
     <section className="px-6 md:px-10 py-20 text-center border-b border-border reveal">
       <div className="flex items-center justify-center gap-3 text-[10px] tracking-[0.3em] uppercase text-foreground mb-7">
         <span className="w-2 h-2 bg-primary animate-pulse" />
-        SYSTEM STATUS: INCOMING DROP
+        {t("systemStatus")}
       </div>
       <h2 className="font-display text-4xl md:text-7xl tracking-[0.25em] text-foreground mb-8">{headline}</h2>
       <div className="grid grid-cols-4 gap-3 md:gap-6 max-w-3xl mx-auto">
@@ -47,7 +49,7 @@ export const Countdown = ({ targetIso, headline }: { targetIso: string; headline
         ))}
       </div>
       <div className="mt-6 text-[10px] tracking-[0.22em] uppercase text-muted-foreground">
-        Mark your calendar. Set your alarm.
+        {t("markCalendar")}
       </div>
     </section>
   );
