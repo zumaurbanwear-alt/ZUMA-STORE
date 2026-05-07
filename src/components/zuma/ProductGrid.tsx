@@ -1,18 +1,23 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { resolveImage, type DbProduct } from "@/hooks/useProducts";
+import { useLang } from "@/context/LanguageContext";
 
 const NEW_THRESHOLD_DAYS = 14;
 
-const badgeFor = (p: DbProduct) => {
-  if (p.stock === 0) return { label: "SOLD OUT", className: "bg-black text-white" };
-  if (p.stock <= 3) return { label: "FEW LEFT", className: "bg-primary text-primary-foreground" };
-  const ageDays = (Date.now() - new Date(p.created_at).getTime()) / 86400000;
-  if (ageDays <= NEW_THRESHOLD_DAYS) return { label: "NEW", className: "bg-primary text-primary-foreground" };
-  return null;
+const useBadgeFor = () => {
+  const { t } = useLang();
+  return (p: DbProduct) => {
+    if (p.stock === 0) return { label: t("soldOut").toUpperCase(), className: "bg-black text-white" };
+    if (p.stock <= 3) return { label: t("fewLeft").toUpperCase(), className: "bg-primary text-primary-foreground" };
+    const ageDays = (Date.now() - new Date(p.created_at).getTime()) / 86400000;
+    if (ageDays <= NEW_THRESHOLD_DAYS) return { label: t("new").toUpperCase(), className: "bg-primary text-primary-foreground" };
+    return null;
+  };
 };
 
 export const ProductCard = ({ p }: { p: DbProduct }) => {
+  const badgeFor = useBadgeFor();
   const badge = badgeFor(p);
   const soldOut = p.stock === 0;
   return (
