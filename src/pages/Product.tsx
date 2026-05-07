@@ -89,7 +89,7 @@ const Product = () => {
             onClick={() => navigate(-1)}
             className="flex items-center gap-1 text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi transition-colors mb-8"
           >
-            <ChevronLeft className="w-3.5 h-3.5" /> Back
+            <ChevronLeft className="w-3.5 h-3.5" /> {t("back")}
           </button>
 
           <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-stretch">
