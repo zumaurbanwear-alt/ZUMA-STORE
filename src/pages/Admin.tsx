@@ -87,7 +87,9 @@ const Admin = () => {
             <div key={p.id} className={`border border-border p-4 flex gap-4 ${!p.is_visible ? "opacity-50" : ""}`}>
               <img src={resolveImage(p)} alt="" className="w-16 h-20 object-cover" />
               <div className="flex-1 min-w-0">
-                <div className="font-display tracking-[0.15em] truncate">{p.name}</div>
+                <div className="font-display tracking-[0.15em] truncate">
+                  <span className="text-primary-hi mr-2">#{(p as any).display_id ?? "—"}</span>{p.name}
+                </div>
                 <div className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground mt-1">
                   {p.category} · {p.price} MAD · stock {p.stock}
                 </div>
