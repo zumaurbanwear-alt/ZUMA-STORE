@@ -16,6 +16,7 @@ const Admin = () => {
   const { user, isAdmin, loading } = useAuth();
   const { products } = useProducts({ adminMode: true });
   const [orders, setOrders] = useState<any[]>([]);
+  const [unified, setUnified] = useState<any[]>([]);
   const [editing, setEditing] = useState<Partial<DbProduct> | null>(null);
 
   useEffect(() => {
@@ -27,6 +28,8 @@ const Admin = () => {
     if (!isAdmin) return;
     supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }).limit(20)
       .then(({ data }) => setOrders(data ?? []));
+    (supabase.from as any)("admin_orders_full").select("*").limit(200)
+      .then(({ data }: any) => setUnified(data ?? []));
   }, [isAdmin]);
 
   if (loading) return <div className="min-h-screen bg-background grid place-items-center text-muted-foreground text-xs">Loading...</div>;
