@@ -1,7 +1,7 @@
 import { X, Minus, Plus } from "lucide-react";
 import { resolveImage, type DbProduct } from "@/hooks/useProducts";
 import { useLang } from "@/context/LanguageContext";
-export type CartItem = DbProduct & { qty: number };
+export type CartItem = DbProduct & { qty: number; size?: string; color?: string };
 export const CartDrawer = ({
   open, onClose, cart, updateQty, onCheckout, whatsappLink,
 }: {
