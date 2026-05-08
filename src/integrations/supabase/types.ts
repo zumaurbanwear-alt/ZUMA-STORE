@@ -71,6 +71,7 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone: string
+          display_id: string
           id: string
           notes: string | null
           order_number: number
@@ -85,6 +86,7 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone: string
+          display_id?: string
           id?: string
           notes?: string | null
           order_number?: number
@@ -99,6 +101,7 @@ export type Database = {
           customer_email?: string
           customer_name?: string
           customer_phone?: string
+          display_id?: string
           id?: string
           notes?: string | null
           order_number?: number
@@ -159,6 +162,7 @@ export type Database = {
           collection: string | null
           created_at: string
           description: string | null
+          display_id: string
           id: string
           image_url: string
           is_visible: boolean
@@ -174,6 +178,7 @@ export type Database = {
           collection?: string | null
           created_at?: string
           description?: string | null
+          display_id?: string
           id?: string
           image_url: string
           is_visible?: boolean
@@ -189,6 +194,7 @@ export type Database = {
           collection?: string | null
           created_at?: string
           description?: string | null
+          display_id?: string
           id?: string
           image_url?: string
           is_visible?: boolean
@@ -224,6 +230,27 @@ export type Database = {
       }
     }
     Views: {
+      admin_orders_full: {
+        Row: {
+          created_at: string | null
+          customer_address: string | null
+          customer_city: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          line_total: number | null
+          notes: string | null
+          order_id: string | null
+          payment_method: string | null
+          product_id: string | null
+          product_name: string | null
+          quantity: number | null
+          status: string | null
+          total: number | null
+          unit_price: number | null
+        }
+        Relationships: []
+      }
       products_public: {
         Row: {
           category: string | null
