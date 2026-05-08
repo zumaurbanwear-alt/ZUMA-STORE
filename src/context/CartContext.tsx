@@ -23,11 +23,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
-  const addToCart = (p: DbProduct) => {
+  const addToCart = (p: DbProduct, variant?: Variant) => {
     setCart(c => {
-      const ex = c.find(i => i.id === p.id);
-      if (ex) return c.map(i => i.id === p.id ? { ...i, qty: Math.min(i.qty + 1, p.stock) } : i);
-      return [...c, { ...p, qty: 1 }];
+      const key = `${p.id}|${variant?.size ?? ""}|${variant?.color ?? ""}`;
+      const ex = c.find(i => `${i.id}|${i.size ?? ""}|${i.color ?? ""}` === key);
+      if (ex) return c.map(i => i === ex ? { ...i, qty: Math.min(i.qty + 1, p.stock) } : i);
+      return [...c, { ...p, qty: 1, size: variant?.size, color: variant?.color }];
     });
     setCartOpen(true);
   };
