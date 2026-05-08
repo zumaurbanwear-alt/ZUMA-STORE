@@ -16,6 +16,7 @@ const Admin = () => {
   const { user, isAdmin, loading } = useAuth();
   const { products } = useProducts({ adminMode: true });
   const [orders, setOrders] = useState<any[]>([]);
+  const [unified, setUnified] = useState<any[]>([]);
   const [editing, setEditing] = useState<Partial<DbProduct> | null>(null);
 
   useEffect(() => {
@@ -27,6 +28,8 @@ const Admin = () => {
     if (!isAdmin) return;
     supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }).limit(20)
       .then(({ data }) => setOrders(data ?? []));
+    (supabase.from as any)("admin_orders_full").select("*").limit(200)
+      .then(({ data }: any) => setUnified(data ?? []));
   }, [isAdmin]);
 
   if (loading) return <div className="min-h-screen bg-background grid place-items-center text-muted-foreground text-xs">Loading...</div>;
@@ -84,7 +87,9 @@ const Admin = () => {
             <div key={p.id} className={`border border-border p-4 flex gap-4 ${!p.is_visible ? "opacity-50" : ""}`}>
               <img src={resolveImage(p)} alt="" className="w-16 h-20 object-cover" />
               <div className="flex-1 min-w-0">
-                <div className="font-display tracking-[0.15em] truncate">{p.name}</div>
+                <div className="font-display tracking-[0.15em] truncate">
+                  <span className="text-primary-hi mr-2">#{(p as any).display_id ?? "—"}</span>{p.name}
+                </div>
                 <div className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground mt-1">
                   {p.category} · {p.price} MAD · stock {p.stock}
                 </div>
@@ -101,12 +106,13 @@ const Admin = () => {
         </div>
       </section>
 
-      <section>
+      <section className="mb-12">
         <h2 className="font-display text-lg tracking-[0.25em] mb-4">RECENT ORDERS ({orders.length})</h2>
         <div className="border border-border divide-y divide-border">
           {orders.length === 0 && <p className="p-6 text-xs text-muted-foreground text-center">No orders yet.</p>}
           {orders.map(o => (
-            <div key={o.id} className="p-4 grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+            <div key={o.id} className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3 text-xs">
+              <div className="text-primary-hi font-display tracking-[0.2em]">#{o.display_id ?? "—"}</div>
               <div>
                 <div className="text-foreground">{o.customer_name}</div>
                 <div className="text-muted-foreground">{o.customer_phone}</div>
@@ -121,6 +127,43 @@ const Admin = () => {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="font-display text-lg tracking-[0.25em] mb-4">ALL-IN-ONE LEDGER ({unified.length})</h2>
+        <div className="border border-border overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead className="bg-muted/30 text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
+              <tr>
+                {["Order #","Date","Status","Product #","Product","Qty","Unit","Line","Customer","Email","Phone","City","Address"].map(h => (
+                  <th key={h} className="px-2 py-2 text-left whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {unified.length === 0 && (
+                <tr><td colSpan={13} className="p-6 text-center text-muted-foreground">No data yet.</td></tr>
+              )}
+              {unified.map((r: any, i: number) => (
+                <tr key={i} className="hover:bg-muted/20">
+                  <td className="px-2 py-2 text-primary-hi font-display tracking-[0.15em]">#{r.order_id}</td>
+                  <td className="px-2 py-2 text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
+                  <td className="px-2 py-2 uppercase tracking-[0.15em] text-[9px]">{r.status}</td>
+                  <td className="px-2 py-2 text-primary-hi">#{r.product_id ?? "—"}</td>
+                  <td className="px-2 py-2">{r.product_name}</td>
+                  <td className="px-2 py-2">{r.quantity}</td>
+                  <td className="px-2 py-2">{r.unit_price}</td>
+                  <td className="px-2 py-2 text-primary-hi">{r.line_total}</td>
+                  <td className="px-2 py-2">{r.customer_name}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{r.customer_email}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{r.customer_phone}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{r.customer_city}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{r.customer_address}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
