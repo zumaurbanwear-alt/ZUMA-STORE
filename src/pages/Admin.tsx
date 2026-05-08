@@ -136,14 +136,14 @@ const Admin = () => {
           <table className="w-full text-[11px]">
             <thead className="bg-muted/30 text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
               <tr>
-                {["Order #","Date","Status","Product #","Product","Qty","Unit","Line","Customer","Email","Phone","City","Address"].map(h => (
+                {["Order #","Date","Status","Product #","Product","Size","Color","Qty","Unit","Line","Customer","Email","Phone","City","Address"].map(h => (
                   <th key={h} className="px-2 py-2 text-left whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {unified.length === 0 && (
-                <tr><td colSpan={13} className="p-6 text-center text-muted-foreground">No data yet.</td></tr>
+                <tr><td colSpan={15} className="p-6 text-center text-muted-foreground">No data yet.</td></tr>
               )}
               {unified.map((r: any, i: number) => (
                 <tr key={i} className="hover:bg-muted/20">
@@ -152,6 +152,8 @@ const Admin = () => {
                   <td className="px-2 py-2 uppercase tracking-[0.15em] text-[9px]">{r.status}</td>
                   <td className="px-2 py-2 text-primary-hi">#{r.product_id ?? "—"}</td>
                   <td className="px-2 py-2">{r.product_name}</td>
+                  <td className="px-2 py-2 uppercase tracking-[0.15em] text-[10px]">{r.size ?? "—"}</td>
+                  <td className="px-2 py-2 uppercase tracking-[0.15em] text-[10px]">{r.color ?? "—"}</td>
                   <td className="px-2 py-2">{r.quantity}</td>
                   <td className="px-2 py-2">{r.unit_price}</td>
                   <td className="px-2 py-2 text-primary-hi">{r.line_total}</td>

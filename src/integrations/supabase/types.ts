@@ -16,27 +16,33 @@ export type Database = {
     Tables: {
       order_items: {
         Row: {
+          color: string | null
           id: string
           order_id: string
           product_id: string | null
           product_name: string
           quantity: number
+          size: string | null
           unit_price: number
         }
         Insert: {
+          color?: string | null
           id?: string
           order_id: string
           product_id?: string | null
           product_name: string
           quantity: number
+          size?: string | null
           unit_price: number
         }
         Update: {
+          color?: string | null
           id?: string
           order_id?: string
           product_id?: string | null
           product_name?: string
           quantity?: number
+          size?: string | null
           unit_price?: number
         }
         Relationships: [
@@ -232,6 +238,7 @@ export type Database = {
     Views: {
       admin_orders_full: {
         Row: {
+          color: string | null
           created_at: string | null
           customer_address: string | null
           customer_city: string | null
@@ -245,6 +252,7 @@ export type Database = {
           product_id: string | null
           product_name: string | null
           quantity: number | null
+          size: string | null
           status: string | null
           total: number | null
           unit_price: number | null

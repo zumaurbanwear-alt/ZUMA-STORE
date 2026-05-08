@@ -63,6 +63,8 @@ export const CheckoutDialog = ({
         product_name: i.name,
         unit_price: Number(i.price),
         quantity: i.qty,
+        size: i.size ?? null,
+        color: i.color ?? null,
       }));
       const { error: itemsErr } = await supabase.from("order_items").insert(items);
       if (itemsErr) throw itemsErr;
