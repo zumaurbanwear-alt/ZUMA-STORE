@@ -1,14 +1,14 @@
 import { X, Minus, Plus } from "lucide-react";
 import { resolveImage, type DbProduct } from "@/hooks/useProducts";
 import { useLang } from "@/context/LanguageContext";
-export type CartItem = DbProduct & { qty: number; size?: string; color?: string };
+export type CartItem = DbProduct & { cartKey?: string; qty: number; size?: string; color?: string };
 export const CartDrawer = ({
   open, onClose, cart, updateQty, onCheckout, whatsappLink,
 }: {
   open: boolean;
   onClose: () => void;
   cart: CartItem[];
-  updateQty: (id: string, qty: number) => void;
+  updateQty: (cartKey: string, qty: number) => void;
   onCheckout: () => void;
   whatsappLink: string;
 }) => {
@@ -35,18 +35,21 @@ export const CartDrawer = ({
           ) : (
             <ul className="flex flex-col gap-5">
               {cart.map(item => (
-                <li key={item.id} className="flex gap-4 border-b border-border pb-5">
+                <li key={item.cartKey ?? item.id} className="flex gap-4 border-b border-border pb-5">
                   <img src={resolveImage(item)} alt={item.name} className="w-16 h-20 object-cover" />
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <div className="font-display text-[11px] tracking-[0.18em]">{item.name}</div>
                       <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mt-1">{item.category}</div>
+                      <div className="text-[9px] tracking-[0.18em] uppercase text-muted-foreground mt-1">
+                        {item.size ?? "—"} / {item.color ?? "—"}
+                      </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center border border-border">
-                        <button onClick={() => updateQty(item.id, item.qty - 1)} className="px-2 py-1 hover:text-primary-hi"><Minus className="w-3 h-3" /></button>
+                        <button onClick={() => updateQty(item.cartKey ?? item.id, item.qty - 1)} className="px-2 py-1 hover:text-primary-hi"><Minus className="w-3 h-3" /></button>
                         <span className="px-3 text-[10px]">{item.qty}</span>
-                        <button onClick={() => updateQty(item.id, Math.min(item.qty + 1, item.stock))} className="px-2 py-1 hover:text-primary-hi"><Plus className="w-3 h-3" /></button>
+                        <button onClick={() => updateQty(item.cartKey ?? item.id, Math.min(item.qty + 1, item.stock))} className="px-2 py-1 hover:text-primary-hi"><Plus className="w-3 h-3" /></button>
                       </div>
                       <span className="text-[10px] text-primary-hi">{Number(item.price) * item.qty} MAD</span>
                     </div>
