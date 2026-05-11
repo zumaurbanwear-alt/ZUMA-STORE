@@ -26,7 +26,6 @@ const Product = () => {
     if (product) document.title = `ZÜMA — ${product.name}`;
   }, [product]);
 
-  // Précharger toutes les images
   useEffect(() => {
     images.forEach(img => {
       const image = new Image();
@@ -34,7 +33,6 @@ const Product = () => {
     });
   }, [images]);
 
-  // Reset slide when color changes
   useEffect(() => {
     setSlide(0);
   }, [color]);
@@ -198,7 +196,7 @@ const Product = () => {
 
               <div className="flex flex-col gap-2 pt-2">
                 <button
-                  disabled={soldOut}
+                  disabled={soldOut || !size || !color}
                   onClick={() => {
                     if (!size) { toast.error(t("selectSize")); return; }
                     if (!color) { toast.error(t("selectColor")); return; }
@@ -208,8 +206,8 @@ const Product = () => {
                 >
                   {soldOut ? t("soldOut") : t("addToCart")}
                 </button>
-                
-                  <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full text-center py-3 border border-border text-[10px] tracking-[0.3em] uppercase text-muted-foreground hover:text-primary-hi hover:border-primary-hi transition-colors"
