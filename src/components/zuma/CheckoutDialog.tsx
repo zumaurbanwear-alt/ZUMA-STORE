@@ -51,9 +51,10 @@ export const CheckoutDialog = ({
         customer_phone: form.phone,
         customer_city: form.city,
         customer_address: form.address,
-        total: 0, // server-side trigger recomputes from order_items
+        total: 0,
         payment_method: "cash_on_delivery",
         status: "pending",
+        notes: null,
       }).select().single();
       if (orderErr) throw orderErr;
 
