@@ -12,7 +12,7 @@ type Ctx = {
   checkoutOpen: boolean;
   setCheckoutOpen: (b: boolean) => void;
   addToCart: (p: DbProduct, variant?: Variant) => void;
-  updateQty: (id: string, qty: number) => void;
+  updateQty: (cartKey: string, qty: number) => void;
   clear: () => void;
 };
 
@@ -26,14 +26,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addToCart = (p: DbProduct, variant?: Variant) => {
     setCart(c => {
       const key = `${p.id}|${variant?.size ?? ""}|${variant?.color ?? ""}`;
-      const ex = c.find(i => `${i.id}|${i.size ?? ""}|${i.color ?? ""}` === key);
+      const ex = c.find(i => (i.cartKey ?? `${i.id}|${i.size ?? ""}|${i.color ?? ""}`) === key);
       if (ex) return c.map(i => i === ex ? { ...i, qty: Math.min(i.qty + 1, p.stock) } : i);
-      return [...c, { ...p, qty: 1, size: variant?.size, color: variant?.color }];
+      return [...c, { ...p, cartKey: key, qty: 1, size: variant?.size, color: variant?.color }];
     });
     setCartOpen(true);
   };
-  const updateQty = (id: string, qty: number) =>
-    setCart(c => qty <= 0 ? c.filter(i => i.id !== id) : c.map(i => i.id === id ? { ...i, qty } : i));
+  const updateQty = (cartKey: string, qty: number) =>
+    setCart(c => qty <= 0
+      ? c.filter(i => (i.cartKey ?? `${i.id}|${i.size ?? ""}|${i.color ?? ""}`) !== cartKey)
+      : c.map(i => (i.cartKey ?? `${i.id}|${i.size ?? ""}|${i.color ?? ""}`) === cartKey ? { ...i, qty } : i));
   const clear = () => setCart([]);
 
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
