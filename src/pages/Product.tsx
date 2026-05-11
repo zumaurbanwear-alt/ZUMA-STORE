@@ -5,6 +5,7 @@ import { SiteLayout, WHATSAPP_NUMBER } from "@/components/zuma/SiteLayout";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
+import { toast } from "sonner";
 
 const SIZES = ["S", "M", "L"];
 const COLORS = ["WHITE", "GREY", "BLACK"];
@@ -198,7 +199,11 @@ const Product = () => {
               <div className="flex flex-col gap-2 pt-2">
                 <button
                   disabled={soldOut}
-                  onClick={() => addToCart(product, { size: size ?? undefined, color: color ?? undefined })}
+                  onClick={() => {
+                    if (!size) { toast.error(t("selectSize")); return; }
+                    if (!color) { toast.error(t("selectColor")); return; }
+                    addToCart(product, { size, color });
+                  }}
                   className="w-full py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {soldOut ? t("soldOut") : t("addToCart")}
