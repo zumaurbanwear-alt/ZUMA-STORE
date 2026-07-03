@@ -48,7 +48,7 @@ const Index = () => {
         </div>
       </header>
 
-      <Countdown targetIso="2026-06-01T00:00:00" headline={t("incoming")} />
+      <Countdown targetIso="2026-08-01T00:00:00" headline={t("incoming")} />
 
       <TextureBand label={t("drop001")} right={t("arrowNew")} ghost={t("newArrivals").toUpperCase()} />
 
