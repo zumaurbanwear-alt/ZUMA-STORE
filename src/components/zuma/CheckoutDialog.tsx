@@ -72,9 +72,12 @@ export const CheckoutDialog = ({
       const { error: itemsErr } = await supabase.from("order_items").insert(items);
       if (itemsErr) throw itemsErr;
 
+      const { data: displayIdData } = await supabase.rpc("get_order_display_id", { _order_id: orderId });
+      const shortId = (displayIdData as string) ?? orderId.slice(0, 8);
+
       const lines = [
         `*New Order — ZÜMA*`,
-        `Order: ${orderId.slice(0, 8)}`,
+        `Order: #${shortId}`,
         `Name: ${form.name}`,
         `Phone: ${form.phone}`,
         `Email: ${form.email}`,
