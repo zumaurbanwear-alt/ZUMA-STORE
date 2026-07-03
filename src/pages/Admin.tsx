@@ -53,7 +53,7 @@ const Admin = () => {
     const { error } = editing.id
       ? await supabase.from("products").update(payload as any).eq("id", editing.id)
       : await supabase.from("products").insert(payload as any);
-    if (error) toast.error(error.message); else { toast.success("Saved"); setEditing(null); }
+    if (error) { console.error(error); toast.error("Could not save product"); } else { toast.success("Saved"); setEditing(null); }
   };
   const toggleVisible = async (p: DbProduct) => {
     await supabase.from("products").update({ is_visible: !p.is_visible }).eq("id", p.id);
