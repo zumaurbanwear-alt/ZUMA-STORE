@@ -45,21 +45,23 @@ export const CheckoutDialog = ({
     setBusy(true);
 
     try {
-      const { data: order, error: orderErr } = await supabase.from("orders").insert({
+      const orderId = crypto.randomUUID();
+      const { error: orderErr } = await supabase.from("orders").insert({
+        id: orderId,
         customer_name: form.name,
         customer_email: form.email,
         customer_phone: form.phone,
         customer_city: form.city,
         customer_address: form.address,
-        total: 0,
+        total,
         payment_method: "cash_on_delivery",
         status: "pending",
         notes: null,
-      }).select().single();
+      });
       if (orderErr) throw orderErr;
 
       const items = cart.map(i => ({
-        order_id: order.id,
+        order_id: orderId,
         product_id: i.id,
         product_name: i.name,
         unit_price: Number(i.price),
@@ -72,7 +74,7 @@ export const CheckoutDialog = ({
 
       const lines = [
         `*New Order — ZÜMA*`,
-        `Order: ${order.id.slice(0, 8)}`,
+        `Order: ${orderId.slice(0, 8)}`,
         `Name: ${form.name}`,
         `Phone: ${form.phone}`,
         `Email: ${form.email}`,
