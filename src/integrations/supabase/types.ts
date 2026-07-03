@@ -303,6 +303,7 @@ export type Database = {
       }
     }
     Functions: {
+      get_order_display_id: { Args: { _order_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
