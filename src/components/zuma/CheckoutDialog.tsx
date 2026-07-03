@@ -91,8 +91,9 @@ export const CheckoutDialog = ({
       window.open(url, "_blank", "noopener,noreferrer");
       toast.success("Order placed");
       setDone(true);
-    } catch (err: any) {
-      toast.error(err.message ?? "Could not place order");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not place your order. Please try again.");
     } finally { setBusy(false); }
   };
 
