@@ -5,6 +5,8 @@ import { Loader } from "@/components/zuma/Loader";
 import { Countdown } from "@/components/zuma/Countdown";
 import { TextureBand } from "@/components/zuma/TextureBand";
 import { ProductGrid } from "@/components/zuma/ProductGrid";
+import { NewsletterBand } from "@/components/zuma/NewsletterBand";
+
 import { SiteLayout } from "@/components/zuma/SiteLayout";
 import { useProducts } from "@/hooks/useProducts";
 import { useLang } from "@/context/LanguageContext";
@@ -48,7 +50,7 @@ const Index = () => {
         </div>
       </header>
 
-      <section aria-hidden className="border-b border-border" style={{ height: "clamp(160px, 30vh, 320px)" }} />
+      <NewsletterBand />
 
       <TextureBand label={t("drop001")} right={t("arrowNew")} ghost={t("newArrivals").toUpperCase()} />
 
