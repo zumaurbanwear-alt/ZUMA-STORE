@@ -48,7 +48,7 @@ const Index = () => {
         </div>
       </header>
 
-      <Countdown targetIso="2026-08-01T00:00:00" headline={t("incoming")} />
+      <section aria-hidden className="border-b border-border" style={{ height: "clamp(160px, 30vh, 320px)" }} />
 
       <TextureBand label={t("drop001")} right={t("arrowNew")} ghost={t("newArrivals").toUpperCase()} />
 
