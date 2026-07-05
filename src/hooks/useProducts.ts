@@ -1,18 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import p1 from "@/assets/product-1.jpg";
-import p2 from "@/assets/product-2.jpg";
-import p3 from "@/assets/product-3.jpg";
-import p4 from "@/assets/product-4.jpg";
-
-const BUNDLED: Record<string, string> = {
-  "muerted-zephyr": p1,
-  "the-gaze": p4,
-  "voidwalker": p2,
-  "z-mark-cap": p3,
-  "ipseity-tee": p1,
-  "shadow-hw": p2,
-};
 
 export type DbProduct = {
   id: string;
@@ -40,7 +27,7 @@ export type ProductImage = {
 
 export const resolveImage = (p: Pick<DbProduct, "slug" | "image_url">) => {
   if (p.image_url && /^https?:\/\//.test(p.image_url)) return p.image_url;
-  return BUNDLED[p.slug] ?? p1;
+  return "";
 };
 
 export const useProducts = (opts: { adminMode?: boolean } = {}) => {
