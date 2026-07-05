@@ -25,14 +25,12 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
-      style={{
-        backgroundImage: `url(${gateImg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center">
+      <img
+        src={gateImg}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+      />
       <div className="absolute inset-0 bg-black/60" />
 
       <div className="relative z-10 flex flex-col items-center gap-8 px-6 w-full max-w-md text-center">
