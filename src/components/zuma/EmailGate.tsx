@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import zumaLogo from "@/assets/zuma-logo.png";
 
 const STORAGE_KEY = "zuma_email_gate_passed";
 const GATE_BG = "https://bsiyhxositjcvlaswttk.supabase.co/storage/v1/object/public/product-images/email-gate-bg.png.jpg";
@@ -34,11 +33,9 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
       <div className="absolute inset-0 bg-black/60" />
 
       <div className="relative z-10 flex flex-col items-center gap-8 px-6 w-full max-w-md text-center">
-        <img
-          src={zumaLogo}
-          alt="ZÜMA"
-          style={{ width: "clamp(80px, 20vw, 150px)", opacity: 0.9 }}
-        />
+        <p className="text-white font-display tracking-[0.3em] uppercase" style={{ fontSize: "clamp(20px, 5vw, 36px)" }}>
+  EMBODY THE ZÜMA
+</p>
 
         <p className="text-white text-[10px] tracking-[0.4em] uppercase font-display">
           DROP 001 — ??/??/26
