@@ -1,0 +1,84 @@
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import heroImg from "@/assets/fw000-modeled.jpg";
+
+const STORAGE_KEY = "zuma_email_gate_passed";
+
+export const EmailGate = ({ onPass }: { onPass: () => void }) => {
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Invalid email");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await supabase.from("waitlist").insert({ email }).select();
+    } catch (_) {}
+    localStorage.setItem(STORAGE_KEY, "1");
+    onPass();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+      style={{
+        backgroundImage: `url(${heroImg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="absolute inset-0 bg-black/60" />
+
+      <div className="relative z-10 flex flex-col items-center gap-8 px-6 w-full max-w-md text-center">
+        <div style={{ fontSize: "clamp(40px, 10vw, 80px)", color: "white", lineHeight: 1 }}>
+          ✦
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <p className="text-white text-[10px] tracking-[0.4em] uppercase">
+            DROP 002 — ??/??/26
+          </p>
+        </div>
+
+        <div className="w-full flex border border-white/40">
+          <input
+            type="email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setError(""); }}
+            onKeyDown={e => e.key === "Enter" && submit()}
+            placeholder="YOUR EMAIL"
+            className="flex-1 bg-transparent px-4 py-3 text-white text-[10px] tracking-[0.25em] uppercase placeholder:text-white/40 outline-none"
+          />
+          <button
+            onClick={submit}
+            disabled={busy}
+            className="px-4 text-white/70 hover:text-white transition-colors text-lg"
+          >
+            →
+          </button>
+        </div>
+
+        {error && (
+          <p className="text-red-400 text-[9px] tracking-[0.2em] uppercase -mt-4">{error}</p>
+        )}
+
+        <button
+          onClick={() => { localStorage.setItem(STORAGE_KEY, "1"); onPass(); }}
+          className="text-white/30 text-[8px] tracking-[0.3em] uppercase hover:text-white/60 transition-colors"
+        >
+          ENTER WITHOUT EMAIL
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export const useEmailGate = () => {
+  const passed = localStorage.getItem("zuma_email_gate_passed") === "1";
+  return { passed };
+};
