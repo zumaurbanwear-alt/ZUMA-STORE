@@ -48,7 +48,7 @@ const Index = () => {
         </div>
       </header>
 
-      <section aria-hidden className="border-b border-border" style={{ height: "clamp(160px, 30vh, 320px)" }} />
+      <NewsletterBand />
 
       <TextureBand label={t("drop001")} right={t("arrowNew")} ghost={t("newArrivals").toUpperCase()} />
 
