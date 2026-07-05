@@ -1,18 +1,29 @@
-import { ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { Nav } from "@/components/zuma/Nav";
 import { Footer } from "@/components/zuma/Footer";
 import { CartDrawer } from "@/components/zuma/CartDrawer";
 import { CheckoutDialog } from "@/components/zuma/CheckoutDialog";
-import { WhatsAppFab } from "@/components/zuma/WhatsAppFab";
+import { EmailGate } from "@/components/zuma/EmailGate";
 import { useCart } from "@/context/CartContext";
 
 export const WHATSAPP_NUMBER = "212600365283";
 export const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
 
+const STORAGE_KEY = "zuma_email_gate_passed";
+
 export const SiteLayout = ({ children }: { children: ReactNode }) => {
   const { cart, cartCount, cartOpen, setCartOpen, checkoutOpen, setCheckoutOpen, updateQty, clear } = useCart();
+  const [passed, setPassed] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem(STORAGE_KEY) === "1") {
+      setPassed(true);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {!passed && <EmailGate onPass={() => setPassed(true)} />}
       <Nav cartCount={cartCount} onCartClick={() => setCartOpen(true)} />
       {children}
       <Footer />
