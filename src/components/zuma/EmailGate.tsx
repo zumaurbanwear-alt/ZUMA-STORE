@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import zumaLogo from "@/assets/zuma-logo.png";
-import gateImg from "@/assets/fw000-modeled.jpg";
+import gateImg from "@/assets/email-gate-bg.png";
 
 const STORAGE_KEY = "zuma_email_gate_passed";
 
