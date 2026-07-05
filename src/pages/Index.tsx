@@ -5,6 +5,8 @@ import { Loader } from "@/components/zuma/Loader";
 import { Countdown } from "@/components/zuma/Countdown";
 import { TextureBand } from "@/components/zuma/TextureBand";
 import { ProductGrid } from "@/components/zuma/ProductGrid";
+import { NewsletterBand } from "@/components/zuma/NewsletterBand";
+
 import { SiteLayout } from "@/components/zuma/SiteLayout";
 import { useProducts } from "@/hooks/useProducts";
 import { useLang } from "@/context/LanguageContext";
