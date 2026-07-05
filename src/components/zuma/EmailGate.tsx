@@ -43,7 +43,7 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
         />
 
         <div className="flex flex-col gap-1">
-          <p className="text-white text-[10px] tracking-[0.4em] uppercase">
+          <p className="text-white text-[10px] tracking-[0.4em] uppercase font-display">
             DROP 001 — ??/??/26
           </p>
         </div>
@@ -55,7 +55,7 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
             onChange={e => { setEmail(e.target.value); setError(""); }}
             onKeyDown={e => e.key === "Enter" && submit()}
             placeholder="YOUR EMAIL"
-            className="flex-1 bg-transparent px-4 py-3 text-white text-[10px] tracking-[0.25em] uppercase placeholder:text-white/40 outline-none"
+            className="flex-1 bg-transparent px-4 py-3 text-white text-[10px] tracking-[0.25em] uppercase placeholder:text-white/40 outline-none font-display"
           />
           <button
             onClick={submit}
