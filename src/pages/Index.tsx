@@ -52,7 +52,7 @@ const Index = () => {
 
       <NewsletterBand />
 
-      <TextureBand label={t("drop001")} right={t("arrowNew")} ghost={t("newArrivals").toUpperCase()} />
+      <TextureBand label={t("drop001")} right={t("arrowNew")} ghost="RECORD" />
 
       <section id="products" className="px-6 md:px-10 py-20 border-b border-border reveal">
         <div className="flex justify-between items-baseline mb-12 border-b border-border pb-3">
