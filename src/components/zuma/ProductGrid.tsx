@@ -9,6 +9,14 @@ const useBadgeFor = () => {
   const { t } = useLang();
   return (p: DbProduct) => {
     if (p.stock === 0) return { label: t("soldOut").toUpperCase(), className: "bg-black text-white" };
+
+    // Manual override from the database
+    if (p.badge === "new") return { label: t("new").toUpperCase(), className: "bg-primary text-primary-foreground" };
+    if (p.badge === "few_left") return { label: t("fewLeft").toUpperCase(), className: "bg-primary text-primary-foreground" };
+    if (p.badge === "sold_out") return { label: t("soldOut").toUpperCase(), className: "bg-black text-white" };
+    if (p.badge === "none") return null;
+
+    // Automatic fallback if no manual badge is set
     if (p.stock <= 3) return { label: t("fewLeft").toUpperCase(), className: "bg-primary text-primary-foreground" };
     const ageDays = (Date.now() - new Date(p.created_at).getTime()) / 86400000;
     if (ageDays <= NEW_THRESHOLD_DAYS) return { label: t("new").toUpperCase(), className: "bg-primary text-primary-foreground" };
