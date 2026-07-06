@@ -68,15 +68,14 @@ const Index = () => {
 
       <TextureBand label={t("drop000")} right={t("arrowArchive")} ghost="ARCHIVE" />
 
-      <section id="archive" className="px-6 md:px-10 py-20 border-b border-border reveal text-center">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3">ARCHIVE</div>
-          <h2 className="font-display text-foreground mb-6" style={{ fontSize: "clamp(36px, 6vw, 72px)", letterSpacing: "0.12em" }}>
-            {t("pastDrops").toUpperCase()}
-          </h2>
-          <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">{t("comingSoon")}</p>
-        </div>
-      </section>
+      <section id="archive" className="px-6 md:px-10 py-20 border-b border-border reveal">
+  <div className="max-w-[1200px] mx-auto">
+    <div className="flex justify-between items-baseline mb-6 border-b border-border pb-3">
+      <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">ARCHIVE</span>
+      <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">{t("comingSoon")}</span>
+    </div>
+  </div>
+</section>
     </SiteLayout>
   );
 };
