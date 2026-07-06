@@ -55,17 +55,14 @@ const Index = () => {
       <TextureBand label={t("drop001")} right={t("arrowNew")} ghost={t("newArrivals").toUpperCase()} />
 
       <section id="products" className="px-6 md:px-10 py-20 border-b border-border reveal">
-        <div className="flex justify-between items-end mb-12 gap-4">
-          <div>
-            <div className="text-[10px] tracking-[0.25em] uppercase text-primary-hi mb-3">{t("new").toUpperCase()}</div>
-            <h2 className="font-display text-foreground" style={{ fontSize: "clamp(36px, 6vw, 72px)", letterSpacing: "0.12em" }}>
-              {t("newArrivals").toUpperCase()}
-            </h2>
-          </div>
-          <Link to="/shop" className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-primary-hi transition-colors whitespace-nowrap">
-            {t("viewAll")} →
-          </Link>
-        </div>
+        <div className="flex justify-between items-baseline mb-12 border-b border-border pb-3">
+  <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+    ENTRIES — {products.length.toString().padStart(3, "0")}
+  </span>
+  <Link to="/shop" className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
+    {t("viewAll")} →
+  </Link>
+</div>
         <ProductGrid products={products} loading={loading} showFilters={false} limit={4} />
       </section>
 
