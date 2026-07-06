@@ -14,6 +14,9 @@ export type DbProduct = {
   is_visible: boolean;
   sort_order: number;
   created_at: string;
+  material: string | null;
+  origin: string | null;
+  archive_ref: string | null;
 };
 
 export type ProductImage = {
