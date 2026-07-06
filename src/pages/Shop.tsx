@@ -18,14 +18,11 @@ const Shop = () => {
   return (
     <SiteLayout>
       <div className="pt-32 pb-20 px-6 md:px-10">
-        <div className="max-w-[1200px] mx-auto mb-12">
-          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-4">
-            {t("inventoryVault")} // {count} {t("items")}
-          </div>
-          <h1 className="font-display text-foreground" style={{ fontSize: "clamp(48px, 8vw, 96px)", letterSpacing: "0.12em" }}>
-            {t("allProducts")}
-          </h1>
-        </div>
+        <div className="max-w-[1200px] mx-auto mb-12 border-b border-border pb-4">
+  <div className="text-[12px] tracking-[0.25em] uppercase text-foreground">
+    {t("inventoryVault")} // {count} {t("items")}
+  </div>
+</div>
         <ProductGrid products={products} loading={loading} />
       </div>
 
