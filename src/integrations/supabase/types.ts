@@ -182,6 +182,7 @@ export type Database = {
       }
       products: {
         Row: {
+          archive_ref: string | null
           category: string
           collection: string | null
           created_at: string
@@ -190,7 +191,9 @@ export type Database = {
           id: string
           image_url: string
           is_visible: boolean
+          material: string | null
           name: string
+          origin: string | null
           price: number
           slug: string
           sort_order: number
@@ -198,6 +201,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archive_ref?: string | null
           category?: string
           collection?: string | null
           created_at?: string
@@ -206,7 +210,9 @@ export type Database = {
           id?: string
           image_url: string
           is_visible?: boolean
+          material?: string | null
           name: string
+          origin?: string | null
           price: number
           slug: string
           sort_order?: number
@@ -214,6 +220,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archive_ref?: string | null
           category?: string
           collection?: string | null
           created_at?: string
@@ -222,7 +229,9 @@ export type Database = {
           id?: string
           image_url?: string
           is_visible?: boolean
+          material?: string | null
           name?: string
+          origin?: string | null
           price?: number
           slug?: string
           sort_order?: number
