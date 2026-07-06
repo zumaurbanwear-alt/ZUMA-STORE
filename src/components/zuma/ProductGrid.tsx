@@ -35,11 +35,11 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
           </span>
         )}
       </div>
- <div className="px-4 py-3 flex justify-between items-start gap-3 border-t border-border">
-  <h3 className="font-display text-base md:text-lg tracking-[0.18em] text-foreground min-w-0 flex-1">
+<div className="px-4 py-3 flex flex-col gap-1 border-t border-border">
+  <h3 className="font-display text-base md:text-lg tracking-[0.18em] text-foreground">
     {p.name}
   </h3>
-  <span className="text-[9px] tracking-[0.18em] text-primary-hi whitespace-nowrap mt-1">{p.price} MAD</span>
+  <span className="text-[9px] tracking-[0.18em] text-primary-hi">{p.price} MAD</span>
 </div>
     </Link>
   );
