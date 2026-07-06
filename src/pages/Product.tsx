@@ -151,13 +151,38 @@ const Product = () => {
               </div>
 
               {product.description && (
-                <p className="text-[10px] leading-[1.95] tracking-[0.04em] text-muted-foreground max-w-md">
-                  {product.description}
-                </p>
-              )}
+  <p className="text-[10px] leading-[1.95] tracking-[0.04em] text-muted-foreground max-w-md">
+    {product.description}
+  </p>
+)}
 
-              <div>
-                <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">{t("selectSize")}</div>
+{(product.material || product.origin || product.archive_ref) && (
+  <dl className="grid grid-cols-2 gap-y-2 gap-x-4 text-[9px] tracking-[0.15em] uppercase border-t border-border pt-4 max-w-md">
+    {product.material && (
+      <>
+        <dt className="text-muted-foreground">Material</dt>
+        <dd className="text-foreground">{product.material}</dd>
+      </>
+    )}
+    {product.origin && (
+      <>
+        <dt className="text-muted-foreground">Origin</dt>
+        <dd className="text-foreground">{product.origin}</dd>
+      </>
+    )}
+    {product.archive_ref && (
+      <>
+        <dt className="text-muted-foreground">Archive Ref</dt>
+        <dd className="text-foreground">{product.archive_ref}</dd>
+      </>
+    )}
+    <dt className="text-muted-foreground">Classification</dt>
+    <dd className="text-foreground">{product.category}</dd>
+  </dl>
+)}
+
+<div>
+  <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">{t("selectSize")}</div>
                 <div className="flex flex-wrap gap-2">
                   {SIZES.map(s => (
                     <button
