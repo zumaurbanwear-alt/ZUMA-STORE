@@ -16,7 +16,7 @@ const Index = () => {
   const { t } = useLang();
 
   useEffect(() => {
-    document.title = "ZÜMA — SHOP";
+    document.title = "ZÜMA — STORE";
     const meta = document.querySelector('meta[name="description"]') ?? (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
@@ -44,7 +44,7 @@ const Index = () => {
               {t("storeTagline")}
             </p>
           </div>
-          <a href="https://zumaurbanwear-alt.github.io/ZUMAINDEX/" target="_blank" rel="noreferrer" className="self-start md:self-auto inline-block text-[7px] tracking-[0.22em] uppercase px-4 py-2 border border-primary text-primary-hi hover:bg-primary hover:text-primary-foreground transition-colors animate-fade-up" style={{ animationDelay: "3.1s" }}>
+          <a href="https://zumaurbanwear-alt.github.io/ZUMA-INDEX/" target="_blank" rel="noreferrer" className="self-start md:self-auto inline-block text-[7px] tracking-[0.22em] uppercase px-4 py-2 border border-primary text-primary-hi hover:bg-primary hover:text-primary-foreground transition-colors animate-fade-up" style={{ animationDelay: "3.1s" }}>
             {t("enterIndex")}
           </a>
         </div>
