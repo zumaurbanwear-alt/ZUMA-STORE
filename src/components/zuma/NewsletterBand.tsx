@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLang } from "@/context/LanguageContext";
 
 export const NewsletterBand = () => {
+  const { t } = useLang();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "ok" | "err">("idle");
   const [busy, setBusy] = useState(false);
@@ -32,7 +34,7 @@ export const NewsletterBand = () => {
           className="font-display text-foreground mb-6"
           style={{ fontSize: "clamp(18px, 2.4vw, 28px)", letterSpacing: "0.2em" }}
         >
-          GET EARLY ACCESS FOR NEW RELEASES
+          {t("newsletterHeadline").toUpperCase()}
         </h2>
         <div className="flex border border-foreground/60">
           <input
@@ -53,10 +55,10 @@ export const NewsletterBand = () => {
           </button>
         </div>
         {status === "ok" && (
-          <p className="text-[10px] tracking-[0.25em] uppercase text-primary-hi mt-3">Subscribed</p>
+          <p className="text-[10px] tracking-[0.25em] uppercase text-primary-hi mt-3">{t("newsletterSubscribed")}</p>
         )}
         {status === "err" && (
-          <p className="text-[10px] tracking-[0.25em] uppercase text-destructive mt-3">Invalid email</p>
+          <p className="text-[10px] tracking-[0.25em] uppercase text-destructive mt-3">{t("newsletterInvalid")}</p>
         )}
       </div>
     </section>
