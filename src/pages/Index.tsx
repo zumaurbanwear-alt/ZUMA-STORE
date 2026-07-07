@@ -20,7 +20,7 @@ const Index = () => {
     const meta = document.querySelector('meta[name="description"]') ?? (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
-    meta.setAttribute("content", "ZÜMA — modular streetwear drops. Cash on delivery. WhatsApp confirmation. Born between Casablanca and elsewhere.");
+    meta.setAttribute("content", "ZÜMA — documented garments. Origin: Casablanca, Morocco. Cash on delivery. WhatsApp confirmation.");
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(e => e.isIntersecting && e.target.classList.add("visible"));
@@ -50,8 +50,6 @@ const Index = () => {
         </div>
       </header>
 
-      <NewsletterBand />
-
       <TextureBand label={t("drop001")} right={t("arrowNew")} ghost="RECORD" />
 
       <section id="products" className="px-6 md:px-10 py-20 border-b border-border reveal">
@@ -76,6 +74,8 @@ const Index = () => {
     </div>
   </div>
 </section>
+
+      <NewsletterBand />
     </SiteLayout>
   );
 };
