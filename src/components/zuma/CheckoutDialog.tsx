@@ -92,11 +92,11 @@ export const CheckoutDialog = ({
       ].join("\n");
       const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines)}`;
       window.open(url, "_blank", "noopener,noreferrer");
-      toast.success("Order placed");
+      toast.success(t("orderPlacedToast"));
       setDone(true);
     } catch (err) {
       console.error(err);
-      toast.error("Could not place your order. Please try again.");
+      toast.error(t("orderErrorToast"));
     } finally { setBusy(false); }
   };
 
