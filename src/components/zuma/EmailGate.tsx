@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLang } from "@/context/LanguageContext";
 
 const STORAGE_KEY = "zuma_email_gate_passed";
 const GATE_BG = "https://bsiyhxositjcvlaswttk.supabase.co/storage/v1/object/public/product-images/email-gate-bg.png.jpg";
 
 export const EmailGate = ({ onPass }: { onPass: () => void }) => {
+  const { t } = useLang();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const submit = async () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Invalid email");
+      setError(t("gateInvalid"));
       return;
     }
     setBusy(true);
@@ -34,11 +36,11 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
 
       <div className="relative z-10 flex flex-col items-center gap-8 px-6 w-full max-w-md text-center">
         <p className="text-white font-display tracking-[0.3em] uppercase" style={{ fontSize: "clamp(20px, 5vw, 36px)" }}>
-  EMBODY THE ZÜMA
+  {t("gateHeadline")}
 </p>
 
         <p className="text-white text-[10px] tracking-[0.4em] uppercase font-display">
-          DROP 001 — ??/??/26
+          {t("gateDrop")}
         </p>
 
         <div className="w-full flex border border-white/40">
@@ -47,7 +49,7 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
             value={email}
             onChange={e => { setEmail(e.target.value); setError(""); }}
             onKeyDown={e => e.key === "Enter" && submit()}
-            placeholder="YOUR EMAIL"
+            placeholder={t("gateEmailPlaceholder").toUpperCase()}
             className="flex-1 bg-transparent px-4 py-3 text-white text-[10px] tracking-[0.25em] uppercase placeholder:text-white/40 outline-none font-display"
           />
           <button
@@ -67,7 +69,7 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
           onClick={() => { localStorage.setItem(STORAGE_KEY, "1"); onPass(); }}
           className="text-white/30 text-[8px] tracking-[0.3em] uppercase hover:text-white/60 transition-colors"
         >
-          ENTER WITHOUT EMAIL
+          {t("gateSkip").toUpperCase()}
         </button>
       </div>
     </div>
