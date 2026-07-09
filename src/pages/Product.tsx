@@ -10,28 +10,9 @@ import { toast } from "sonner";
 const SIZES = ["S", "M", "L"];
 const COLORS = ["WHITE", "GREY", "BLACK"];
 
-// ------------------------------------------------------------
-// INDEX cross-reference
-// ------------------------------------------------------------
-// Maps a product's `collection` field (from Supabase) to its
-// Collection Archive folder on ZÜMA INDEX. Add one entry here
-// each time a new collection archive is published on INDEX —
-// see INDEX repo: docs/ARCHITECTURE.md → "Collection Archives".
-const INDEX_BASE_URL = "https://zumaurbanwear-alt.github.io/ZUMA-INDEX/";
-const COLLECTION_ARCHIVE_SLUGS: Record<string, string> = {
-  IPSEITY: "001-ipseity",
-};
-
-const getArchiveUrl = (collection: string | null, lang: "EN" | "FR") => {
-  if (!collection) return null;
-  const slug = COLLECTION_ARCHIVE_SLUGS[collection.toUpperCase()];
-  if (!slug) return null;
-  return `${INDEX_BASE_URL}collections/${slug}/${lang === "FR" ? "fr.html" : "index.html"}`;
-};
-
 const Product = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const navigate = useNavigate();
   const { products, loading } = useProducts();
   const product = useMemo(() => products.find(p => p.slug === slug), [products, slug]);
@@ -40,6 +21,22 @@ const Product = () => {
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
   const [slide, setSlide] = useState(0);
+
+  const availableColors = useMemo(() => {
+    const present = new Set(
+      images
+        .filter(img => !!img.url)
+        .map(img => img.color?.toUpperCase())
+        .filter((c): c is string => !!c)
+    );
+    return COLORS.filter(c => present.has(c));
+  }, [images]);
+
+  useEffect(() => {
+    if (color && !availableColors.includes(color)) {
+      setColor(null);
+    }
+  }, [availableColors, color]);
 
   useEffect(() => {
     if (product) document.title = `ZÜMA — ${product.name}`;
@@ -197,25 +194,6 @@ const Product = () => {
   </dl>
 )}
 
-{getArchiveUrl(product.collection, lang) && (
-  <div className="flex items-center justify-between gap-4 border-t border-border pt-4 max-w-md">
-    <div className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground leading-relaxed">
-      {t("documentation")}
-      <br />
-      {t("originallyDocumented")} <span className="text-foreground">INDEX</span>
-      {product.collection && <>, {product.collection}</>}
-    </div>
-    <a
-      href={getArchiveUrl(product.collection, lang)!}
-      target="_blank"
-      rel="noreferrer"
-      className="shrink-0 text-[9px] tracking-[0.22em] uppercase px-3 py-2 border border-primary text-primary-hi hover:bg-primary hover:text-primary-foreground transition-colors"
-    >
-      {t("openArchive")} →
-    </a>
-  </div>
-)}
-
 <div>
   <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">{t("selectSize")}</div>
                 <div className="flex flex-wrap gap-2">
@@ -235,24 +213,26 @@ const Product = () => {
                 </div>
               </div>
 
-              <div>
-                <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">{t("selectColor")}</div>
-                <div className="flex flex-wrap gap-2">
-                  {COLORS.map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setColor(c)}
-                      className={`px-4 py-2 text-[9px] tracking-[0.22em] uppercase border transition-colors ${
-                        color === c
-                          ? "border-foreground bg-foreground text-background"
-                          : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
+              {availableColors.length > 0 && (
+                <div>
+                  <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">{t("selectColor")}</div>
+                  <div className="flex flex-wrap gap-2">
+                    {availableColors.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setColor(c)}
+                        className={`px-4 py-2 text-[9px] tracking-[0.22em] uppercase border transition-colors ${
+                          color === c
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex flex-col gap-2 pt-2">
                 <button
