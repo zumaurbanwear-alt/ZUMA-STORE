@@ -276,6 +276,14 @@ const Product = () => {
                 >
                   {t("askWhatsApp")}
                 </a>
+                {product.archive_url && (
+                  <a
+                    href={product.archive_url}
+                    className="w-full text-center py-2 mt-1 text-[9px] tracking-[0.3em] uppercase text-muted-foreground hover:text-primary-hi transition-colors border-t border-border pt-3"
+                  >
+                    {t("openArchive")}
+                  </a>
+                )}
               </div>
             </div>
           </div>
