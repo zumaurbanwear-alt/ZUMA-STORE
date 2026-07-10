@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AudioProvider } from "@/context/AudioContext";
-import { AudioToggle } from "@/components/zuma/AudioToggle";
 import Index from "./pages/Index.tsx";
 import Shop from "./pages/Shop.tsx";
 import Product from "./pages/Product.tsx";
@@ -25,7 +24,6 @@ const App = () => (
        <LanguageProvider>
         <AudioProvider>
         <CartProvider>
-          <AudioToggle />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />
