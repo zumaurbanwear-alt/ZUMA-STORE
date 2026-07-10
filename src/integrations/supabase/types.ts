@@ -183,6 +183,7 @@ export type Database = {
       products: {
         Row: {
           archive_ref: string | null
+          archive_url: string | null
           badge: string | null
           category: string
           collection: string | null
@@ -203,6 +204,7 @@ export type Database = {
         }
         Insert: {
           archive_ref?: string | null
+          archive_url?: string | null
           badge?: string | null
           category?: string
           collection?: string | null
@@ -223,6 +225,7 @@ export type Database = {
         }
         Update: {
           archive_ref?: string | null
+          archive_url?: string | null
           badge?: string | null
           category?: string
           collection?: string | null
