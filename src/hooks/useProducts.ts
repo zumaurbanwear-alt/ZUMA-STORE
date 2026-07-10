@@ -17,6 +17,7 @@ export type DbProduct = {
   material: string | null;
   origin: string | null;
   archive_ref: string | null;
+  archive_url: string | null;
   badge: string | null;
 };
 
