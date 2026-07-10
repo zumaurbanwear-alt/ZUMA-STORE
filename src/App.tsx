@@ -12,6 +12,7 @@ import Product from "./pages/Product.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Auth from "./pages/Auth.tsx";
 import Admin from "./pages/Admin.tsx";
+import { ScrollToHash } from "./components/zuma/ScrollToHash.tsx";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
        <LanguageProvider>
         <AudioProvider>
         <CartProvider>
+          <ScrollToHash />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />
