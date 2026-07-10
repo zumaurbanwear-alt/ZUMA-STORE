@@ -5,6 +5,7 @@ export type Lang = "EN" | "FR";
 const dict = {
   EN: {
     shop: "Shop",
+    indexNav: "Index",
     archive: "Archive",
     instagram: "Instagram",
     addToCart: "Add to Cart",
@@ -89,6 +90,7 @@ const dict = {
   },
   FR: {
     shop: "Boutique",
+    indexNav: "Index",
     archive: "Archive",
     instagram: "Instagram",
     addToCart: "Ajouter au panier",

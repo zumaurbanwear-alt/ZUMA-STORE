@@ -13,6 +13,7 @@ export const Nav = ({ cartCount, onCartClick }: { cartCount: number; onCartClick
       <div className="flex items-center gap-4 md:gap-6">
         <div className="flex flex-col items-end gap-1">
           <Link to="/shop" className={linkCls}>{t("shop")}</Link>
+          <a href="https://zumaurbanwear-alt.github.io/ZUMA-INDEX/" target="_blank" rel="noreferrer" className={linkCls}>{t("indexNav")}</a>
           <Link to="/#archive" className={linkCls}>{t("archive")}</Link>
           <a href="https://www.instagram.com/zumaurbanwear" target="_blank" rel="noreferrer" className={linkCls}>{t("instagram")}</a>
           <button
