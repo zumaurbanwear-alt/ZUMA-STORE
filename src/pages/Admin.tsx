@@ -11,12 +11,59 @@ const empty = {
   image_url: "", stock: 0, is_visible: true, sort_order: 0,
 };
 
+type OrderItem = {
+  id: string;
+  product_name: string;
+  quantity: number;
+  size: string | null;
+  color: string | null;
+  unit_price: number;
+};
+
+type Order = {
+  id: string;
+  display_id: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  customer_city: string;
+  customer_address: string;
+  total: number;
+  status: string;
+  created_at: string;
+  order_items: OrderItem[];
+};
+
+// admin_orders_full is a hand-written Supabase view (see recreate_admin_orders_full.sql),
+// so it isn't part of the auto-generated Database types — this row shape is the
+// single source of truth for what that view returns.
+type LedgerRow = {
+  order_id: string;
+  created_at: string;
+  status: string;
+  payment_method: string;
+  total: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  customer_city: string;
+  customer_address: string;
+  notes: string | null;
+  product_id: string | null;
+  product_name: string;
+  size: string | null;
+  color: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+};
+
 const Admin = () => {
   const nav = useNavigate();
   const { user, isAdmin, loading } = useAuth();
   const { products } = useProducts({ adminMode: true });
-  const [orders, setOrders] = useState<any[]>([]);
-  const [unified, setUnified] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [unified, setUnified] = useState<LedgerRow[]>([]);
   const [editing, setEditing] = useState<Partial<DbProduct> | null>(null);
 
   useEffect(() => {
@@ -27,9 +74,11 @@ const Admin = () => {
   useEffect(() => {
     if (!isAdmin) return;
     supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }).limit(20)
-      .then(({ data }) => setOrders(data ?? []));
-    (supabase.from as any)("admin_orders_full").select("*").limit(200)
-      .then(({ data }: any) => setUnified(data ?? []));
+      .then(({ data }) => setOrders((data as Order[]) ?? []));
+    // "admin_orders_full" as any: hand-written view not present in the generated
+    // Database types — the response itself is fully typed via LedgerRow above.
+    supabase.from("admin_orders_full" as any).select("*").limit(200)
+      .then((res) => setUnified((res.data as LedgerRow[]) ?? []));
   }, [isAdmin]);
 
   if (loading) return <div className="min-h-screen bg-background grid place-items-center text-muted-foreground text-xs">Loading...</div>;
@@ -51,8 +100,8 @@ const Admin = () => {
     const payload = { ...editing, price: Number(editing.price), stock: Number(editing.stock), sort_order: Number(editing.sort_order ?? 0) };
     if (!payload.slug || !payload.name) { toast.error("Slug and name required"); return; }
     const { error } = editing.id
-      ? await supabase.from("products").update(payload as any).eq("id", editing.id)
-      : await supabase.from("products").insert(payload as any);
+      ? await supabase.from("products").update(payload as Partial<DbProduct>).eq("id", editing.id)
+      : await supabase.from("products").insert(payload as DbProduct);
     if (error) { console.error(error); toast.error("Could not save product"); } else { toast.success("Saved"); setEditing(null); }
   };
   const toggleVisible = async (p: DbProduct) => {
@@ -85,10 +134,10 @@ const Admin = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map(p => (
             <div key={p.id} className={`border border-border p-4 flex gap-4 ${!p.is_visible ? "opacity-50" : ""}`}>
-              <img src={resolveImage(p)} alt="" className="w-16 h-20 object-cover" />
+              <img src={resolveImage(p)} alt={p.name} className="w-16 h-20 object-cover" />
               <div className="flex-1 min-w-0">
                 <div className="font-display tracking-[0.15em] truncate">
-                  <span className="text-primary-hi mr-2">#{(p as any).display_id ?? "—"}</span>{p.name}
+                  <span className="text-primary-hi mr-2">#{p.display_id ?? "—"}</span>{p.name}
                 </div>
                 <div className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground mt-1">
                   {p.category} · {p.price} MAD · stock {p.stock}
@@ -119,7 +168,7 @@ const Admin = () => {
               </div>
               <div className="text-muted-foreground">{o.customer_email}<br/>{o.customer_city}</div>
               <div className="text-muted-foreground">
-                {(o.order_items ?? []).map((i: any) => `${i.product_name} ×${i.quantity}`).join(", ")}
+                {(o.order_items ?? []).map((i: OrderItem) => `${i.product_name} ×${i.quantity}`).join(", ")}
               </div>
               <div className="text-right">
                 <div className="text-primary-hi">{o.total} MAD</div>
@@ -145,7 +194,7 @@ const Admin = () => {
               {unified.length === 0 && (
                 <tr><td colSpan={15} className="p-6 text-center text-muted-foreground">No data yet.</td></tr>
               )}
-              {unified.map((r: any, i: number) => (
+              {unified.map((r: LedgerRow, i: number) => (
                 <tr key={i} className="hover:bg-muted/20">
                   <td className="px-2 py-2 text-primary-hi font-display tracking-[0.15em]">#{r.order_id}</td>
                   <td className="px-2 py-2 text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
@@ -182,7 +231,7 @@ const Admin = () => {
                   <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{l}</span>
                   <input
                     type={["price","stock","sort_order"].includes(k) ? "number" : "text"}
-                    value={(editing as any)[k] ?? ""}
+                    value={editing[k as keyof DbProduct] ?? ""}
                     onChange={e => setEditing({ ...editing, [k]: e.target.value })}
                     className="bg-background border border-border px-3 py-2 text-sm focus:border-primary outline-none"
                   />

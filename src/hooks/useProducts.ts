@@ -19,6 +19,7 @@ export type DbProduct = {
   archive_ref: string | null;
   archive_url: string | null;
   badge: string | null;
+  display_id: string;
 };
 
 export type ProductImage = {
