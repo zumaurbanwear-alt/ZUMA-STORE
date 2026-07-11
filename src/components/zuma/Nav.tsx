@@ -1,9 +1,11 @@
 import { ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/context/LanguageContext";
+import { useAudio } from "@/context/AudioContext";
 
 export const Nav = ({ cartCount, onCartClick }: { cartCount: number; onCartClick: () => void }) => {
   const { lang, setLang, t } = useLang();
+  const { playing, toggle } = useAudio();
   const linkCls = "text-[8px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi transition-colors";
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] flex justify-between items-start px-6 md:px-10 py-7">
@@ -16,6 +18,13 @@ export const Nav = ({ cartCount, onCartClick }: { cartCount: number; onCartClick
           <a href="https://zumaurbanwear-alt.github.io/ZUMA-INDEX/" target="_blank" rel="noreferrer" className={linkCls}>{t("indexNav")}</a>
           <Link to="/#archive" className={linkCls}>{t("archive")}</Link>
           <a href="https://www.instagram.com/zumaurbanwear" target="_blank" rel="noreferrer" className={linkCls}>{t("instagram")}</a>
+          <button
+            onClick={toggle}
+            className={linkCls}
+            aria-label={playing ? "Mute sound" : "Play sound"}
+          >
+            {playing ? "SOUND ON" : "SOUND OFF"}
+          </button>
           <button
             onClick={() => setLang(lang === "EN" ? "FR" : "EN")}
             className={`${linkCls} flex gap-1`}
