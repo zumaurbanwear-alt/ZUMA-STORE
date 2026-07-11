@@ -100,7 +100,9 @@ export type Database = {
           notes: string | null
           order_number: number
           payment_method: string
+          shipping_fee: number
           status: string
+          subtotal: number
           total: number
         }
         Insert: {
@@ -115,7 +117,9 @@ export type Database = {
           notes?: string | null
           order_number?: number
           payment_method?: string
+          shipping_fee?: number
           status?: string
+          subtotal: number
           total: number
         }
         Update: {
@@ -130,7 +134,9 @@ export type Database = {
           notes?: string | null
           order_number?: number
           payment_method?: string
+          shipping_fee?: number
           status?: string
+          subtotal?: number
           total?: number
         }
         Relationships: []
