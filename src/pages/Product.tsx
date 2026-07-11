@@ -11,6 +11,11 @@ import { toast } from "sonner";
 const SIZES = ["S", "M", "L"];
 const COLORS = ["WHITE", "GREY", "BLACK"];
 
+const setMeta = (selector: string, attr: "content", value: string) => {
+  const el = document.querySelector(selector);
+  if (el) el.setAttribute(attr, value);
+};
+
 const Product = () => {
   const { slug } = useParams<{ slug: string }>();
   const { t } = useLang();
@@ -40,7 +45,26 @@ const Product = () => {
   }, [availableColors, color]);
 
   useEffect(() => {
-    if (product) document.title = `ZÜMA — ${product.name}`;
+    if (!product) return;
+    const title = `ZÜMA — ${product.name}`;
+    const description = (product.description ?? "").replace(/\s+/g, " ").trim().slice(0, 160);
+    const image = resolveImage(product);
+
+    document.title = title;
+    setMeta('meta[property="og:title"]', "content", title);
+    setMeta('meta[property="og:description"]', "content", description);
+    setMeta('meta[property="og:image"]', "content", image);
+    setMeta('meta[name="twitter:title"]', "content", title);
+    setMeta('meta[name="twitter:description"]', "content", description);
+    setMeta('meta[name="twitter:image"]', "content", image);
+
+    return () => {
+      document.title = "ZÜMA — Store";
+      setMeta('meta[property="og:title"]', "content", "ZÜMA — STORE");
+      setMeta('meta[property="og:image"]', "content", "https://zumaurbanwear.store/og-image.jpg");
+      setMeta('meta[name="twitter:title"]', "content", "ZÜMA — STORE");
+      setMeta('meta[name="twitter:image"]', "content", "https://zumaurbanwear.store/og-image.jpg");
+    };
   }, [product]);
 
   useEffect(() => {
