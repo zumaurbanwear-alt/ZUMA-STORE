@@ -61,7 +61,7 @@ export const CartDrawer = ({
         </div>
         <footer className="border-t border-border px-6 py-5 flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("total")}</span>
+            <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("subtotal")}</span>
             <span className="font-display text-sm tracking-[0.1em]">{total} MAD</span>
           </div>
           <button

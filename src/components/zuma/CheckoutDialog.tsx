@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { z } from "zod";
-import { X, Check } from "lucide-react";
+import { X, Check, ChevronDown } from "lucide-react";
 import type { CartItem } from "@/components/zuma/CartDrawer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLang } from "@/context/LanguageContext";
+import { getShippingFee, CITY_SUGGESTIONS } from "@/lib/shipping";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name required").max(80),
@@ -30,7 +31,9 @@ export const CheckoutDialog = ({
   const [busy, setBusy] = useState(false);
 
   if (!open) return null;
-  const total = cart.reduce((s, i) => s + i.qty * Number(i.price), 0);
+  const subtotal = cart.reduce((s, i) => s + i.qty * Number(i.price), 0);
+  const shippingFee = getShippingFee(form.city);
+  const total = subtotal + shippingFee;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +56,8 @@ export const CheckoutDialog = ({
         customer_phone: form.phone,
         customer_city: form.city,
         customer_address: form.address,
+        subtotal,
+        shipping_fee: shippingFee,
         total,
         payment_method: "cash_on_delivery",
         status: "pending",
@@ -87,6 +92,8 @@ export const CheckoutDialog = ({
         `*Items:*`,
         ...cart.map(i => `• ${i.name} × ${i.qty} — ${Number(i.price) * i.qty} MAD`),
         ``,
+        `Subtotal: ${subtotal} MAD`,
+        `Delivery Fee: ${shippingFee} MAD`,
         `*Total: ${total} MAD*`,
         `Payment: Cash on Delivery`,
       ].join("\n");
@@ -133,7 +140,14 @@ export const CheckoutDialog = ({
               <Field label={t("phoneWhatsApp")} v={form.phone} set={v => setForm({ ...form, phone: v })} err={errors.phone} placeholder="+212 6 ..." />
               <Field label={t("email")} type="email" v={form.email} set={v => setForm({ ...form, email: v })} err={errors.email} className="sm:col-span-2" />
               <Field label={t("address")} v={form.address} set={v => setForm({ ...form, address: v })} err={errors.address} className="sm:col-span-2" />
-              <Field label={t("city")} v={form.city} set={v => setForm({ ...form, city: v })} err={errors.city} className="sm:col-span-2" />
+              <CitySelect
+                label={t("city")}
+                v={form.city}
+                set={v => setForm({ ...form, city: v })}
+                err={errors.city}
+                placeholder={t("selectCity")}
+                className="sm:col-span-2"
+              />
             </div>
 
             <div className="border border-border p-4 bg-background/50">
@@ -144,9 +158,20 @@ export const CheckoutDialog = ({
               </p>
             </div>
 
-            <div className="flex justify-between items-center pt-2 border-t border-border">
-              <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("total")}</span>
-              <span className="font-display text-sm tracking-[0.1em]">{total} MAD</span>
+            <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("subtotal")}</span>
+                <span className="text-[11px] tracking-[0.05em] text-foreground">{subtotal} MAD</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("deliveryFee")}</span>
+                <span className="text-[11px] tracking-[0.05em] text-foreground">{shippingFee} MAD</span>
+              </div>
+              <p className="text-[8px] tracking-[0.16em] uppercase text-muted-foreground/70">{t("deliveryFeeHint")}</p>
+              <div className="flex justify-between items-center pt-1.5 mt-1 border-t border-border">
+                <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("total")}</span>
+                <span className="font-display text-sm tracking-[0.1em]">{total} MAD</span>
+              </div>
             </div>
 
             <button type="submit" disabled={busy} className="w-full py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi transition-colors disabled:opacity-50">
@@ -173,6 +198,28 @@ const Field = ({
       placeholder={placeholder}
       className="bg-background border border-border px-3 py-2 text-[10px] text-foreground focus:border-primary outline-none transition-colors"
     />
+    {err && <span className="text-[9px] text-destructive">{err}</span>}
+  </label>
+);
+
+const CitySelect = ({
+  label, v, set, err, placeholder, className = "",
+}: {
+  label: string; v: string; set: (v: string) => void; err?: string; placeholder?: string; className?: string;
+}) => (
+  <label className={`flex flex-col gap-1.5 ${className}`}>
+    <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{label}</span>
+    <div className="relative">
+      <select
+        value={v}
+        onChange={e => set(e.target.value)}
+        className="w-full bg-background border border-border px-3 py-2 text-[10px] text-foreground focus:border-primary outline-none transition-colors appearance-none pr-8"
+      >
+        <option value="" disabled>{placeholder}</option>
+        {CITY_SUGGESTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
+      <ChevronDown className="w-3 h-3 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+    </div>
     {err && <span className="text-[9px] text-destructive">{err}</span>}
   </label>
 );
