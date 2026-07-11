@@ -28,6 +28,8 @@ type Order = {
   customer_phone: string;
   customer_city: string;
   customer_address: string;
+  subtotal: number;
+  shipping_fee: number;
   total: number;
   status: string;
   created_at: string;
@@ -42,6 +44,8 @@ type LedgerRow = {
   created_at: string;
   status: string;
   payment_method: string;
+  subtotal: number;
+  shipping_fee: number;
   total: number;
   customer_name: string;
   customer_email: string;
@@ -172,6 +176,9 @@ const Admin = () => {
               </div>
               <div className="text-right">
                 <div className="text-primary-hi">{o.total} MAD</div>
+                <div className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground">
+                  {o.subtotal} + {o.shipping_fee} delivery
+                </div>
                 <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">{o.status}</div>
               </div>
             </div>
@@ -185,14 +192,14 @@ const Admin = () => {
           <table className="w-full text-[11px]">
             <thead className="bg-muted/30 text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
               <tr>
-                {["Order #","Date","Status","Product #","Product","Size","Color","Qty","Unit","Line","Customer","Email","Phone","City","Address"].map(h => (
+                {["Order #","Date","Status","Product #","Product","Size","Color","Qty","Unit","Line","Subtotal","Delivery","Order Total","Customer","Email","Phone","City","Address"].map(h => (
                   <th key={h} className="px-2 py-2 text-left whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {unified.length === 0 && (
-                <tr><td colSpan={15} className="p-6 text-center text-muted-foreground">No data yet.</td></tr>
+                <tr><td colSpan={18} className="p-6 text-center text-muted-foreground">No data yet.</td></tr>
               )}
               {unified.map((r: LedgerRow, i: number) => (
                 <tr key={i} className="hover:bg-muted/20">
@@ -206,6 +213,9 @@ const Admin = () => {
                   <td className="px-2 py-2">{r.quantity}</td>
                   <td className="px-2 py-2">{r.unit_price}</td>
                   <td className="px-2 py-2 text-primary-hi">{r.line_total}</td>
+                  <td className="px-2 py-2">{r.subtotal}</td>
+                  <td className="px-2 py-2">{r.shipping_fee}</td>
+                  <td className="px-2 py-2 text-primary-hi">{r.total}</td>
                   <td className="px-2 py-2">{r.customer_name}</td>
                   <td className="px-2 py-2 text-muted-foreground">{r.customer_email}</td>
                   <td className="px-2 py-2 text-muted-foreground">{r.customer_phone}</td>
