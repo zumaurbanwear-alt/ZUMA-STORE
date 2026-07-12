@@ -29,7 +29,7 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
   const badge = badgeFor(p);
   const soldOut = p.stock === 0;
   return (
-    <Link to={`/product/${p.slug}`} className="group block hover:bg-secondary transition-colors" style={{ background: "#DBDBD0" }}>
+    <Link to={`/product/${p.slug}`} className="group block hover:bg-secondary transition-colors" style={{ background: "hsl(var(--card))" }}>
       <div className="relative aspect-[3/4] overflow-hidden bg-background">
         <img
           src={resolveImage(p)}
