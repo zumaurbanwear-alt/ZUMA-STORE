@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,21 +7,32 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AudioProvider } from "@/context/AudioContext";
-import Index from "./pages/Index.tsx";
-import Shop from "./pages/Shop.tsx";
-import Product from "./pages/Product.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import Auth from "./pages/Auth.tsx";
-import Admin from "./pages/Admin.tsx";
-import Faq from "./pages/Faq.tsx";
-import ShippingPolicy from "./pages/ShippingPolicy.tsx";
-import ReturnPolicy from "./pages/ReturnPolicy.tsx";
-import Terms from "./pages/Terms.tsx";
-import Privacy from "./pages/Privacy.tsx";
-import Contact from "./pages/Contact.tsx";
+import { Loader } from "@/components/zuma/Loader.tsx";
 import { ScrollToHash } from "./components/zuma/ScrollToHash.tsx";
 
-const queryClient = new QueryClient();
+// Routes are code-split so the first load only downloads the JS for the
+// page actually being visited, instead of the whole site (Admin included).
+const Index = lazy(() => import("./pages/Index.tsx"));
+const Shop = lazy(() => import("./pages/Shop.tsx"));
+const Product = lazy(() => import("./pages/Product.tsx"));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const Auth = lazy(() => import("./pages/Auth.tsx"));
+const Admin = lazy(() => import("./pages/Admin.tsx"));
+const Faq = lazy(() => import("./pages/Faq.tsx"));
+const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy.tsx"));
+const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy.tsx"));
+const Terms = lazy(() => import("./pages/Terms.tsx"));
+const Privacy = lazy(() => import("./pages/Privacy.tsx"));
+const Contact = lazy(() => import("./pages/Contact.tsx"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -32,21 +44,23 @@ const App = () => (
         <AudioProvider>
         <CartProvider>
           <ScrollToHash />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/product/:slug" element={<Product />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/faq" element={<Faq />} />
-            <Route path="/shipping" element={<ShippingPolicy />} />
-            <Route path="/returns" element={<ReturnPolicy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/contact" element={<Contact />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<Loader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/product/:slug" element={<Product />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/faq" element={<Faq />} />
+              <Route path="/shipping" element={<ShippingPolicy />} />
+              <Route path="/returns" element={<ReturnPolicy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/contact" element={<Contact />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </CartProvider>
         </AudioProvider>
        </LanguageProvider>
