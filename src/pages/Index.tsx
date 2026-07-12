@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import heroImg from "@/assets/fw000-modeled.jpg";
+import heroDesktopWebp from "@/assets/fw000-modeled-desktop.webp";
+import heroDesktopJpg from "@/assets/fw000-modeled-desktop.jpg";
+import heroMobileWebp from "@/assets/fw000-modeled-mobile.webp";
+import heroMobileJpg from "@/assets/fw000-modeled-mobile.jpg";
 import { Loader } from "@/components/zuma/Loader";
 import { Countdown } from "@/components/zuma/Countdown";
 import { TextureBand } from "@/components/zuma/TextureBand";
@@ -34,16 +37,25 @@ const Index = () => {
       <Loader />
 
       <header id="hero" className="relative h-screen overflow-hidden flex flex-col justify-end px-6 md:px-10 pb-14 border-b border-border">
-        <img
-          src={heroImg}
-          alt=""
-          aria-hidden
-          fetchPriority="high"
-          loading="eager"
-          decoding="async"
-          className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
-          style={{ objectPosition: "center 15%" }}
-        />
+        <picture>
+          {/* Phones get the small crop; anything wider gets the full-size one.
+              WebP first (smaller, and what most browsers use today), JPEG
+              as the fallback for the rare browser without WebP support. */}
+          <source media="(max-width: 767px)" srcSet={heroMobileWebp} type="image/webp" />
+          <source srcSet={heroDesktopWebp} type="image/webp" />
+          <img
+            src={heroDesktopJpg}
+            srcSet={`${heroMobileJpg} 750w, ${heroDesktopJpg} 1400w`}
+            sizes="100vw"
+            alt=""
+            aria-hidden
+            fetchPriority="high"
+            loading="eager"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
+            style={{ objectPosition: "center 15%" }}
+          />
+        </picture>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="relative z-10 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
           <div>
