@@ -67,12 +67,15 @@ const Product = () => {
     };
   }, [product]);
 
+  // Only warm the cache for the images belonging to the currently selected
+  // color (or the default product image) — not every color variant up
+  // front, which used to pull down every product photo on page load.
   useEffect(() => {
-    images.forEach(img => {
+    carouselImages.forEach(url => {
       const image = new Image();
-      image.src = img.url;
+      image.src = url;
     });
-  }, [images]);
+  }, [carouselImages]);
 
   useEffect(() => {
     setSlide(0);
@@ -153,6 +156,8 @@ const Product = () => {
                 <img
                   src={currentImage}
                   alt={product.name}
+                  fetchPriority="high"
+                  decoding="async"
                   className={`w-full h-full object-cover transition-opacity duration-300 ${soldOut ? "opacity-40 grayscale" : ""}`}
                 />
                 {carouselImages.length > 1 && (
@@ -181,7 +186,7 @@ const Product = () => {
                       className={`border aspect-square w-16 overflow-hidden transition-all ${slide === i ? "border-foreground" : "border-border opacity-50"}`}
                       style={{ background: "hsl(var(--card))" }}
                     >
-                      <img src={url} alt={`${product.name} — view ${i + 1}`} className="w-full h-full object-cover" />
+                      <img src={url} alt={`${product.name} — view ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
