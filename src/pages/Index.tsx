@@ -34,7 +34,16 @@ const Index = () => {
       <Loader />
 
       <header id="hero" className="relative h-screen overflow-hidden flex flex-col justify-end px-6 md:px-10 pb-14 border-b border-border">
-        <div className="absolute inset-0 bg-cover animate-hero-reveal" style={{ backgroundImage: `url(${heroImg})`, backgroundPosition: "center 15%" }} aria-hidden />
+        <img
+          src={heroImg}
+          alt=""
+          aria-hidden
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
+          style={{ objectPosition: "center 15%" }}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="relative z-10 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
           <div>
