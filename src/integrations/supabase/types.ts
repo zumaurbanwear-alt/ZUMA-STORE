@@ -120,7 +120,7 @@ export type Database = {
           shipping_fee?: number
           status?: string
           subtotal: number
-          total: number
+          // "total" is a DB-generated column (subtotal + shipping_fee) — never insertable.
         }
         Update: {
           created_at?: string
@@ -137,7 +137,7 @@ export type Database = {
           shipping_fee?: number
           status?: string
           subtotal?: number
-          total?: number
+          // "total" is a DB-generated column — never updatable directly.
         }
         Relationships: []
       }
