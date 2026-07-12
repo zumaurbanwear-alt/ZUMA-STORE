@@ -89,6 +89,18 @@ const fetchProductImages = async (productId: string): Promise<ProductImage[]> =>
   return (data ?? []) as ProductImage[];
 };
 
+// Exposed so links can warm the cache on hover (see ProductGrid) — by the
+// time the user actually clicks, the images are often already loaded.
+export const prefetchProductImages = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  productId: string
+) =>
+  queryClient.prefetchQuery({
+    queryKey: ["product-images", productId],
+    queryFn: () => fetchProductImages(productId),
+    staleTime: 60_000,
+  });
+
 export const useProductImages = (productId: string | undefined) => {
   const { data, isLoading } = useQuery({
     queryKey: ["product-images", productId],
