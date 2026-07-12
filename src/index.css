@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
+/* Fonts are loaded from index.html via <link rel="stylesheet"> (with
+   preconnect) instead of @import here — @import is render-blocking and
+   forces the browser to wait for this file to parse before it even
+   discovers the font stylesheet request. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
