@@ -58,7 +58,6 @@ export const CheckoutDialog = ({
         customer_address: form.address,
         subtotal,
         shipping_fee: shippingFee,
-        total,
         payment_method: "cash_on_delivery",
         status: "pending",
         notes: null,
