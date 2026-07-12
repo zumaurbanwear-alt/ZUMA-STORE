@@ -6,6 +6,11 @@
 
   <title>ZÜMA — STORE</title>
 
+  <!-- Warm up the connection to Supabase early so the first API/realtime
+       call doesn't pay the DNS + TLS handshake cost on top of the request. -->
+  <link rel="preconnect" href="https://bsiyhxositjcvlaswttk.supabase.co" crossorigin />
+  <link rel="dns-prefetch" href="https://bsiyhxositjcvlaswttk.supabase.co" />
+
   <meta
     name="description"
     content="with züma, explore what remains when everything external is stripped away. what you are, when no one is watching. and what you become, when everyone is."
@@ -15,7 +20,6 @@
 
   <!-- Favicons -->
   <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
 
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -58,7 +62,8 @@
                   document.querySelector('div[id*="lovable"]');
     if (badge) badge.style.display = 'none';
   };
-  setInterval(hide, 500);
+  const id = setInterval(hide, 500);
+  setTimeout(() => clearInterval(id), 15000);
 </script>
   </body>
 </html>
