@@ -179,7 +179,7 @@ const Product = () => {
                       key={i}
                       onClick={() => setSlide(i)}
                       className={`border aspect-square w-16 overflow-hidden transition-all ${slide === i ? "border-foreground" : "border-border opacity-50"}`}
-                      style={{ background: "#DBDBD0" }}
+                      style={{ background: "hsl(var(--card))" }}
                     >
                       <img src={url} alt={`${product.name} — view ${i + 1}`} className="w-full h-full object-cover" />
                     </button>
