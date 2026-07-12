@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { resolveImage, prefetchProductImages, type DbProduct } from "@/hooks/useProducts";
+import { ProductImg } from "@/components/zuma/ProductImg";
 import { preloadProductPage } from "@/pages/Product.preload";
 import { useLang } from "@/context/LanguageContext";
 
@@ -44,8 +45,9 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
       style={{ background: "hsl(var(--card))" }}
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-background">
-        <img
+        <ProductImg
           src={resolveImage(p)}
+          width={600}
           alt={p.name}
           loading="lazy"
           className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-[1.03] ${soldOut ? "opacity-40 grayscale" : ""}`}

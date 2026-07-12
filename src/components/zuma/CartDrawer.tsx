@@ -1,5 +1,6 @@
 import { X, Minus, Plus } from "lucide-react";
 import { resolveImage, type DbProduct } from "@/hooks/useProducts";
+import { ProductImg } from "@/components/zuma/ProductImg";
 import { useLang } from "@/context/LanguageContext";
 export type CartItem = DbProduct & { cartKey?: string; qty: number; size?: string; color?: string };
 export const CartDrawer = ({
@@ -36,7 +37,7 @@ export const CartDrawer = ({
             <ul className="flex flex-col gap-5">
               {cart.map(item => (
                 <li key={item.cartKey ?? item.id} className="flex gap-4 border-b border-border pb-5">
-                  <img src={resolveImage(item)} alt={item.name} className="w-16 h-20 object-cover" />
+                  <ProductImg src={resolveImage(item)} width={160} alt={item.name} className="w-16 h-20 object-cover" />
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <div className="font-display text-[11px] tracking-[0.18em]">{item.name}</div>

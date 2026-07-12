@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ProductImg } from "@/components/zuma/ProductImg";
 import { useLang } from "@/context/LanguageContext";
 
 const STORAGE_KEY = "zuma_email_gate_passed";
@@ -25,9 +26,12 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center">
-      <img
+      <ProductImg
         src={GATE_BG}
+        width={1200}
         alt=""
+        loading="eager"
+        fetchPriority="high"
         className="absolute inset-0 w-full h-full object-cover"
       />
       <div className="absolute inset-0 bg-black/60" />
