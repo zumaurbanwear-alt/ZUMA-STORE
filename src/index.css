@@ -4,32 +4,35 @@
 @tailwind utilities;
 @layer base {
   :root {
-    --background: 60 8% 84%;
-    --foreground: 0 0% 0%;
-    --card: 0 0% 82%;
-    --card-foreground: 0 0% 0%;
-    --popover: 0 0% 82%;
-    --popover-foreground: 0 0% 0%;
+    --background: 40 10% 95.5%;
+    --foreground: 40 8% 9%;
+    --card: 40 9% 92.5%;
+    --card-foreground: 40 8% 9%;
+    --popover: 40 9% 92.5%;
+    --popover-foreground: 40 8% 9%;
     --primary: 0 0% 8%;
-    --primary-foreground: 60 8% 84%;
+    --primary-foreground: 40 10% 95.5%;
     --primary-hi: 0 0% 25%;
     --primary-dim: 0 0% 0%;
-    --secondary: 0 0% 78%;
-    --secondary-foreground: 0 0% 0%;
-    --muted: 0 0% 78%;
-    --muted-foreground: 0 0% 30%;
+    --secondary: 40 8% 90%;
+    --secondary-foreground: 40 8% 9%;
+    --muted: 40 8% 90%;
+    --muted-foreground: 40 4% 38%;
     --accent: 0 0% 25%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 70%;
-    --input: 0 0% 78%;
+    --border: 40 7% 84%;
+    --input: 40 9% 93%;
     --ring: 0 0% 25%;
     --radius: 0px;
+    /* Archival paper grades — used by textured sections (TextureBand) */
+    --paper-1: 40 8% 88%;
+    --paper-2: 40 7% 80%;
   }
   .dark {
-    --background: 60 8% 84%;
-    --foreground: 0 0% 0%;
+    --background: 40 10% 95.5%;
+    --foreground: 40 8% 9%;
   }
 }
 @layer base {
