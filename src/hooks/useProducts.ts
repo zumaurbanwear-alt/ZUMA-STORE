@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type DbProduct = {
@@ -36,44 +37,65 @@ export const resolveImage = (p: Pick<DbProduct, "slug" | "image_url">) => {
   return "";
 };
 
+const productsQueryKey = (adminMode: boolean) => ["products", { adminMode }] as const;
+
+const fetchProducts = async (adminMode: boolean): Promise<DbProduct[]> => {
+  let q = supabase.from("products").select("*").order("created_at", { ascending: false });
+  if (!adminMode) q = q.eq("is_visible", true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as DbProduct[];
+};
+
+// Products are cached by react-query and shared across every page that calls
+// useProducts(), so navigating Index -> Shop -> Product no longer re-fetches
+// the whole catalog each time. A single realtime channel per mode keeps the
+// cache fresh in the background instead of every mounted page opening its
+// own websocket subscription.
 export const useProducts = (opts: { adminMode?: boolean } = {}) => {
-  const [products, setProducts] = useState<DbProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+  const adminMode = !!opts.adminMode;
+  const queryClient = useQueryClient();
+  const queryKey = productsQueryKey(adminMode);
+
+  const { data, isLoading } = useQuery({
+    queryKey,
+    queryFn: () => fetchProducts(adminMode),
+    staleTime: 60_000, // reuse cached data for 60s before refetching in the background
+  });
+
   useEffect(() => {
-    let active = true;
-    const load = async () => {
-      let q = supabase.from("products").select("*").order("created_at", { ascending: false });
-      if (!opts.adminMode) q = q.eq("is_visible", true);
-      const { data, error } = await q;
-      if (!active) return;
-      if (!error && data) setProducts(data as DbProduct[]);
-      setLoading(false);
-    };
-    load();
-    const ch = supabase
-      .channel("products-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => load())
+    const channel = supabase
+      .channel(`products-live-${adminMode ? "admin" : "public"}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
       .subscribe();
-    return () => { active = false; supabase.removeChannel(ch); };
-  }, [opts.adminMode]);
-  return { products, loading };
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminMode]);
+
+  return { products: data ?? [], loading: isLoading };
+};
+
+const fetchProductImages = async (productId: string): Promise<ProductImage[]> => {
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("*")
+    .eq("product_id", productId)
+    .order("position", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as ProductImage[];
 };
 
 export const useProductImages = (productId: string | undefined) => {
-  const [images, setImages] = useState<ProductImage[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    if (!productId) return;
-    const load = async () => {
-      const { data, error } = await supabase
-        .from("product_images")
-        .select("*")
-        .eq("product_id", productId)
-        .order("position", { ascending: true });
-      if (!error && data) setImages(data as ProductImage[]);
-      setLoading(false);
-    };
-    load();
-  }, [productId]);
-  return { images, loading };
+  const { data, isLoading } = useQuery({
+    queryKey: ["product-images", productId],
+    queryFn: () => fetchProductImages(productId as string),
+    enabled: !!productId,
+    staleTime: 60_000,
+  });
+
+  return { images: data ?? [], loading: isLoading };
 };
