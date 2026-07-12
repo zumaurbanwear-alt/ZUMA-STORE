@@ -16,7 +16,7 @@ export const Footer = () => {
 
   return (
     <footer className="border-t border-border relative overflow-hidden">
-      <div className="py-14 px-6 md:px-10 flex flex-col md:flex-row justify-between gap-12">
+      <div className="py-10 md:py-14 px-6 md:px-10 flex flex-col md:flex-row justify-between gap-8 md:gap-12">
         <div className="max-w-[220px]">
           <div className="font-display text-[18px] tracking-[0.3em] text-foreground">
             ZÜMA
@@ -26,7 +26,7 @@ export const Footer = () => {
           </span>
         </div>
 
-        <nav className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-16" aria-label="Footer">
+        <nav className="grid grid-cols-3 gap-4 sm:gap-8 md:gap-16" aria-label="Footer">
           <FooterColumn heading={t("footerShop")}>
             <Link to="/shop" className={linkCls}>{t("allEntries")}</Link>
             <Link to="/#archive" className={linkCls}>{t("archive")}</Link>
@@ -43,17 +43,16 @@ export const Footer = () => {
 
           <FooterColumn heading={t("footerSystem")}>
             <a href="https://zumaurbanwear-alt.github.io/ZUMA-INDEX/" target="_blank" rel="noreferrer" className={linkCls}>{t("indexNav")}</a>
-            <span className={`${linkCls} cursor-default opacity-60`} title={t("footerComingSoon")}>{t("foundationalRecord")}</span>
             <Link to="/#archive" className={linkCls}>{t("archive")}</Link>
           </FooterColumn>
         </nav>
       </div>
 
-      <div className="px-6 md:px-10 py-5 border-t border-border flex flex-col-reverse md:flex-row justify-between items-start md:items-center gap-3">
-        <p className="text-[8px] tracking-[0.16em] text-muted-foreground uppercase">
+      <div className="px-6 md:px-10 py-5 border-t border-border flex flex-row justify-between items-center gap-3">
+        <p className="text-[7px] sm:text-[8px] tracking-[0.12em] sm:tracking-[0.16em] text-muted-foreground uppercase">
           © {year} ZÜMA. {t("footerRights")}
         </p>
-        <div className="flex gap-4">
+        <div className="flex gap-2 sm:gap-4 shrink-0">
           {[
             { label: "Instagram", url: "https://www.instagram.com/zumaurbanwear" },
             { label: "TikTok", url: "https://www.tiktok.com/@zumaurbanwear" },
@@ -64,7 +63,7 @@ export const Footer = () => {
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={linkCls}
+              className={`${linkCls} text-[7px] sm:text-[8px] tracking-[0.12em] sm:tracking-[0.16em] whitespace-nowrap`}
             >
               {s.label}
             </a>
