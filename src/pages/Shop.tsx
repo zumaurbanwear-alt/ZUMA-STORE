@@ -14,7 +14,7 @@ const Shop = () => {
   return (
     <SiteLayout>
       <div className="pt-44 md:pt-40 pb-20 px-6 md:px-10">
-        <ProductGrid products={products} loading={loading} />
+        <ProductGrid products={products} loading={loading} showUndocumented />
       </div>
 
       <TextureBand label="DROP 000 — Archive" right="↓ Archive" ghost="ARCHIVE" />
