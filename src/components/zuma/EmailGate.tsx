@@ -8,21 +8,19 @@ const GATE_BG = "https://bsiyhxositjcvlaswttk.supabase.co/storage/v1/object/publ
 export const EmailGate = ({ onPass }: { onPass: () => void }) => {
   const { t } = useLang();
   const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const submit = async () => {
+  const submit = () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError(t("gateInvalid"));
       return;
     }
-    setBusy(true);
     setError("");
-    try {
-      await supabase.from("waitlist").insert({ email }).select();
-    } catch (_) {}
     localStorage.setItem(STORAGE_KEY, "1");
     onPass();
+    // Fire-and-forget: the site is already revealed, no need to make the
+    // visitor wait on this round-trip. Errors are non-critical here.
+    supabase.from("waitlist").insert({ email }).select().catch(() => {});
   };
 
   return (
@@ -54,7 +52,6 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
           />
           <button
             onClick={submit}
-            disabled={busy}
             className="px-4 text-white/70 hover:text-white transition-colors text-lg"
           >
             →

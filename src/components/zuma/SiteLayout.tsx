@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from "react";
+import { useState, ReactNode } from "react";
 import { Nav } from "@/components/zuma/Nav";
 import { Footer } from "@/components/zuma/Footer";
 import { CartDrawer } from "@/components/zuma/CartDrawer";
@@ -13,13 +13,7 @@ const STORAGE_KEY = "zuma_email_gate_passed";
 
 export const SiteLayout = ({ children }: { children: ReactNode }) => {
   const { cart, cartCount, cartOpen, setCartOpen, checkoutOpen, setCheckoutOpen, updateQty, clear } = useCart();
-  const [passed, setPassed] = useState(false);
-
-  useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY) === "1") {
-      setPassed(true);
-    }
-  }, []);
+  const [passed, setPassed] = useState(() => localStorage.getItem(STORAGE_KEY) === "1");
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
