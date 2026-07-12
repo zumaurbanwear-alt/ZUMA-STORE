@@ -21,7 +21,7 @@ export const CartDrawer = ({
         onClick={onClose}
       />
       <aside
-        className={`fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-card border-l border-border z-[201] flex flex-col transition-transform duration-200 ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-card border-l border-border z-[201] flex flex-col transition-transform duration-500 ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         <header className="flex justify-between items-center px-6 py-5 border-b border-border">
           <h2 className="font-display text-sm tracking-[0.3em]">{t("cart")}</h2>
@@ -36,7 +36,7 @@ export const CartDrawer = ({
             <ul className="flex flex-col gap-5">
               {cart.map(item => (
                 <li key={item.cartKey ?? item.id} className="flex gap-4 border-b border-border pb-5">
-                  <img src={resolveImage(item)} alt={item.name} loading="lazy" decoding="async" className="w-16 h-20 object-cover" />
+                  <img src={resolveImage(item)} alt={item.name} className="w-16 h-20 object-cover" />
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <div className="font-display text-[11px] tracking-[0.18em]">{item.name}</div>

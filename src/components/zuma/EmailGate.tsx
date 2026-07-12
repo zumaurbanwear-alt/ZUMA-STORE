@@ -30,8 +30,6 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
       <img
         src={GATE_BG}
         alt=""
-        fetchPriority="high"
-        decoding="async"
         className="absolute inset-0 w-full h-full object-cover"
       />
       <div className="absolute inset-0 bg-black/60" />
