@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { resolveImage, type DbProduct } from "@/hooks/useProducts";
 import { useLang } from "@/context/LanguageContext";
@@ -24,7 +24,17 @@ const useBadgeFor = () => {
   };
 };
 
-export const ProductCard = ({ p }: { p: DbProduct }) => {
+const ProductCardSkeleton = () => (
+  <div className="block animate-pulse" aria-hidden>
+    <div className="relative aspect-[3/4] overflow-hidden bg-muted" />
+    <div className="px-4 py-3 flex flex-col gap-2 border-t border-border">
+      <div className="h-3.5 w-3/4 bg-muted" />
+      <div className="h-2.5 w-1/3 bg-muted" />
+    </div>
+  </div>
+);
+
+export const ProductCard = memo(({ p, priority = false }: { p: DbProduct; priority?: boolean }) => {
   const badgeFor = useBadgeFor();
   const badge = badgeFor(p);
   const soldOut = p.stock === 0;
@@ -34,8 +44,10 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
         <img
           src={resolveImage(p)}
           alt={p.name}
-          loading="lazy"
-          className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-[1.03] ${soldOut ? "opacity-40 grayscale" : ""}`}
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          decoding="async"
+          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03] ${soldOut ? "opacity-40 grayscale" : ""}`}
         />
         {badge && (
           <span className={`absolute top-3 left-3 px-2.5 py-1 text-[9px] tracking-[0.22em] uppercase ${badge.className}`}>
@@ -51,7 +63,8 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
 </div>
     </Link>
   );
-};
+});
+ProductCard.displayName = "ProductCard";
 
 export const ProductGrid = ({
   products,
@@ -98,12 +111,13 @@ export const ProductGrid = ({
           ))}
         </div>
       )}
-      {loading && <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">{t("loading")}</p>}
       {!loading && filtered.length === 0 && (
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">{t("noProducts")}</p>
       )}
       <div className="grid grid-cols-2 gap-4 max-w-[600px]">
-        {filtered.map(p => <ProductCard key={p.id} p={p} />)}
+        {loading
+          ? Array.from({ length: limit ?? 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
+          : filtered.map((p, i) => <ProductCard key={p.id} p={p} priority={i < 2} />)}
       </div>
     </div>
   );

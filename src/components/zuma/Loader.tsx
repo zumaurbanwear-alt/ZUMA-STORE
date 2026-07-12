@@ -8,7 +8,7 @@ export const Loader = () => {
   }, []);
   return (
     <div
-      className={`fixed inset-0 z-[9000] bg-background pointer-events-none transition-opacity duration-[400ms] ${
+      className={`fixed inset-0 z-[9000] bg-background pointer-events-none transition-opacity duration-300 ${
         hidden ? "opacity-0" : "opacity-100"
       }`}
       aria-hidden

@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 const AUDIO_SRC = "/audio/theme.mp3";
 const STORAGE_KEY = "zuma-audio-playing";
 const VOLUME_KEY = "zuma-audio-volume";
+const INTERACTION_EVENTS: (keyof DocumentEventMap)[] = ["click", "touchstart", "keydown", "scroll"];
 
 type Ctx = {
   playing: boolean;
@@ -16,52 +17,53 @@ export const AudioProvider = ({ children }: { children: ReactNode }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
 
-  // Created once — this provider lives above <Routes> so the same
-  // <audio> element survives navigation (Index → Shop → Product...),
-  // giving continuous, uninterrupted playback across pages.
-  useEffect(() => {
+  // The <audio> element (and its ~2.8MB file) is only created the first
+  // time it's actually needed — either the visitor interacts with the page
+  // (and had audio playing last time) or taps the sound toggle. This keeps
+  // the track out of the critical path on first load instead of racing
+  // hero images and product data for bandwidth.
+  const ensureAudio = () => {
+    if (audioRef.current) return audioRef.current;
+
     const audio = new Audio(AUDIO_SRC);
     audio.loop = true;
     const savedVolume = localStorage.getItem(VOLUME_KEY);
     audio.volume = savedVolume ? Number(savedVolume) : 0.5;
-    audioRef.current = audio;
 
-    const markPlaying = () => {
-      localStorage.setItem(STORAGE_KEY, "1");
-      setPlaying(true);
-    };
-    const markPaused = () => {
+    audio.addEventListener("pause", () => {
       localStorage.setItem(STORAGE_KEY, "0");
       setPlaying(false);
-    };
-    audio.addEventListener("pause", markPaused);
-    audio.addEventListener("play", markPlaying);
+    });
+    audio.addEventListener("play", () => {
+      localStorage.setItem(STORAGE_KEY, "1");
+      setPlaying(true);
+    });
 
-    const armFallback = () => {
-      const events: (keyof DocumentEventMap)[] = ["click", "touchstart", "keydown", "scroll"];
-      const start = () => {
-        events.forEach((ev) => document.removeEventListener(ev, start));
-        audio.play().catch(() => {});
-      };
-      events.forEach((ev) => document.addEventListener(ev, start, { once: true, passive: true }));
-    };
+    audioRef.current = audio;
+    return audio;
+  };
 
+  // This provider lives above <Routes> so once created, the same <audio>
+  // element survives navigation (Index → Shop → Product...), giving
+  // continuous, uninterrupted playback across pages.
+  useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored !== "0") {
-      audio.play().catch(armFallback);
-    }
+    if (stored === "0") return; // visitor muted it last time — do nothing
+
+    const start = () => {
+      INTERACTION_EVENTS.forEach((ev) => document.removeEventListener(ev, start));
+      ensureAudio().play().catch(() => {});
+    };
+    INTERACTION_EVENTS.forEach((ev) => document.addEventListener(ev, start, { once: true, passive: true }));
 
     return () => {
-      audio.removeEventListener("pause", markPaused);
-      audio.removeEventListener("play", markPlaying);
-      audio.pause();
-      audioRef.current = null;
+      INTERACTION_EVENTS.forEach((ev) => document.removeEventListener(ev, start));
+      audioRef.current?.pause();
     };
   }, []);
 
   const toggle = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const audio = ensureAudio();
     if (audio.paused) {
       audio.play().catch(() => {});
     } else {
