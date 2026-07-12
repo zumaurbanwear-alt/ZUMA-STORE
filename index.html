@@ -21,6 +21,20 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
 
+  <!-- Fonts: preconnect + direct <link> instead of a CSS @import, so the
+       browser can start the font fetch in parallel with everything else
+       instead of waiting to parse index.css first. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" />
+
+  <!-- Product imagery is served from Supabase Storage on every page -->
+  <link rel="preconnect" href="https://bsiyhxositjcvlaswttk.supabase.co" crossorigin />
+
+  <!-- The email gate covers the full viewport for first-time visitors and
+       is typically the largest contentful element on first visit. -->
+  <link rel="preload" as="image" fetchpriority="high" href="https://bsiyhxositjcvlaswttk.supabase.co/storage/v1/object/public/product-images/email-gate-bg.png.jpg" />
+
   <!-- Theme -->
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -52,13 +66,22 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+  // Runs briefly on load to hide a leftover Lovable badge if present,
+  // then stops — no need to poll the DOM for the lifetime of the page.
+  let hideAttempts = 0;
   const hide = () => {
-    const badge = document.querySelector('[data-lovable]') || 
+    const badge = document.querySelector('[data-lovable]') ||
                   document.querySelector('iframe[src*="lovable"]') ||
                   document.querySelector('div[id*="lovable"]');
-    if (badge) badge.style.display = 'none';
+    if (badge) {
+      badge.style.display = 'none';
+      clearInterval(hideTimer);
+      return;
+    }
+    hideAttempts += 1;
+    if (hideAttempts > 20) clearInterval(hideTimer); // stop after ~10s
   };
-  setInterval(hide, 500);
+  const hideTimer = setInterval(hide, 500);
 </script>
   </body>
 </html>
