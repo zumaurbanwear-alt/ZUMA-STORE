@@ -6,7 +6,7 @@ import { useAudio } from "@/context/AudioContext";
 export const Nav = ({ cartCount, onCartClick }: { cartCount: number; onCartClick: () => void }) => {
   const { lang, setLang, t } = useLang();
   const { playing, toggle } = useAudio();
-  const linkCls = "text-[8px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi transition-colors";
+  const linkCls = "text-[8px] tracking-[0.22em] uppercase text-foreground hover:text-primary-dim transition-colors";
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] flex justify-between items-start px-6 md:px-10 py-7">
       <Link to="/" className="font-display text-lg tracking-[0.3em] text-foreground">
@@ -27,12 +27,27 @@ export const Nav = ({ cartCount, onCartClick }: { cartCount: number; onCartClick
           </button>
           <button
             onClick={() => setLang(lang === "EN" ? "FR" : "EN")}
-            className={`${linkCls} flex gap-1`}
+            className="mt-0.5 flex items-center border border-foreground/70 hover:border-foreground transition-colors"
             aria-label="Toggle language"
           >
-            <span className={lang === "EN" ? "text-primary-hi" : ""}>EN</span>
-            <span>/</span>
-            <span className={lang === "FR" ? "text-primary-hi" : ""}>FR</span>
+            <span
+              className={`px-2 py-1 text-[9px] tracking-[0.22em] uppercase transition-colors ${
+                lang === "EN"
+                  ? "bg-foreground text-background"
+                  : "text-foreground/60"
+              }`}
+            >
+              EN
+            </span>
+            <span
+              className={`px-2 py-1 text-[9px] tracking-[0.22em] uppercase transition-colors border-l border-foreground/70 ${
+                lang === "FR"
+                  ? "bg-foreground text-background"
+                  : "text-foreground/60"
+              }`}
+            >
+              FR
+            </span>
           </button>
         </div>
         <button
