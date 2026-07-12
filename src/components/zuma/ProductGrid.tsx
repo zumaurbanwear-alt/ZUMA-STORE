@@ -68,16 +68,32 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
   );
 };
 
+const UndocumentedCard = () => (
+  <div className="block" style={{ background: "hsl(var(--card))" }}>
+    <div className="relative aspect-[3/4] overflow-hidden bg-background flex items-center justify-center">
+      <span className="text-muted-foreground/30 text-4xl font-display">?</span>
+    </div>
+    <div className="px-4 py-3 flex flex-col gap-1 border-t border-border">
+      <h3 className="font-display text-base md:text-lg tracking-[0.18em] text-muted-foreground">
+        Undocumented Entry
+      </h3>
+      <span className="text-[9px] tracking-[0.18em] text-muted-foreground">Incoming...</span>
+    </div>
+  </div>
+);
+
 export const ProductGrid = ({
   products,
   loading,
   showFilters = true,
   limit,
+  showUndocumented = false,
 }: {
   products: DbProduct[];
   loading?: boolean;
   showFilters?: boolean;
   limit?: number;
+  showUndocumented?: boolean;
 }) => {
   const [cat, setCat] = useState("All");
   const categories = useMemo(() => {
@@ -119,6 +135,12 @@ export const ProductGrid = ({
       )}
       <div className="grid grid-cols-2 gap-4 max-w-[600px]">
         {filtered.map(p => <ProductCard key={p.id} p={p} />)}
+        {showUndocumented && (
+          <>
+            <UndocumentedCard />
+            <UndocumentedCard />
+          </>
+        )}
       </div>
     </div>
   );
