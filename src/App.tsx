@@ -14,7 +14,7 @@ import { ScrollToHash } from "./components/zuma/ScrollToHash.tsx";
 // page actually being visited, instead of the whole site (Admin included).
 const Index = lazy(() => import("./pages/Index.tsx"));
 const Shop = lazy(() => import("./pages/Shop.tsx"));
-const Product = lazy(() => import("./pages/Product.tsx"));
+const Product = lazy(() => import("./pages/Product.preload.ts").then((m) => m.preloadProductPage()));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Auth = lazy(() => import("./pages/Auth.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
