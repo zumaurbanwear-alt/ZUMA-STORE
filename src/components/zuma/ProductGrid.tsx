@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { resolveImage, type DbProduct } from "@/hooks/useProducts";
+import { useQueryClient } from "@tanstack/react-query";
+import { resolveImage, prefetchProductImages, type DbProduct } from "@/hooks/useProducts";
+import { preloadProductPage } from "@/pages/Product.preload";
 import { useLang } from "@/context/LanguageContext";
 
 const NEW_THRESHOLD_DAYS = 14;
@@ -28,8 +30,19 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
   const badgeFor = useBadgeFor();
   const badge = badgeFor(p);
   const soldOut = p.stock === 0;
+  const queryClient = useQueryClient();
+  const warm = () => {
+    preloadProductPage();
+    prefetchProductImages(queryClient, p.id);
+  };
   return (
-    <Link to={`/product/${p.slug}`} className="group block hover:bg-secondary transition-colors" style={{ background: "hsl(var(--card))" }}>
+    <Link
+      to={`/product/${p.slug}`}
+      onMouseEnter={warm}
+      onTouchStart={warm}
+      className="group block hover:bg-secondary transition-colors"
+      style={{ background: "hsl(var(--card))" }}
+    >
       <div className="relative aspect-[3/4] overflow-hidden bg-background">
         <img
           src={resolveImage(p)}
