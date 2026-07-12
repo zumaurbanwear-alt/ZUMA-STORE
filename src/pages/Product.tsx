@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { resolveImage, useProducts, useProductImages } from "@/hooks/useProducts";
+import { resolveImage, transformImage, useProducts, useProductImages } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/zuma/ProductGrid";
+import { ProductImg } from "@/components/zuma/ProductImg";
 import { SiteLayout, WHATSAPP_NUMBER } from "@/components/zuma/SiteLayout";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -70,7 +71,7 @@ const Product = () => {
   useEffect(() => {
     images.forEach(img => {
       const image = new Image();
-      image.src = img.url;
+      image.src = transformImage(img.url, 1000);
     });
   }, [images]);
 
@@ -150,9 +151,12 @@ const Product = () => {
           <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-stretch">
             <div className="relative md:h-full">
               <div className="relative border border-border w-full aspect-[4/5] md:aspect-auto md:h-full overflow-hidden">
-                <img
+                <ProductImg
                   src={currentImage}
+                  width={1000}
                   alt={product.name}
+                  loading="eager"
+                  fetchPriority="high"
                   className={`w-full h-full object-cover transition-opacity duration-300 ${soldOut ? "opacity-40 grayscale" : ""}`}
                 />
                 {carouselImages.length > 1 && (
@@ -181,7 +185,7 @@ const Product = () => {
                       className={`border aspect-square w-16 overflow-hidden transition-all ${slide === i ? "border-foreground" : "border-border opacity-50"}`}
                       style={{ background: "hsl(var(--card))" }}
                     >
-                      <img src={url} alt={`${product.name} — view ${i + 1}`} className="w-full h-full object-cover" />
+                      <ProductImg src={url} width={128} alt={`${product.name} — view ${i + 1}`} className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
