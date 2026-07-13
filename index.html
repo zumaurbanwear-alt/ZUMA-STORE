@@ -66,15 +66,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-  const hide = () => {
-    const badge = document.querySelector('[data-lovable]') || 
-                  document.querySelector('iframe[src*="lovable"]') ||
-                  document.querySelector('div[id*="lovable"]');
-    if (badge) badge.style.display = 'none';
-  };
-  const id = setInterval(hide, 500);
-  setTimeout(() => clearInterval(id), 15000);
-</script>
   </body>
 </html>
