@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { resolveImage, transformImage, useProducts, useProductImages } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/zuma/ProductGrid";
 import { ProductImg } from "@/components/zuma/ProductImg";
+import { ProductDetailSkeleton } from "@/components/zuma/ProductDetailSkeleton";
 import { SiteLayout, WHATSAPP_NUMBER } from "@/components/zuma/SiteLayout";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -107,9 +108,7 @@ const Product = () => {
   if (loading) {
     return (
       <SiteLayout>
-        <div className="pt-40 pb-20 px-6 text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">
-          {t("loadingProduct")}
-        </div>
+        <ProductDetailSkeleton />
       </SiteLayout>
     );
   }
@@ -142,7 +141,7 @@ const Product = () => {
       <div style={{ paddingTop: "120px", paddingBottom: "80px" }} className="px-6 md:px-10 flex-1">
         <div className="max-w-[1200px] mx-auto">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate(-1)}
             className="flex items-center gap-1 text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi transition-colors mb-8"
           >
             <ChevronLeft className="w-3.5 h-3.5" /> {t("back")}
