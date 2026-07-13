@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { resolveImage, prefetchProductImages, type DbProduct } from "@/hooks/useProducts";
 import { ProductImg } from "@/components/zuma/ProductImg";
+import { Skeleton } from "@/components/zuma/Skeleton";
 import { preloadProductPage } from "@/pages/Product.preload";
 import { useLang } from "@/context/LanguageContext";
 
@@ -75,6 +76,25 @@ export const ProductCard = ({ p, priority = false }: { p: DbProduct; priority?: 
   );
 };
 
+// Mirrors ProductCard's exact structure — same aspect-[3/4] image area,
+// same two-line text block below — so the grid never jumps or reflows
+// once real products replace these placeholders.
+const ProductCardSkeleton = () => (
+  <div style={{ background: "hsl(var(--card))" }}>
+    <Skeleton className="aspect-[3/4] w-full" />
+    <div className="px-4 py-3 flex flex-col gap-2 border-t border-border">
+      <Skeleton className="h-3.5 w-3/4" />
+      <Skeleton className="h-2.5 w-1/3" />
+    </div>
+  </div>
+);
+
+const ProductGridSkeleton = ({ count }: { count: number }) => (
+  <div className="grid grid-cols-2 gap-4 max-w-[600px]">
+    {Array.from({ length: count }).map((_, i) => <ProductCardSkeleton key={i} />)}
+  </div>
+);
+
 export const ProductGrid = ({
   products,
   loading,
@@ -120,13 +140,15 @@ export const ProductGrid = ({
           ))}
         </div>
       )}
-      {loading && <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">{t("loading")}</p>}
+      {loading && <ProductGridSkeleton count={limit ?? 8} />}
       {!loading && filtered.length === 0 && (
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">{t("noProducts")}</p>
       )}
-      <div className="grid grid-cols-2 gap-4 max-w-[600px]">
-        {filtered.map((p, i) => <ProductCard key={p.id} p={p} priority={i < EAGER_LOAD_COUNT} />)}
-      </div>
+      {!loading && filtered.length > 0 && (
+        <div className="grid grid-cols-2 gap-4 max-w-[600px]">
+          {filtered.map((p, i) => <ProductCard key={p.id} p={p} priority={i < EAGER_LOAD_COUNT} />)}
+        </div>
+      )}
     </div>
   );
 };
