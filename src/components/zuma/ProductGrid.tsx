@@ -6,6 +6,12 @@ import { ProductImg } from "@/components/zuma/ProductImg";
 import { preloadProductPage } from "@/pages/Product.preload";
 import { useLang } from "@/context/LanguageContext";
 
+// Cards within this index don't need to scroll into view — they're on
+// screen the moment the page loads, so they should never be held back by
+// loading="lazy" (which delays the fetch behind a viewport-proximity
+// check the browser has to compute first).
+const EAGER_LOAD_COUNT = 4;
+
 const NEW_THRESHOLD_DAYS = 14;
 
 const useBadgeFor = () => {
@@ -27,7 +33,7 @@ const useBadgeFor = () => {
   };
 };
 
-export const ProductCard = ({ p }: { p: DbProduct }) => {
+export const ProductCard = ({ p, priority = false }: { p: DbProduct; priority?: boolean }) => {
   const badgeFor = useBadgeFor();
   const badge = badgeFor(p);
   const soldOut = p.stock === 0;
@@ -49,7 +55,8 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
           src={resolveImage(p)}
           width={600}
           alt={p.name}
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
           className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-[1.03] ${soldOut ? "opacity-40 grayscale" : ""}`}
         />
         {badge && (
@@ -68,32 +75,16 @@ export const ProductCard = ({ p }: { p: DbProduct }) => {
   );
 };
 
-const UndocumentedCard = () => (
-  <div className="block" style={{ background: "hsl(var(--card))" }}>
-    <div className="relative aspect-[3/4] overflow-hidden bg-background flex items-center justify-center">
-      <span className="text-muted-foreground/30 text-4xl font-display">?</span>
-    </div>
-    <div className="px-4 py-3 flex flex-col gap-1 border-t border-border">
-      <h3 className="font-display text-base md:text-lg tracking-[0.18em] text-muted-foreground">
-        Undocumented Entry
-      </h3>
-      <span className="text-[9px] tracking-[0.18em] text-muted-foreground">Incoming...</span>
-    </div>
-  </div>
-);
-
 export const ProductGrid = ({
   products,
   loading,
   showFilters = true,
   limit,
-  showUndocumented = false,
 }: {
   products: DbProduct[];
   loading?: boolean;
   showFilters?: boolean;
   limit?: number;
-  showUndocumented?: boolean;
 }) => {
   const [cat, setCat] = useState("All");
   const categories = useMemo(() => {
@@ -134,13 +125,7 @@ export const ProductGrid = ({
         <p className="text-center text-xs tracking-[0.2em] uppercase text-muted-foreground">{t("noProducts")}</p>
       )}
       <div className="grid grid-cols-2 gap-4 max-w-[600px]">
-        {filtered.map(p => <ProductCard key={p.id} p={p} />)}
-        {showUndocumented && (
-          <>
-            <UndocumentedCard />
-            <UndocumentedCard />
-          </>
-        )}
+        {filtered.map((p, i) => <ProductCard key={p.id} p={p} priority={i < EAGER_LOAD_COUNT} />)}
       </div>
     </div>
   );
