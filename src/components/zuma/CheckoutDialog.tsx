@@ -29,6 +29,16 @@ export const CheckoutDialog = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Honeypot: a field real users never see or fill, but naive bots that
+  // auto-fill every input on the page do. Also record when the form
+  // opened — a submission arriving in under 2s almost certainly wasn't
+  // typed by a human. Both cases fail silently (fake success) rather than
+  // showing an error, so scripted submitters don't learn what tripped it.
+  const [hp, setHp] = useState("");
+  const openedAtRef = useRef(0);
+  useEffect(() => {
+    if (open) openedAtRef.current = Date.now();
+  }, [open]);
 
   if (!open) return null;
   const subtotal = cart.reduce((s, i) => s + i.qty * Number(i.price), 0);
@@ -37,6 +47,13 @@ export const CheckoutDialog = ({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (hp.trim() !== "" || Date.now() - openedAtRef.current < 2000) {
+      // Looks like a bot — pretend it worked and stop, no request sent.
+      setDone(true);
+      return;
+    }
+
     const r = schema.safeParse(form);
     if (!r.success) {
       const errs: Record<string, string> = {};
@@ -129,6 +146,18 @@ export const CheckoutDialog = ({
           </div>
         ) : (
           <form onSubmit={submit} className="p-6 md:p-10 flex flex-col gap-5">
+            {/* Honeypot — invisible to real users, left for bots that
+                auto-fill every field. Never becomes visible/focusable. */}
+            <input
+              type="text"
+              name="website"
+              value={hp}
+              onChange={e => setHp(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }}
+            />
             <header>
               <h2 className="font-display text-xl tracking-[0.25em] mb-2">{t("checkout").toUpperCase()}</h2>
               <p className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("cashOnly")}</p>
