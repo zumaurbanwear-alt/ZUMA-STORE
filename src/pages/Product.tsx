@@ -4,7 +4,8 @@ import { resolveImage, transformImage, useProducts, useProductImages } from "@/h
 import { ProductCard } from "@/components/zuma/ProductGrid";
 import { ProductImg } from "@/components/zuma/ProductImg";
 import { ProductDetailSkeleton } from "@/components/zuma/ProductDetailSkeleton";
-import { SiteLayout, WHATSAPP_NUMBER } from "@/components/zuma/SiteLayout";
+import { SiteLayout } from "@/components/zuma/SiteLayout";
+import { WHATSAPP_NUMBER } from "@/lib/contactInfo";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";

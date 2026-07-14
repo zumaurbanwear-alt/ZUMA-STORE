@@ -1,8 +1,8 @@
 import { X, Minus, Plus } from "lucide-react";
-import { resolveImage, type DbProduct } from "@/hooks/useProducts";
+import { resolveImage } from "@/hooks/useProducts";
 import { ProductImg } from "@/components/zuma/ProductImg";
 import { useLang } from "@/context/LanguageContext";
-export type CartItem = DbProduct & { cartKey?: string; qty: number; size?: string; color?: string };
+import type { CartItem } from "@/context/CartContext";
 export const CartDrawer = ({
   open, onClose, cart, updateQty, onCheckout, whatsappLink,
 }: {

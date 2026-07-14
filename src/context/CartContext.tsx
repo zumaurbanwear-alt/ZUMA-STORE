@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import type { DbProduct } from "@/hooks/useProducts";
-import type { CartItem } from "@/components/zuma/CartDrawer";
+
+export type CartItem = DbProduct & { cartKey?: string; qty: number; size?: string; color?: string };
 
 type Variant = { size?: string; color?: string };
 

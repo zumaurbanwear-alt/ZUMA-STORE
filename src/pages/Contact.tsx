@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { InfoPage } from "@/components/zuma/InfoPage";
 import { useLang } from "@/context/LanguageContext";
-import { WHATSAPP_LINK } from "@/components/zuma/SiteLayout";
-import { CONTACT_EMAIL, INSTAGRAM_HANDLE, INSTAGRAM_URL } from "@/lib/contactInfo";
+import { CONTACT_EMAIL, INSTAGRAM_HANDLE, INSTAGRAM_URL, WHATSAPP_LINK } from "@/lib/contactInfo";
 
 const copy = {
   EN: {

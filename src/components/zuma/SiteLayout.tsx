@@ -5,9 +5,7 @@ import { CartDrawer } from "@/components/zuma/CartDrawer";
 import { CheckoutDialog } from "@/components/zuma/CheckoutDialog";
 import { EmailGate } from "@/components/zuma/EmailGate";
 import { useCart } from "@/context/CartContext";
-
-export const WHATSAPP_NUMBER = "212600365283";
-export const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
+import { WHATSAPP_NUMBER, WHATSAPP_LINK } from "@/lib/contactInfo";
 
 const STORAGE_KEY = "zuma_email_gate_passed";
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { X, Check, ChevronDown } from "lucide-react";
-import type { CartItem } from "@/components/zuma/CartDrawer";
+import type { CartItem } from "@/context/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLang } from "@/context/LanguageContext";
