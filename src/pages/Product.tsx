@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { resolveImage, transformImage, useProducts, useProductImages } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/zuma/ProductGrid";
 import { ProductImg } from "@/components/zuma/ProductImg";
@@ -23,6 +23,7 @@ const Product = () => {
   const { slug } = useParams<{ slug: string }>();
   const { t } = useLang();
   const navigate = useNavigate();
+  const location = useLocation();
   const { products, loading } = useProducts();
   const product = useMemo(() => products.find(p => p.slug === slug), [products, slug]);
   const { images } = useProductImages(product?.id);
@@ -142,7 +143,10 @@ const Product = () => {
       <div style={{ paddingTop: "120px", paddingBottom: "80px" }} className="px-6 md:px-10 flex-1">
         <div className="max-w-[1200px] mx-auto">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (location.key === "default") navigate("/shop");
+              else navigate(-1);
+            }}
             className="flex items-center gap-1 text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi transition-colors mb-8"
           >
             <ChevronLeft className="w-3.5 h-3.5" /> {t("back")}

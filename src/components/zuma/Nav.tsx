@@ -8,11 +8,11 @@ export const Nav = ({ cartCount, onCartClick }: { cartCount: number; onCartClick
   const { playing, toggle } = useAudio();
   const linkCls = "text-[8px] tracking-[0.22em] uppercase text-foreground hover:text-primary-dim transition-colors";
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[100] flex justify-between items-start px-6 md:px-10 py-7">
-      <Link to="/" className="font-display text-lg tracking-[0.3em] text-foreground">
+    <nav className="fixed top-0 left-0 right-0 z-[100] flex justify-between items-start px-6 md:px-10 py-7 pointer-events-none">
+      <Link to="/" className="font-display text-lg tracking-[0.3em] text-foreground pointer-events-auto">
         ZÜMA
       </Link>
-      <div className="flex items-center gap-4 md:gap-6">
+      <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
         <div className="flex flex-col items-end gap-1">
           <Link to="/shop" className={linkCls}>{t("shop")}</Link>
           <a href="https://zumaurbanwear-alt.github.io/ZUMA-INDEX/" target="_blank" rel="noreferrer" className={linkCls}>{t("indexNav")}</a>
