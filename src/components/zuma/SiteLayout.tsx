@@ -2,7 +2,7 @@ import { useState, ReactNode } from "react";
 import { Nav } from "@/components/zuma/Nav";
 import { Footer } from "@/components/zuma/Footer";
 import { CartDrawer } from "@/components/zuma/CartDrawer";
-import { CheckoutDialog } from "@/components/zuma/CheckoutDialog";
+import { CheckoutDialog } from "@/components/zuma/checkout/CheckoutDialog";
 import { EmailGate } from "@/components/zuma/EmailGate";
 import { useCart } from "@/context/CartContext";
 import { WHATSAPP_NUMBER, WHATSAPP_LINK } from "@/lib/contactInfo";
