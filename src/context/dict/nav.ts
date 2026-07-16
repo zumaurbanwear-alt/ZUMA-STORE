@@ -1,0 +1,26 @@
+export const nav = {
+  EN: {
+    shop: "Shop",
+    indexNav: "Index",
+    archive: "Archive",
+    instagram: "Instagram",
+    faqNav: "FAQ",
+    shippingNav: "Shipping",
+    returnsNav: "Returns",
+    privacyNav: "Privacy",
+    termsNav: "Terms",
+    contactNav: "Contact",
+  },
+  FR: {
+    shop: "Boutique",
+    indexNav: "Index",
+    archive: "Archive",
+    instagram: "Instagram",
+    faqNav: "FAQ",
+    shippingNav: "Livraison",
+    returnsNav: "Retours",
+    privacyNav: "Confidentialité",
+    termsNav: "CGV",
+    contactNav: "Contact",
+  },
+} as const;
