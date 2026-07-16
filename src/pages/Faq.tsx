@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { InfoPage, FaqItem } from "@/components/zuma/InfoPage";
+import { InfoPage, FaqItem } from "@/components/zuma/common/InfoPage";
 import { useLang } from "@/context/LanguageContext";
 import { INSTAGRAM_HANDLE, CONTACT_EMAIL } from "@/lib/contactInfo";
 

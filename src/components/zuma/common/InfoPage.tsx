@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { SiteLayout } from "@/components/zuma/SiteLayout";
+import { SiteLayout } from "@/components/zuma/layout/SiteLayout";
 
 /**
  * Shared template for all informational/legal pages (FAQ, Shipping, Returns,

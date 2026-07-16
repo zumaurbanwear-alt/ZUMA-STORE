@@ -1,6 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
-import { SiteLayout } from "@/components/zuma/SiteLayout";
+import { SiteLayout } from "@/components/zuma/layout/SiteLayout";
 import { useLang } from "@/context/LanguageContext";
 
 const NotFound = () => {

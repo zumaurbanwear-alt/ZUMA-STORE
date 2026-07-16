@@ -5,9 +5,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AudioProvider } from "@/context/AudioContext";
-import { Loader } from "@/components/zuma/Loader";
-import { ErrorBoundary } from "@/components/zuma/ErrorBoundary";
-import { ScrollToHash } from "./components/zuma/ScrollToHash";
+import { Loader } from "@/components/zuma/common/Loader";
+import { ErrorBoundary } from "@/components/zuma/common/ErrorBoundary";
+import { ScrollToHash } from "./components/zuma/common/ScrollToHash";
 import Index from "./pages/Index";
 
 // Index is the landing page most visitors hit first, so it ships in the

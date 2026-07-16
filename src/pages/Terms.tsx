@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { InfoPage, InfoSection } from "@/components/zuma/InfoPage";
+import { InfoPage, InfoSection } from "@/components/zuma/common/InfoPage";
 import { useLang } from "@/context/LanguageContext";
 import { CONTACT_EMAIL } from "@/lib/contactInfo";
 

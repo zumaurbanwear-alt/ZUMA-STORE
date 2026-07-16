@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { TextureBand } from "@/components/zuma/TextureBand";
-import { ProductGrid } from "@/components/zuma/ProductGrid";
-import { SiteLayout } from "@/components/zuma/SiteLayout";
+import { TextureBand } from "@/components/zuma/layout/TextureBand";
+import { ProductGrid } from "@/components/zuma/product/ProductGrid";
+import { SiteLayout } from "@/components/zuma/layout/SiteLayout";
 import { useProducts } from "@/hooks/useProducts";
 
 const Shop = () => {

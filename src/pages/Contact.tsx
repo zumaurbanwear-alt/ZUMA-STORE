@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { InfoPage } from "@/components/zuma/InfoPage";
+import { InfoPage } from "@/components/zuma/common/InfoPage";
 import { useLang } from "@/context/LanguageContext";
 import { CONTACT_EMAIL, INSTAGRAM_HANDLE, INSTAGRAM_URL, WHATSAPP_LINK } from "@/lib/contactInfo";
 

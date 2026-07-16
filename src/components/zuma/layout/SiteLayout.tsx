@@ -1,9 +1,9 @@
 import { useState, ReactNode } from "react";
-import { Nav } from "@/components/zuma/Nav";
-import { Footer } from "@/components/zuma/Footer";
-import { CartDrawer } from "@/components/zuma/CartDrawer";
+import { Nav } from "@/components/zuma/layout/Nav";
+import { Footer } from "@/components/zuma/layout/Footer";
+import { CartDrawer } from "@/components/zuma/cart/CartDrawer";
 import { CheckoutDialog } from "@/components/zuma/checkout/CheckoutDialog";
-import { EmailGate } from "@/components/zuma/EmailGate";
+import { EmailGate } from "@/components/zuma/marketing/EmailGate";
 import { useCart } from "@/context/CartContext";
 import { WHATSAPP_NUMBER, WHATSAPP_LINK } from "@/lib/contactInfo";
 

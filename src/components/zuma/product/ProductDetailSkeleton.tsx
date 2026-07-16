@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/zuma/Skeleton";
+import { Skeleton } from "@/components/zuma/common/Skeleton";
 
 // Mirrors Product.tsx's real layout section by section — image + thumbnail
 // strip on one side, title/price/description/size/color/CTA stack on the

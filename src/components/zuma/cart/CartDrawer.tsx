@@ -1,6 +1,6 @@
 import { X, Minus, Plus } from "lucide-react";
 import { resolveImage } from "@/hooks/useProducts";
-import { ProductImg } from "@/components/zuma/ProductImg";
+import { ProductImg } from "@/components/zuma/product/ProductImg";
 import { useLang } from "@/context/LanguageContext";
 import type { CartItem } from "@/context/CartContext";
 export const CartDrawer = ({

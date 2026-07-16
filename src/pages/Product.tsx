@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { resolveImage, transformImage, useProducts, useProductImages } from "@/hooks/useProducts";
-import { ProductCard } from "@/components/zuma/ProductGrid";
-import { ProductImg } from "@/components/zuma/ProductImg";
-import { ProductDetailSkeleton } from "@/components/zuma/ProductDetailSkeleton";
-import { SiteLayout } from "@/components/zuma/SiteLayout";
+import { ProductCard } from "@/components/zuma/product/ProductGrid";
+import { ProductImg } from "@/components/zuma/product/ProductImg";
+import { ProductDetailSkeleton } from "@/components/zuma/product/ProductDetailSkeleton";
+import { SiteLayout } from "@/components/zuma/layout/SiteLayout";
 import { WHATSAPP_NUMBER } from "@/lib/contactInfo";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";

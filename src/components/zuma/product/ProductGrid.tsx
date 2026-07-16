@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { resolveImage, prefetchProductImages, type DbProduct } from "@/hooks/useProducts";
-import { ProductImg } from "@/components/zuma/ProductImg";
-import { Skeleton } from "@/components/zuma/Skeleton";
+import { ProductImg } from "@/components/zuma/product/ProductImg";
+import { Skeleton } from "@/components/zuma/common/Skeleton";
 import { preloadProductPage } from "@/pages/Product.preload";
 import { useLang } from "@/context/LanguageContext";
 
