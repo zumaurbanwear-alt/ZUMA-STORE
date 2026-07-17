@@ -17,6 +17,12 @@ export type Order = {
   customer_address: string;
   subtotal: number;
   shipping_fee: number;
+  sendit_order_id: string | null;
+  tracking_number: string | null;
+  shipping_provider: string | null;
+  shipping_status: string | null;
+  shipping_created_at: string | null;
+  shipping_label_url: string | null;
   total: number;
   status: string;
   created_at: string;
