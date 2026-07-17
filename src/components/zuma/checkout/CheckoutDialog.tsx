@@ -8,6 +8,7 @@ import { useLang } from "@/context/LanguageContext";
 import { getShippingFee } from "@/lib/shipping";
 import { Field } from "@/components/zuma/checkout/Field";
 import { CitySelect } from "@/components/zuma/checkout/CitySelect";
+import { DistrictSelect } from "@/components/zuma/checkout/DistrictSelect";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name required").max(80),
@@ -212,39 +213,20 @@ const [form, setForm] = useState({
   className="sm:col-span-2"
 />
 
-<select
-  value={form.senditDistrictId ?? ""}
-  onChange={(e) => {
-    const selected = districts.find(
-      (d) => d.district_id === Number(e.target.value)
-    );
-
+<DistrictSelect
+  label="District"
+  v={form.senditDistrictId}
+  districts={districts}
+  set={(id, name) =>
     setForm({
       ...form,
-      district: selected?.name ?? "",
-      senditDistrictId: selected
-        ? Number(selected.district_id)
-        : null,
-    });
-  }}
-  disabled={!districts.length}
-  className="sm:col-span-2 w-full h-12 border border-border bg-background px-3 text-[10px] tracking-[0.15em] uppercase text-foreground"
->
-  <option value="">
-    {districts.length
-      ? "Select district"
-      : "Select city first"}
-  </option>
-
-  {districts.map((d) => (
-    <option
-      key={d.district_id}
-      value={d.district_id}
-    >
-      {d.name}
-    </option>
-  ))}
-</select>
+      senditDistrictId: id,
+      district: name,
+    })
+  }
+  placeholder="Select district"
+  className="sm:col-span-2"
+/>
             </div>
 
             <div className="border border-border p-4 bg-background/50">
