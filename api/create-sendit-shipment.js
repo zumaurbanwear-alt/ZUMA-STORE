@@ -3,35 +3,44 @@ import { createClient } from "@supabase/supabase-js";
 function buildSenditPayload(order, districtId) {
   return {
     pickup_district_id: 46,
-    district_id: districtId,
+
+    district_id: Number(districtId),
 
     name: order.customer_name,
-    amount: order.total,
+
+    amount: Number(order.total),
 
     address: order.customer_address,
-    phone: order.customer_phone,
+
+    phone: String(order.customer_phone)
+      .replace(/\s+/g, "")
+      .replace(/^(\+212|212)/, "0"),
 
     comment: order.notes ?? "",
-    reference: order.display_id,
+
+    reference: String(order.display_id),
 
     allow_open: 1,
+
     allow_try: 1,
 
     products_from_stock: 0,
 
-    products: [
+    products: JSON.stringify([
       {
-        reference: order.display_id,
+        reference: String(order.display_id),
         name: "ZÜMA Order",
         quantity: 1,
       },
-    ],
+    ]),
 
     packaging_id: 1,
+
     option_exchange: 0,
+
+    delivery_exchange_id: "",
   };
 }
-
 
 function parseSenditResponse(json) {
   const data = json.data ?? json;
@@ -215,6 +224,16 @@ if (!loginResponse.ok || !loginJson.success) {
 
 const senditToken = loginJson.data.token;
 
+const payload = buildSenditPayload(
+  order,
+  district.district_id
+);
+
+console.log(
+  "SENDIT PAYLOAD:",
+  JSON.stringify(payload, null, 2)
+);
+    
 const senditResponse = await fetch(
   `${process.env.SENDIT_API_URL}/deliveries`,
   {
@@ -223,12 +242,7 @@ const senditResponse = await fetch(
       "Content-Type": "application/json",
       Authorization: `Bearer ${senditToken}`,
     },
-    body: JSON.stringify(
-      buildSenditPayload(
-        order,
-        district.district_id
-      )
-    ),
+    body: JSON.stringify(payload),
   }
 );
 
