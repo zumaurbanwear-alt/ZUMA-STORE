@@ -283,7 +283,9 @@ console.log(
 console.log("PARSED");
 console.log(parsed);
 
-
+console.log("ORDER ID FROM REQUEST:", orderId);
+console.log("ORDER ID FROM DB:", order.id);
+    
     const {
       error: updateError,
     } =
