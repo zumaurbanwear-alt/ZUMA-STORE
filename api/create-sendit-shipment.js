@@ -174,8 +174,20 @@ const {
 
 
 
-    const senditJson =
-      await senditResponse.json();
+    const senditText = await senditResponse.text();
+
+console.log("SENDIT STATUS:", senditResponse.status);
+console.log("SENDIT BODY:", senditText);
+
+let senditJson;
+
+try {
+  senditJson = JSON.parse(senditText);
+} catch {
+  senditJson = {
+    raw: senditText
+  };
+}
 
 
 
