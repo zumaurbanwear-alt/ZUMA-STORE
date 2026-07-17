@@ -245,9 +245,9 @@ const senditResponse = await fetch(
 
 
     console.log(
-      "SENDIT BODY:",
-      senditText
-    );
+  "SENDIT BODY:",
+  JSON.stringify(senditJson, null, 2)
+);
 
 
 
