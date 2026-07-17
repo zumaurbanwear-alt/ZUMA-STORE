@@ -188,27 +188,49 @@ export default async function handler(req, res) {
 
 
 
-    const senditResponse =
-      await fetch(
-        `${process.env.SENDIT_API_URL}/deliveries`,
-        {
-          method: "POST",
+    const loginResponse = await fetch(
+  `${process.env.SENDIT_API_URL}/login`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      public_key: process.env.SENDIT_PUBLIC_KEY,
+      secret_key: process.env.SENDIT_SECRET_KEY,
+    }),
+  }
+);
 
-          headers: {
-            "Content-Type": "application/json",
+const loginJson = await loginResponse.json();
 
-            Authorization:
-              `Bearer ${process.env.SENDIT_API_KEY}`,
-          },
+if (!loginResponse.ok || !loginJson.success) {
+  console.error("SENDIT LOGIN:", loginJson);
 
-          body: JSON.stringify(
-            buildSenditPayload(
-              order,
-              district.district_id
-            )
-          ),
-        }
-      );
+  return res.status(500).json({
+    error: "Impossible de se connecter à Sendit",
+    details: loginJson,
+  });
+}
+
+const senditToken = loginJson.data.token;
+
+const senditResponse = await fetch(
+  `${process.env.SENDIT_API_URL}/deliveries`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${senditToken}`,
+    },
+    body: JSON.stringify(
+      buildSenditPayload(
+        order,
+        district.district_id
+      )
+    ),
+  }
+);
 
 
 
