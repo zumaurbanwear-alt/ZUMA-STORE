@@ -320,7 +320,8 @@ console.log(parsed);
           orderId
         );
 
-
+console.log("UPDATE ERROR");
+console.log(updateError);
 
 
 
