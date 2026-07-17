@@ -27,8 +27,17 @@ export const CheckoutDialog = ({
   onSuccess: () => void;
 }) => {
   const { t } = useLang();
-  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "" });
+const [form, setForm] = useState({
+  name: "",
+  email: "",
+  phone: "",
+  address: "",
+  city: "",
+  district: "",
+  senditDistrictId: null as number | null,
+});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [districts, setDistricts] = useState<any[]>([]);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
   // Honeypot: a field real users never see or fill, but naive bots that
@@ -41,6 +50,30 @@ export const CheckoutDialog = ({
   useEffect(() => {
     if (open) openedAtRef.current = Date.now();
   }, [open]);
+  useEffect(() => {
+  async function loadDistricts() {
+    if (!form.city) {
+      setDistricts([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("sendit_districts")
+      .select("district_id, name, ville")
+      .eq("ville", form.city)
+      .order("name");
+
+    if (error) {
+      console.error("District loading error:", error);
+      setDistricts([]);
+      return;
+    }
+
+    setDistricts(data ?? []);
+  }
+
+  loadDistricts();
+}, [form.city]);
 
   if (!open) return null;
   const subtotal = cart.reduce((s, i) => s + i.qty * Number(i.price), 0);
@@ -171,13 +204,47 @@ export const CheckoutDialog = ({
               <Field label={t("email")} type="email" v={form.email} set={v => setForm({ ...form, email: v })} err={errors.email} className="sm:col-span-2" />
               <Field label={t("address")} v={form.address} set={v => setForm({ ...form, address: v })} err={errors.address} className="sm:col-span-2" />
               <CitySelect
-                label={t("city")}
-                v={form.city}
-                set={v => setForm({ ...form, city: v })}
-                err={errors.city}
-                placeholder={t("selectCity")}
-                className="sm:col-span-2"
-              />
+  label={t("city")}
+  v={form.city}
+  set={v => setForm({ ...form, city: v })}
+  err={errors.city}
+  placeholder={t("selectCity")}
+  className="sm:col-span-2"
+/>
+
+<select
+  value={form.senditDistrictId ?? ""}
+  onChange={(e) => {
+    const selected = districts.find(
+      (d) => d.district_id === Number(e.target.value)
+    );
+
+    setForm({
+      ...form,
+      district: selected?.name ?? "",
+      senditDistrictId: selected
+        ? Number(selected.district_id)
+        : null,
+    });
+  }}
+  disabled={!districts.length}
+  className="sm:col-span-2 border border-border bg-background px-3 py-3 text-sm"
+>
+  <option value="">
+    {districts.length
+      ? "Select district"
+      : "Select city first"}
+  </option>
+
+  {districts.map((d) => (
+    <option
+      key={d.district_id}
+      value={d.district_id}
+    >
+      {d.name}
+    </option>
+  ))}
+</select>
             </div>
 
             <div className="border border-border p-4 bg-background/50">
