@@ -1,19 +1,63 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
 
 export const AdminOrdersPanel = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [unified, setUnified] = useState<LedgerRow[]>([]);
+  const [creatingShipmentFor, setCreatingShipmentFor] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadOrders = () => {
     supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }).limit(20)
       .then(({ data }) => setOrders((data as Order[]) ?? []));
     // "admin_orders_full" as any: hand-written view not present in the generated
     // Database types — the response itself is fully typed via LedgerRow above.
     supabase.from("admin_orders_full" as any).select("*").limit(200)
       .then((res) => setUnified((res.data as LedgerRow[]) ?? []));
+  };
+
+  useEffect(() => {
+    loadOrders();
   }, []);
+
+  const handleCreateShipment = async (order: Order) => {
+    const confirmed = window.confirm(
+      `Créer le colis Sendit pour la commande #${order.display_id} ?\n\n` +
+      `${order.customer_name}\n${order.customer_phone}\n${order.customer_address}, ${order.customer_city}\n\n` +
+      `Vérifie l'adresse, le téléphone, la taille et qu'il ne s'agit pas d'un test avant de confirmer.`
+    );
+    if (!confirmed) return;
+
+    setCreatingShipmentFor(order.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Session expirée, reconnecte-toi."); return; }
+
+      const res = await fetch("/api/create-sendit-shipment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        toast.error(body.error ?? "Échec de la création du colis");
+        return;
+      }
+
+      toast.success(`Colis créé — tracking ${body.tracking_number ?? "—"}`);
+      loadOrders();
+    } catch (err) {
+      console.error(err);
+      toast.error("Impossible de contacter le serveur");
+    } finally {
+      setCreatingShipmentFor(null);
+    }
+  };
 
   return (
     <>
@@ -38,6 +82,19 @@ export const AdminOrdersPanel = () => {
                   {o.subtotal} + {o.shipping_fee} delivery
                 </div>
                 <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">{o.status}</div>
+                {o.tracking_number ? (
+                  <div className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground mt-1">
+                    Sendit: {o.tracking_number}
+                  </div>
+                ) : o.status === "pending" ? (
+                  <button
+                    onClick={() => handleCreateShipment(o)}
+                    disabled={creatingShipmentFor === o.id}
+                    className="mt-2 px-3 py-1.5 border border-primary text-primary text-[9px] tracking-[0.2em] uppercase hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
+                  >
+                    {creatingShipmentFor === o.id ? "Création…" : "Créer le colis"}
+                  </button>
+                ) : null}
               </div>
             </div>
           ))}
