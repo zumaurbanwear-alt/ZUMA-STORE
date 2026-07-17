@@ -57,20 +57,21 @@ export const DistrictSelect = ({
 
           }}
 
-          className="
-            w-full
-            bg-background
-            border
-            border-border
-            px-3
-            py-2
-            text-[10px]
-            text-foreground
-            focus:border-primary
-            outline-none
-            transition-colors
-            pr-8
-          "
+         className="
+  w-full
+  appearance-none
+  bg-background
+  border
+  border-border
+  px-3
+  py-2
+  text-[10px]
+  text-foreground
+  focus:border-primary
+  outline-none
+  transition-colors
+  pr-8
+"
         >
 
           <option value="">
