@@ -287,41 +287,22 @@ console.log("ORDER ID FROM REQUEST:", orderId);
 console.log("ORDER ID FROM DB:", order.id);
     
     const {
-      error: updateError,
-    } =
-      await supabase
-        .from("orders")
-        .update({
+  data: updatedRows,
+  error: updateError,
+} = await supabase
+  .from("orders")
+  .update({
+    sendit_order_id: parsed.sendit_order_id,
+    tracking_number: parsed.tracking_number,
+    shipping_provider: "sendit",
+    shipping_status: parsed.shipping_status,
+    shipping_created_at: new Date().toISOString(),
+    shipping_label_url: parsed.shipping_label_url,
+  })
+  .eq("id", order.id)
+  .select();
 
-          sendit_order_id:
-            parsed.sendit_order_id,
-
-
-          tracking_number:
-            parsed.tracking_number,
-
-
-          shipping_provider:
-            "sendit",
-
-
-          shipping_status:
-            parsed.shipping_status,
-
-
-          shipping_created_at:
-            new Date().toISOString(),
-
-
-          shipping_label_url:
-            parsed.shipping_label_url,
-
-        })
-        .eq(
-          "id",
-          orderId
-        );
-
+console.log("UPDATED ROWS:", updatedRows);
 console.log("UPDATE ERROR");
 console.log(updateError);
 
