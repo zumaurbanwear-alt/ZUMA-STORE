@@ -234,40 +234,25 @@ const senditResponse = await fetch(
 
 
 
-    const senditText =
-      await senditResponse.text();
+const senditText = await senditResponse.text();
 
+console.log("SENDIT STATUS:", senditResponse.status);
+console.log("SENDIT BODY RAW:", senditText);
 
-    console.log(
-      "SENDIT STATUS:",
-      senditResponse.status
-    );
+let senditJson;
 
+try {
+  senditJson = JSON.parse(senditText);
+} catch {
+  senditJson = {
+    raw: senditText,
+  };
+}
 
-    console.log(
-  "SENDIT BODY:",
+console.log(
+  "SENDIT JSON:",
   JSON.stringify(senditJson, null, 2)
 );
-
-
-
-    let senditJson;
-
-
-    try {
-
-      senditJson =
-        JSON.parse(senditText);
-
-    } catch {
-
-      senditJson = {
-        raw: senditText,
-      };
-
-    }
-
-
 
 
     if (!senditResponse.ok || senditJson.success === false) {
