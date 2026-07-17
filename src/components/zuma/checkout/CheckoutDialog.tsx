@@ -109,6 +109,8 @@ const [form, setForm] = useState({
         customer_phone: form.phone,
         customer_city: form.city,
         customer_address: form.address,
+        sendit_district_id: form.senditDistrictId,
+        sendit_district_name: form.district,
         subtotal,
         shipping_fee: shippingFee,
         payment_method: "cash_on_delivery",
