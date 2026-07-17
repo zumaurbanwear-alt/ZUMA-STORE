@@ -220,13 +220,15 @@ const [form, setForm] = useState({
   label="District"
   v={form.senditDistrictId}
   districts={districts}
-  set={(id, name) =>
+  set={(id, name) => {
+    console.log("PARENT RECEIVED DISTRICT:", id, name);
+
     setForm({
       ...form,
       senditDistrictId: id,
       district: name,
-    })
-  }
+    });
+  }}
   placeholder="Select district"
   className="sm:col-span-2"
 />
