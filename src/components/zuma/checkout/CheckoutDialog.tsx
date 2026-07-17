@@ -101,9 +101,11 @@ const [form, setForm] = useState({
     setBusy(true);
 
     try {
-      console.log("FORM BEFORE INSERT:", form);
-      const orderId = crypto.randomUUID();
-      const { error: orderErr } = await supabase.from("orders").insert({
+  const orderId = crypto.randomUUID();
+
+  console.log("FORM AT SUBMIT:", form);
+
+  const { error: orderErr } = await supabase.from("orders").insert({
         id: orderId,
         customer_name: form.name,
         customer_email: form.email,
