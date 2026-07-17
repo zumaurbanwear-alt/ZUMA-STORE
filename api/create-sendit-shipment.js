@@ -257,22 +257,14 @@ console.log(
 
     if (!senditResponse.ok || senditJson.success === false) {
 
-      console.error(
-        "SENDIT RESPONSE:",
-        senditJson
-      );
+  console.log("====================================");
+  console.log("SENDIT VALIDATION ERROR");
+  console.log(JSON.stringify(senditJson, null, 2));
+  console.log("====================================");
 
+  return res.status(422).json(senditJson);
 
-      return res.status(502).json({
-        error:
-          "Sendit rejected shipment",
-        details:
-          senditJson,
-      });
-
-    }
-
-
+}
 
 
     const parsed =
