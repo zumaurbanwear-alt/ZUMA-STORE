@@ -228,7 +228,7 @@ const [form, setForm] = useState({
     });
   }}
   disabled={!districts.length}
-  className="sm:col-span-2 border border-border bg-background px-3 py-3 text-sm"
+  className="sm:col-span-2 w-full h-12 border border-border bg-background px-3 text-[10px] tracking-[0.15em] uppercase text-foreground"
 >
   <option value="">
     {districts.length
