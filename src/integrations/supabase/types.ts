@@ -100,10 +100,16 @@ export type Database = {
           notes: string | null
           order_number: number
           payment_method: string
+          sendit_order_id: string | null
+          shipping_created_at: string | null
           shipping_fee: number
+          shipping_label_url: string | null
+          shipping_provider: string | null
+          shipping_status: string | null
           status: string
           subtotal: number
           total: number
+          tracking_number: string | null
         }
         Insert: {
           created_at?: string
@@ -117,9 +123,15 @@ export type Database = {
           notes?: string | null
           order_number?: number
           payment_method?: string
+          sendit_order_id?: string | null
+          shipping_created_at?: string | null
           shipping_fee?: number
+          shipping_label_url?: string | null
+          shipping_provider?: string | null
+          shipping_status?: string | null
           status?: string
           subtotal: number
+          tracking_number?: string | null
           // "total" is a DB-generated column (subtotal + shipping_fee) — never insertable.
         }
         Update: {
@@ -134,9 +146,15 @@ export type Database = {
           notes?: string | null
           order_number?: number
           payment_method?: string
+          sendit_order_id?: string | null
+          shipping_created_at?: string | null
           shipping_fee?: number
+          shipping_label_url?: string | null
+          shipping_provider?: string | null
+          shipping_status?: string | null
           status?: string
           subtotal?: number
+          tracking_number?: string | null
           // "total" is a DB-generated column — never updatable directly.
         }
         Relationships: []
