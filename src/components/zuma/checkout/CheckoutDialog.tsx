@@ -104,7 +104,11 @@ const [form, setForm] = useState({
   const orderId = crypto.randomUUID();
 
   console.log("FORM AT SUBMIT:", form);
-
+console.log("FORM AT INSERT:", {
+  city: form.city,
+  district: form.district,
+  senditDistrictId: form.senditDistrictId,
+});
   const { error: orderErr } = await supabase.from("orders").insert({
         id: orderId,
         customer_name: form.name,
