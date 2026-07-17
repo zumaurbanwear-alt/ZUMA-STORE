@@ -6,21 +6,38 @@ import type { Order, OrderItem, LedgerRow } from "@/types/order";
 export const AdminOrdersPanel = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [unified, setUnified] = useState<LedgerRow[]>([]);
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [creatingShipmentFor, setCreatingShipmentFor] = useState<string | null>(null);
+  const [confirmingOrderFor, setConfirmingOrderFor] = useState<string | null>(null);
 
   const loadOrders = async () => {
-    const { data: ordersData } = await supabase
+    const { data: ordersData, error: ordersError } = await supabase
       .from("orders")
-      .select("*, order_items(*)")
+      .select(`
+        *,
+        order_items (*)
+      `)
       .order("created_at", { ascending: false })
       .limit(50);
 
+    if (ordersError) {
+      console.error("Orders loading error:", ordersError);
+      toast.error("Impossible de charger les commandes");
+      return;
+    }
+
+    console.log("ADMIN ORDERS:", ordersData);
+
     setOrders((ordersData as Order[]) ?? []);
 
-    const { data: ledgerData } = await supabase
+    const { data: ledgerData, error: ledgerError } = await supabase
       .from("admin_orders_full" as any)
       .select("*")
-      .limit(300);
+      .limit(500);
+
+    if (ledgerError) {
+      console.error("Ledger loading error:", ledgerError);
+      return;
+    }
 
     setUnified((ledgerData as LedgerRow[]) ?? []);
   };
@@ -29,63 +46,63 @@ export const AdminOrdersPanel = () => {
     loadOrders();
   }, []);
 
-  const confirmOrder = async (order: Order) => {
-    const ok = window.confirm(
-      `Confirmer la commande #${order.display_id} ?\n\n` +
-      `${order.customer_name}\n` +
-      `${order.customer_phone}\n` +
-      `${order.customer_city}`
-    );
+  const handleConfirmOrder = async (order: Order) => {
+    setConfirmingOrderFor(order.id);
 
-    if (!ok) return;
+    try {
+      const { error } = await supabase.rpc("confirm_order", {
+        order_uuid: order.id,
+      });
 
-    setLoadingAction(order.id);
+      if (error) {
+        console.error("Confirm error:", error);
+        toast.error(error.message);
+        return;
+      }
 
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        status: "confirmed",
-      })
-      .eq("id", order.id)
-      .eq("status", "pending");
+      toast.success(`Commande #${order.display_id} validée`);
+      await loadOrders();
 
-    if (error) {
+    } catch (error) {
       console.error(error);
-      toast.error("Impossible de confirmer la commande");
-    } else {
-      toast.success("Commande confirmée");
-      loadOrders();
-    }
+      toast.error("Erreur validation commande");
 
-    setLoadingAction(null);
+    } finally {
+      setConfirmingOrderFor(null);
+    }
   };
 
 
-  const createShipment = async (order: Order) => {
-    const ok = window.confirm(
+  const handleCreateShipment = async (order: Order) => {
+
+    const confirmed = window.confirm(
       `Créer le colis Sendit ?\n\n` +
       `Commande #${order.display_id}\n` +
       `${order.customer_name}\n` +
       `${order.customer_phone}\n` +
-      `${order.customer_address}\n` +
-      `${order.customer_city}`
+      `${order.customer_address}, ${order.customer_city}`
     );
 
-    if (!ok) return;
+    if (!confirmed) return;
 
-    setLoadingAction(order.id);
+
+    setCreatingShipmentFor(order.id);
+
 
     try {
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
+
 
       if (!session) {
         toast.error("Session expirée");
         return;
       }
 
-      const res = await fetch(
+
+      const response = await fetch(
         "/api/create-sendit-shipment",
         {
           method: "POST",
@@ -99,156 +116,204 @@ export const AdminOrdersPanel = () => {
         }
       );
 
-      const json = await res.json();
 
-      if (!res.ok) {
-        toast.error(json.error ?? "Erreur Sendit");
+      const result = await response.json();
+
+
+      if (!response.ok) {
+        console.error(result);
+        toast.error(result.error ?? "Erreur Sendit");
         return;
       }
 
+
       toast.success(
-        `Colis créé : ${json.tracking_number ?? "OK"}`
+        `Colis créé : ${result.tracking_number ?? "sans tracking"}`
       );
 
-      loadOrders();
 
-    } catch (e) {
-      console.error(e);
+      await loadOrders();
+
+
+    } catch (error) {
+
+      console.error(error);
       toast.error("Erreur serveur");
+
+    } finally {
+
+      setCreatingShipmentFor(null);
+
     }
 
-    setLoadingAction(null);
-  };
-
-
+  };  
   return (
     <>
       <section className="mb-12">
 
         <h2 className="font-display text-lg tracking-[0.25em] mb-4">
-          ORDERS ({orders.length})
+          RECENT ORDERS ({orders.length})
         </h2>
 
 
-        <div className="border border-border divide-y">
+        <div className="border border-border divide-y divide-border">
 
-          {orders.map((order) => (
+
+          {orders.length === 0 && (
+            <p className="p-6 text-xs text-muted-foreground text-center">
+              No orders yet.
+            </p>
+          )}
+
+
+
+          {orders.map((o) => (
 
             <div
-              key={order.id}
-              className="p-5 grid grid-cols-1 md:grid-cols-6 gap-4 text-xs"
+              key={o.id}
+              className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3 text-xs"
             >
 
-              <div className="font-display text-primary-hi">
-                #{order.display_id}
+
+              <div className="text-primary-hi font-display tracking-[0.2em]">
+                #{o.display_id}
               </div>
 
 
+
               <div>
-                <div>
-                  {order.customer_name}
+                <div className="text-foreground">
+                  {o.customer_name}
                 </div>
+
                 <div className="text-muted-foreground">
-                  {order.customer_phone}
+                  {o.customer_phone}
                 </div>
               </div>
 
 
-              <div>
-                {order.customer_city}
-                <br/>
-                {order.customer_address}
+
+
+              <div className="text-muted-foreground">
+
+                {o.customer_email}
+
+                <br />
+
+                {o.customer_city}
+
               </div>
 
 
-              <div>
-                {(order.order_items ?? [])
+
+
+
+              <div className="text-muted-foreground">
+
+                {(o.order_items ?? [])
                   .map(
-                    (i: OrderItem)=>
-                    `${i.product_name} ×${i.quantity}`
+                    (item: OrderItem) =>
+                      `${item.product_name} ×${item.quantity}`
                   )
-                  .join(", ")
-                }
+                  .join(", ")}
+
               </div>
 
 
-              <div>
-                <strong>
-                  {order.total} MAD
-                </strong>
 
-                <div className="uppercase text-[10px]">
-                  {order.status}
+
+
+              <div className="text-right">
+
+
+                <div className="text-primary-hi">
+                  {o.total} MAD
                 </div>
 
 
-                {order.tracking_number && (
-                  <div className="mt-2 text-[10px]">
-                    SENDIT:
-                    <br/>
-                    {order.tracking_number}
+
+                <div className="text-[9px] uppercase text-muted-foreground">
+                  {o.subtotal} + {o.shipping_fee} livraison
+                </div>
+
+
+
+                <div className="text-[10px] uppercase tracking-[0.2em] mt-1">
+                  STATUS : {o.status}
+                </div>
+
+
+
+
+                {o.tracking_number ? (
+
+                  <div className="text-[9px] uppercase text-muted-foreground mt-2">
+                    SENDIT : {o.tracking_number}
                   </div>
-                )}
-
-              </div>
 
 
-              <div className="flex flex-col gap-2">
 
+                ) : o.status === "pending" ? (
 
-                {order.status === "pending" && (
 
                   <button
-                    disabled={loadingAction === order.id}
-                    onClick={() =>
-                      confirmOrder(order)
-                    }
+                    onClick={() => handleConfirmOrder(o)}
+                    disabled={confirmingOrderFor === o.id}
                     className="
-                    px-3 py-2
-                    border
-                    text-[10px]
-                    uppercase
-                    tracking-widest
-                    "
-                  >
-                    Confirmer
-                  </button>
-
-                )}
-
-
-
-                {order.status === "confirmed" &&
-                !order.tracking_number && (
-
-                  <button
-                    disabled={loadingAction === order.id}
-                    onClick={() =>
-                      createShipment(order)
-                    }
-                    className="
-                    px-3 py-2
+                    mt-3
+                    px-4
+                    py-2
                     border
                     border-primary
                     text-primary
                     text-[10px]
+                    tracking-[0.2em]
                     uppercase
-                    tracking-widest
+                    hover:bg-primary
+                    hover:text-primary-foreground
+                    disabled:opacity-50
                     "
                   >
-                    Créer colis Sendit
+
+                    {confirmingOrderFor === o.id
+                      ? "VALIDATION..."
+                      : "VALIDER LA COMMANDE"}
+
                   </button>
 
-                )}
 
 
-                {order.shipping_status && (
+                ) : o.status === "confirmed" ? (
 
-                  <span className="text-[10px]">
-                    {order.shipping_status}
-                  </span>
 
-                )}
+                  <button
+                    onClick={() => handleCreateShipment(o)}
+                    disabled={creatingShipmentFor === o.id}
+                    className="
+                    mt-3
+                    px-4
+                    py-2
+                    border
+                    border-primary
+                    text-primary
+                    text-[10px]
+                    tracking-[0.2em]
+                    uppercase
+                    hover:bg-primary
+                    hover:text-primary-foreground
+                    disabled:opacity-50
+                    "
+                  >
+
+                    {creatingShipmentFor === o.id
+                      ? "CREATION..."
+                      : "CREER LE COLIS"}
+
+                  </button>
+
+
+                ) : null}
+
 
 
               </div>
@@ -256,65 +321,163 @@ export const AdminOrdersPanel = () => {
 
             </div>
 
+
           ))}
 
+
         </div>
+
 
       </section>
 
 
 
-      <section>
+
+
+      <section className="mb-12">
+
 
         <h2 className="font-display text-lg tracking-[0.25em] mb-4">
-          LEDGER ({unified.length})
+          ALL-IN-ONE LEDGER ({unified.length})
         </h2>
 
 
-        <div className="overflow-x-auto border">
 
-          <table className="w-full text-xs">
+        <div className="border border-border overflow-x-auto">
 
-            <tbody>
 
-            {unified.map((r,i)=>(
+          <table className="w-full text-[11px]">
 
-              <tr key={i}
-              className="border-b">
 
-                <td className="p-2">
-                  #{r.order_id}
-                </td>
+            <thead className="bg-muted/30 text-[9px] uppercase">
 
-                <td className="p-2">
-                  {r.customer_name}
-                </td>
 
-                <td className="p-2">
-                  {r.product_name}
-                </td>
+              <tr>
 
-                <td className="p-2">
-                  {r.quantity}
-                </td>
-
-                <td className="p-2">
-                  {r.total}
-                </td>
-
-                <td className="p-2">
-                  {r.shipping_status ?? "-"}
-                </td>
+                {[
+                  "Order",
+                  "Date",
+                  "Status",
+                  "Produit",
+                  "Taille",
+                  "Couleur",
+                  "Qty",
+                  "Prix",
+                  "Total",
+                  "Client",
+                  "Email",
+                  "Téléphone",
+                  "Ville",
+                  "Adresse"
+                ].map((head)=>(
+                  <th
+                    key={head}
+                    className="px-2 py-2 text-left whitespace-nowrap"
+                  >
+                    {head}
+                  </th>
+                ))}
 
               </tr>
 
-            ))}
+
+            </thead>
+
+
+
+            <tbody className="divide-y divide-border">
+
+
+              {unified.map((r: LedgerRow,index)=>(
+                      <tr
+                  key={index}
+                  className="hover:bg-muted/20"
+                >
+
+                  <td className="px-2 py-2 text-primary-hi">
+                    #{r.order_id}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {new Date(r.created_at).toLocaleDateString()}
+                  </td>
+
+
+                  <td className="px-2 py-2 uppercase">
+                    {r.status}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.product_name}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.size ?? "—"}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.color ?? "—"}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.quantity}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.unit_price}
+                  </td>
+
+
+                  <td className="px-2 py-2 text-primary-hi">
+                    {r.line_total}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.customer_name}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.customer_email}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.customer_phone}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.customer_city}
+                  </td>
+
+
+                  <td className="px-2 py-2">
+                    {r.customer_address}
+                  </td>
+
+
+                </tr>
+
+              ))}
+
+
 
             </tbody>
 
+
           </table>
 
+
         </div>
+
 
       </section>
 
