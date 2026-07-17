@@ -10,7 +10,7 @@ export const AdminOrdersPanel = () => {
   const [confirmingOrderFor, setConfirmingOrderFor] = useState<string | null>(null);
 
   const loadOrders = async () => {
-    const { data: ordersData, error: ordersError } = await supabase
+    const { data: ordersData, error } = await supabase
       .from("orders")
       .select(`
         *,
@@ -19,25 +19,18 @@ export const AdminOrdersPanel = () => {
       .order("created_at", { ascending: false })
       .limit(50);
 
-    if (ordersError) {
-      console.error("Orders loading error:", ordersError);
-      toast.error("Impossible de charger les commandes");
+    if (error) {
+      console.error(error);
+      toast.error("Erreur chargement commandes");
       return;
     }
-
-    console.log("ADMIN ORDERS:", ordersData);
 
     setOrders((ordersData as Order[]) ?? []);
 
-    const { data: ledgerData, error: ledgerError } = await supabase
+    const { data: ledgerData } = await supabase
       .from("admin_orders_full" as any)
       .select("*")
       .limit(500);
-
-    if (ledgerError) {
-      console.error("Ledger loading error:", ledgerError);
-      return;
-    }
 
     setUnified((ledgerData as LedgerRow[]) ?? []);
   };
@@ -45,6 +38,7 @@ export const AdminOrdersPanel = () => {
   useEffect(() => {
     loadOrders();
   }, []);
+
 
   const handleConfirmOrder = async (order: Order) => {
     setConfirmingOrderFor(order.id);
@@ -55,7 +49,7 @@ export const AdminOrdersPanel = () => {
       });
 
       if (error) {
-        console.error("Confirm error:", error);
+        console.error(error);
         toast.error(error.message);
         return;
       }
@@ -65,7 +59,7 @@ export const AdminOrdersPanel = () => {
 
     } catch (error) {
       console.error(error);
-      toast.error("Erreur validation commande");
+      toast.error("Erreur validation");
 
     } finally {
       setConfirmingOrderFor(null);
@@ -75,7 +69,7 @@ export const AdminOrdersPanel = () => {
 
   const handleCreateShipment = async (order: Order) => {
 
-    const confirmed = window.confirm(
+    const confirm = window.confirm(
       `Créer le colis Sendit ?\n\n` +
       `Commande #${order.display_id}\n` +
       `${order.customer_name}\n` +
@@ -83,7 +77,7 @@ export const AdminOrdersPanel = () => {
       `${order.customer_address}, ${order.customer_city}`
     );
 
-    if (!confirmed) return;
+    if (!confirm) return;
 
 
     setCreatingShipmentFor(order.id);
@@ -102,7 +96,7 @@ export const AdminOrdersPanel = () => {
       }
 
 
-      const response = await fetch(
+      const res = await fetch(
         "/api/create-sendit-shipment",
         {
           method: "POST",
@@ -117,18 +111,17 @@ export const AdminOrdersPanel = () => {
       );
 
 
-      const result = await response.json();
+      const result = await res.json();
 
 
-      if (!response.ok) {
-        console.error(result);
+      if (!res.ok) {
         toast.error(result.error ?? "Erreur Sendit");
         return;
       }
 
 
       toast.success(
-        `Colis créé : ${result.tracking_number ?? "sans tracking"}`
+        `Colis créé ${result.tracking_number ?? ""}`
       );
 
 
@@ -145,9 +138,8 @@ export const AdminOrdersPanel = () => {
       setCreatingShipmentFor(null);
 
     }
-
-  };  
-  return (
+  };
+    return (
     <>
       <section className="mb-12">
 
@@ -155,205 +147,154 @@ export const AdminOrdersPanel = () => {
           RECENT ORDERS ({orders.length})
         </h2>
 
-
         <div className="border border-border divide-y divide-border">
 
+          {orders.map((o) => {
 
-          {orders.length === 0 && (
-            <p className="p-6 text-xs text-muted-foreground text-center">
-              No orders yet.
-            </p>
-          )}
+            const status = o.status?.trim().toLowerCase();
 
+            return (
 
+              <div
+                key={o.id}
+                className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3 text-xs"
+              >
 
-          {orders.map((o) => (
-
-            <div
-              key={o.id}
-              className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3 text-xs"
-            >
-
-
-              <div className="text-primary-hi font-display tracking-[0.2em]">
-                #{o.display_id}
-              </div>
-
-
-
-              <div>
-                <div className="text-foreground">
-                  {o.customer_name}
+                <div className="text-primary-hi font-display tracking-[0.2em]">
+                  #{o.display_id}
                 </div>
+
+
+                <div>
+                  <div className="text-foreground">
+                    {o.customer_name}
+                  </div>
+
+                  <div className="text-muted-foreground">
+                    {o.customer_phone}
+                  </div>
+                </div>
+
 
                 <div className="text-muted-foreground">
-                  {o.customer_phone}
-                </div>
-              </div>
-
-
-
-
-              <div className="text-muted-foreground">
-
-                {o.customer_email}
-
-                <br />
-
-                {o.customer_city}
-
-              </div>
-
-
-
-
-
-              <div className="text-muted-foreground">
-
-                {(o.order_items ?? [])
-                  .map(
-                    (item: OrderItem) =>
-                      `${item.product_name} ×${item.quantity}`
-                  )
-                  .join(", ")}
-
-              </div>
-
-
-
-
-
-              <div className="text-right">
-
-
-                <div className="text-primary-hi">
-                  {o.total} MAD
+                  {o.customer_email}
+                  <br />
+                  {o.customer_city}
                 </div>
 
 
-
-                <div className="text-[9px] uppercase text-muted-foreground">
-                  {o.subtotal} + {o.shipping_fee} livraison
+                <div className="text-muted-foreground">
+                  {(o.order_items ?? [])
+                    .map(
+                      (item: OrderItem) =>
+                        `${item.product_name} ×${item.quantity}`
+                    )
+                    .join(", ")}
                 </div>
 
 
+                <div className="text-right">
 
-                <div className="text-[10px] uppercase tracking-[0.2em] mt-1">
-                  STATUS : {o.status}
-                </div>
-
-
-
-
-                {o.tracking_number ? (
-
-                  <div className="text-[9px] uppercase text-muted-foreground mt-2">
-                    SENDIT : {o.tracking_number}
+                  <div className="text-primary-hi">
+                    {o.total} MAD
                   </div>
 
 
-
-                ) : o.status === "pending" ? (
-
-
-                  <button
-                    onClick={() => handleConfirmOrder(o)}
-                    disabled={confirmingOrderFor === o.id}
-                    className="
-                    mt-3
-                    px-4
-                    py-2
-                    border
-                    border-primary
-                    text-primary
-                    text-[10px]
-                    tracking-[0.2em]
-                    uppercase
-                    hover:bg-primary
-                    hover:text-primary-foreground
-                    disabled:opacity-50
-                    "
-                  >
-
-                    {confirmingOrderFor === o.id
-                      ? "VALIDATION..."
-                      : "VALIDER LA COMMANDE"}
-
-                  </button>
+                  <div className="text-[9px] uppercase text-muted-foreground">
+                    {o.subtotal} + {o.shipping_fee} livraison
+                  </div>
 
 
-
-                ) : o.status === "confirmed" ? (
-
-
-                  <button
-                    onClick={() => handleCreateShipment(o)}
-                    disabled={creatingShipmentFor === o.id}
-                    className="
-                    mt-3
-                    px-4
-                    py-2
-                    border
-                    border-primary
-                    text-primary
-                    text-[10px]
-                    tracking-[0.2em]
-                    uppercase
-                    hover:bg-primary
-                    hover:text-primary-foreground
-                    disabled:opacity-50
-                    "
-                  >
-
-                    {creatingShipmentFor === o.id
-                      ? "CREATION..."
-                      : "CREER LE COLIS"}
-
-                  </button>
+                  <div className="text-[10px] uppercase tracking-[0.2em] mt-1">
+                    STATUS : {status}
+                  </div>
 
 
-                ) : null}
+                  {o.tracking_number ? (
+
+                    <div className="text-[9px] uppercase mt-2">
+                      SENDIT : {o.tracking_number}
+                    </div>
+
+                  ) : status === "pending" ? (
+
+                    <button
+                      onClick={() => handleConfirmOrder(o)}
+                      disabled={confirmingOrderFor === o.id}
+                      className="
+                      mt-3
+                      px-4
+                      py-2
+                      border
+                      border-primary
+                      text-primary
+                      text-[10px]
+                      tracking-[0.2em]
+                      uppercase
+                      hover:bg-primary
+                      hover:text-primary-foreground
+                      disabled:opacity-50
+                      "
+                    >
+                      {confirmingOrderFor === o.id
+                        ? "VALIDATION..."
+                        : "VALIDER LA COMMANDE"}
+                    </button>
 
 
+                  ) : status === "confirmed" ? (
+
+                    <button
+                      onClick={() => handleCreateShipment(o)}
+                      disabled={creatingShipmentFor === o.id}
+                      className="
+                      mt-3
+                      px-4
+                      py-2
+                      border
+                      border-primary
+                      text-primary
+                      text-[10px]
+                      tracking-[0.2em]
+                      uppercase
+                      hover:bg-primary
+                      hover:text-primary-foreground
+                      disabled:opacity-50
+                      "
+                    >
+                      {creatingShipmentFor === o.id
+                        ? "CREATION..."
+                        : "CREER LE COLIS"}
+                    </button>
+
+                  ) : null}
+
+                </div>
 
               </div>
 
-
-            </div>
-
-
-          ))}
-
+            );
+          })}
 
         </div>
-
 
       </section>
 
 
-
-
-
       <section className="mb-12">
-
 
         <h2 className="font-display text-lg tracking-[0.25em] mb-4">
           ALL-IN-ONE LEDGER ({unified.length})
         </h2>
 
 
-
         <div className="border border-border overflow-x-auto">
-
 
           <table className="w-full text-[11px]">
 
-
             <thead className="bg-muted/30 text-[9px] uppercase">
 
-
               <tr>
-
                 {[
                   "Order",
                   "Date",
@@ -369,115 +310,93 @@ export const AdminOrdersPanel = () => {
                   "Téléphone",
                   "Ville",
                   "Adresse"
-                ].map((head)=>(
+                ].map((h) => (
                   <th
-                    key={head}
+                    key={h}
                     className="px-2 py-2 text-left whitespace-nowrap"
                   >
-                    {head}
+                    {h}
                   </th>
                 ))}
-
               </tr>
-
 
             </thead>
 
 
-
             <tbody className="divide-y divide-border">
 
+              {unified.map((r: LedgerRow, i) => (
 
-              {unified.map((r: LedgerRow,index)=>(
-                      <tr
-                  key={index}
+                <tr
+                  key={i}
                   className="hover:bg-muted/20"
                 >
 
-                  <td className="px-2 py-2 text-primary-hi">
+                  <td className="px-2 py-2">
                     #{r.order_id}
                   </td>
-
 
                   <td className="px-2 py-2">
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
 
-
                   <td className="px-2 py-2 uppercase">
                     {r.status}
                   </td>
-
 
                   <td className="px-2 py-2">
                     {r.product_name}
                   </td>
 
-
                   <td className="px-2 py-2">
                     {r.size ?? "—"}
                   </td>
-
 
                   <td className="px-2 py-2">
                     {r.color ?? "—"}
                   </td>
 
-
                   <td className="px-2 py-2">
                     {r.quantity}
                   </td>
-
 
                   <td className="px-2 py-2">
                     {r.unit_price}
                   </td>
 
-
-                  <td className="px-2 py-2 text-primary-hi">
+                  <td className="px-2 py-2">
                     {r.line_total}
                   </td>
-
 
                   <td className="px-2 py-2">
                     {r.customer_name}
                   </td>
 
-
                   <td className="px-2 py-2">
                     {r.customer_email}
                   </td>
-
 
                   <td className="px-2 py-2">
                     {r.customer_phone}
                   </td>
 
-
                   <td className="px-2 py-2">
                     {r.customer_city}
                   </td>
-
 
                   <td className="px-2 py-2">
                     {r.customer_address}
                   </td>
 
-
                 </tr>
 
               ))}
 
-
-
             </tbody>
-
 
           </table>
 
-
         </div>
-
 
       </section>
 
