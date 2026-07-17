@@ -26,13 +26,7 @@ function buildSenditPayload(order, districtId) {
 
     products_from_stock: 0,
 
-    products: JSON.stringify([
-      {
-        reference: String(order.display_id),
-        name: "ZÜMA Order",
-        quantity: 1,
-      },
-    ]),
+    products: "",
 
     packaging_id: 1,
 
@@ -343,12 +337,6 @@ console.log(
 
     }
 
-
-
-
-return res.status(422).json({
-  raw: senditJson
-});
     
     return res.status(200).json({
 
