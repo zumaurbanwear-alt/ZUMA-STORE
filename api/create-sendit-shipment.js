@@ -125,17 +125,16 @@ export default async function handler(req, res) {
 
 
 
-    const {
-      data: district,
-      error: districtError,
-    } = await supabase
-      .from("sendit_districts")
-      .select("district_id")
-      .eq(
-        "ville",
-        order.customer_city
-      )
-      .maybeSingle();
+const {
+  data: district,
+  error: districtError,
+} = await supabase
+  .from("sendit_districts")
+  .select("district_id")
+  .eq("ville", order.customer_city)
+  .order("district_id", { ascending: false })
+  .limit(1)
+  .single();
 
 
 
