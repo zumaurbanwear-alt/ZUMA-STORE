@@ -83,7 +83,6 @@ const [form, setForm] = useState({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("SUBMIT EXECUTED");
 
     if (hp.trim() !== "" || Date.now() - openedAtRef.current < 2000) {
       // Looks like a bot — pretend it worked and stop, no request sent.
