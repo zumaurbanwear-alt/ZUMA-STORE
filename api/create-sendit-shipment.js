@@ -2,25 +2,55 @@ import { createClient } from "@supabase/supabase-js";
 
 function buildSenditPayload(order, districtId) {
   return {
-    reference: order.display_id,
+    pickup_district_id: 46,
     district_id: districtId,
-    customer_name: order.customer_name,
-    phone: order.customer_phone,
-    city: order.customer_city,
-    address: order.customer_address,
+
+    name: order.customer_name,
     amount: order.total,
-    notes: order.notes ?? undefined,
+
+    address: order.customer_address,
+    phone: order.customer_phone,
+
+    comment: order.notes ?? "",
+    reference: order.display_id,
+
+    allow_open: 1,
+    allow_try: 1,
+
+    products_from_stock: 0,
+
+    products: [
+      {
+        reference: order.display_id,
+        name: "ZÜMA Order",
+        quantity: 1,
+      },
+    ],
+
+    packaging_id: 1,
+    option_exchange: 0,
   };
 }
 
+
 function parseSenditResponse(json) {
+  const data = json.data ?? json;
+
   return {
-    sendit_order_id: json.id ?? json.order_id ?? null,
-    tracking_number: json.tracking_number ?? json.code ?? null,
-    shipping_label_url: json.label_url ?? json.label ?? null,
-    shipping_status: json.status ?? "submitted",
+    sendit_order_id: data.id ?? data.order_id ?? data.code ?? null,
+    tracking_number: data.code ?? data.tracking_number ?? null,
+    shipping_label_url:
+      data.labelUrl ??
+      data.label_url ??
+      data.label ??
+      null,
+    shipping_status:
+      data.status ??
+      "PENDING",
   };
 }
+
+
 
 export default async function handler(req, res) {
 
@@ -45,6 +75,7 @@ export default async function handler(req, res) {
         error: "Missing token",
       });
     }
+
 
 
     const { orderId } = req.body;
@@ -75,7 +106,8 @@ export default async function handler(req, res) {
     const {
       data: userData,
       error: userError,
-    } = await supabase.auth.getUser(token);
+    } =
+      await supabase.auth.getUser(token);
 
 
 
@@ -89,12 +121,13 @@ export default async function handler(req, res) {
 
     const {
       data: adminRole,
-    } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userData.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
+    } =
+      await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userData.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
 
 
 
@@ -109,11 +142,15 @@ export default async function handler(req, res) {
     const {
       data: order,
       error: orderError,
-    } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("id", orderId)
-      .single();
+    } =
+      await supabase
+        .from("orders")
+        .select(`
+          *,
+          order_items(*)
+        `)
+        .eq("id", orderId)
+        .single();
 
 
 
@@ -125,129 +162,175 @@ export default async function handler(req, res) {
 
 
 
-const {
-  data: district,
-  error: districtError,
-} = await supabase
-  .from("sendit_districts")
-  .select("district_id")
-  .eq("ville", order.customer_city)
-  .order("district_id", { ascending: false })
-  .limit(1)
-  .single();
+    const {
+      data: district,
+      error: districtError,
+    } =
+      await supabase
+        .from("sendit_districts")
+        .select("district_id")
+        .eq("ville", order.customer_city)
+        .order("district_id", {
+          ascending: false,
+        })
+        .limit(1)
+        .single();
 
 
 
     if (districtError || !district) {
-
       return res.status(400).json({
+        error: "Sendit district not found for city",
+        city: order.customer_city,
+      });
+    }
+
+
+
+
+    const senditResponse =
+      await fetch(
+        `${process.env.SENDIT_API_URL}/deliveries`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+
+            Authorization:
+              `Bearer ${process.env.SENDIT_API_KEY}`,
+          },
+
+          body: JSON.stringify(
+            buildSenditPayload(
+              order,
+              district.district_id
+            )
+          ),
+        }
+      );
+
+
+
+    const senditText =
+      await senditResponse.text();
+
+
+    console.log(
+      "SENDIT STATUS:",
+      senditResponse.status
+    );
+
+
+    console.log(
+      "SENDIT BODY:",
+      senditText
+    );
+
+
+
+    let senditJson;
+
+
+    try {
+
+      senditJson =
+        JSON.parse(senditText);
+
+    } catch {
+
+      senditJson = {
+        raw: senditText,
+      };
+
+    }
+
+
+
+
+    if (!senditResponse.ok || senditJson.success === false) {
+
+      console.error(
+        "SENDIT RESPONSE:",
+        senditJson
+      );
+
+
+      return res.status(502).json({
         error:
-          "Sendit district not found for city",
-        city:
-          order.customer_city,
+          "Sendit rejected shipment",
+        details:
+          senditJson,
       });
 
     }
 
 
 
-    const senditResponse = await fetch(
-      `${process.env.SENDIT_API_URL}/orders`,
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-
-          Authorization:
-            `Bearer ${process.env.SENDIT_API_KEY}`,
-        },
-
-        body: JSON.stringify(
-          buildSenditPayload(
-            order,
-            district.district_id
-          )
-        ),
-      }
-    );
-
-
-
-    const senditText = await senditResponse.text();
-
-console.log("SENDIT STATUS:", senditResponse.status);
-console.log("SENDIT BODY:", senditText);
-
-let senditJson;
-
-try {
-  senditJson = JSON.parse(senditText);
-} catch {
-  senditJson = {
-    raw: senditText
-  };
-}
-
-
-
-if (!senditResponse.ok) {
-
-  console.error("SENDIT RESPONSE:", senditJson);
-
-  return res.status(502).json({
-    error: "Sendit rejected shipment",
-    details: senditJson,
-  });
-
-}
-
-
 
     const parsed =
-      parseSenditResponse(senditJson);
+      parseSenditResponse(
+        senditJson
+      );
+
 
 
 
     const {
       error: updateError,
-    } = await supabase
-      .from("orders")
-      .update({
+    } =
+      await supabase
+        .from("orders")
+        .update({
 
-        sendit_order_id:
-          parsed.sendit_order_id,
+          sendit_order_id:
+            parsed.sendit_order_id,
 
-        tracking_number:
-          parsed.tracking_number,
 
-        shipping_provider:
-          "sendit",
+          tracking_number:
+            parsed.tracking_number,
 
-        shipping_status:
-          parsed.shipping_status,
 
-        shipping_created_at:
-          new Date().toISOString(),
+          shipping_provider:
+            "sendit",
 
-        shipping_label_url:
-          parsed.shipping_label_url,
 
-      })
-      .eq("id", orderId);
+          shipping_status:
+            parsed.shipping_status,
+
+
+          shipping_created_at:
+            new Date().toISOString(),
+
+
+          shipping_label_url:
+            parsed.shipping_label_url,
+
+        })
+        .eq(
+          "id",
+          orderId
+        );
+
+
 
 
 
     if (updateError) {
 
       return res.status(500).json({
+
         error:
           "Sendit created but database update failed",
+
         details:
           updateError,
+
       });
 
     }
+
+
 
 
 
@@ -261,11 +344,17 @@ if (!senditResponse.ok) {
       sendit_order_id:
         parsed.sendit_order_id,
 
+      label:
+        parsed.shipping_label_url,
+
     });
 
 
 
+
+
   } catch(error) {
+
 
     console.error(
       "SENDIT ERROR:",
@@ -274,8 +363,10 @@ if (!senditResponse.ok) {
 
 
     return res.status(500).json({
+
       error:
         error.message,
+
     });
 
   }
