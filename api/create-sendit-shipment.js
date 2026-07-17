@@ -179,14 +179,16 @@ const {
 
 
 
-    if (!senditResponse.ok) {
+if (!senditResponse.ok) {
 
-      return res.status(502).json({
-        error: "Sendit rejected shipment",
-        details: senditJson,
-      });
+  console.error("SENDIT RESPONSE:", senditJson);
 
-    }
+  return res.status(502).json({
+    error: "Sendit rejected shipment",
+    details: senditJson,
+  });
+
+}
 
 
 
