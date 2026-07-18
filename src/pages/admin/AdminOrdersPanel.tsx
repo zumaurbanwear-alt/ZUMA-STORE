@@ -158,24 +158,275 @@ export const AdminOrdersPanel = () => {
             return (
 
               <div
-                key={o.id}
-                className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3 text-xs"
-              >
+  key={o.id}
+  className="border-b border-border p-6"
+>
 
-                <div className="text-primary-hi font-display tracking-[0.2em]">
-                  #{o.display_id}
-                </div>
+  <div className="flex items-center justify-between mb-5">
+
+    <div className="font-display tracking-[0.25em] text-primary-hi">
+      #{o.display_id}
+    </div>
+
+    <div className="text-[10px] uppercase tracking-[0.2em]">
+      STATUS : {status}
+    </div>
+
+  </div>
+
+  <div className="grid lg:grid-cols-3 gap-4">
+
+    {/* CLIENT */}
+
+    <div className="border border-border p-4">
+
+      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-4">
+        CLIENT
+      </div>
+
+      <div className="space-y-3">
+
+        <div>
+          <div className="text-[9px] uppercase text-muted-foreground">
+            Nom
+          </div>
+
+          <div className="mt-1">
+            {o.customer_name}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-[9px] uppercase text-muted-foreground">
+            Téléphone
+          </div>
+
+          <div className="mt-1">
+            {o.customer_phone}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-[9px] uppercase text-muted-foreground">
+            Email
+          </div>
+
+          <div className="mt-1 break-all">
+            {o.customer_email}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
 
 
-                <div>
-                  <div className="text-foreground">
-                    {o.customer_name}
-                  </div>
+    {/* LIVRAISON */}
 
-                  <div className="text-muted-foreground">
-                    {o.customer_phone}
-                  </div>
-                </div>
+    <div className="border border-border p-4">
+
+      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-4">
+        LIVRAISON
+      </div>
+
+      <div className="space-y-3">
+
+        <div>
+
+          <div className="text-[9px] uppercase text-muted-foreground">
+            Ville
+          </div>
+
+          <div className="mt-1">
+            {o.customer_city}
+          </div>
+
+        </div>
+
+        <div>
+
+          <div className="text-[9px] uppercase text-muted-foreground">
+            District
+          </div>
+
+          <div className="mt-1">
+            {o.customer_district ?? "—"}
+          </div>
+
+        </div>
+
+        <div>
+
+          <div className="text-[9px] uppercase text-muted-foreground">
+            Adresse
+          </div>
+
+          <div className="mt-1 leading-relaxed">
+            {o.customer_address}
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    {/* SENDIT */}
+
+    <div className="border border-border p-4">
+
+      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-4">
+        SENDIT
+      </div>
+
+      {o.tracking_number ? (
+
+        <>
+
+          <div className="space-y-3">
+
+            <div>
+
+              <div className="text-[9px] uppercase text-muted-foreground">
+                Tracking
+              </div>
+
+              <div className="mt-1 font-display tracking-[0.12em]">
+                {o.tracking_number}
+              </div>
+
+            </div>
+
+            <div>
+
+              <div className="text-[9px] uppercase text-muted-foreground">
+                Status
+              </div>
+
+              <div className="mt-1 uppercase">
+                {o.shipping_status}
+              </div>
+
+            </div>
+
+          </div>
+
+          {o.shipping_label_url && (
+
+            <a
+              href={o.shipping_label_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+                mt-5
+                block
+                border
+                border-primary
+                py-2
+                text-center
+                text-[10px]
+                tracking-[0.2em]
+                uppercase
+                hover:bg-primary
+                hover:text-primary-foreground
+              "
+            >
+              Bordereau
+            </a>
+
+          )}
+
+        </>
+
+      ) : status === "pending" ? (
+
+        <button
+          onClick={() => handleConfirmOrder(o)}
+          disabled={confirmingOrderFor === o.id}
+          className="
+            w-full
+            border
+            border-primary
+            py-2
+            text-[10px]
+            uppercase
+            tracking-[0.2em]
+            hover:bg-primary
+            hover:text-primary-foreground
+            disabled:opacity-50
+          "
+        >
+          {confirmingOrderFor === o.id
+            ? "VALIDATION..."
+            : "VALIDER LA COMMANDE"}
+        </button>
+
+      ) : status === "confirmed" ? (
+
+        <button
+          onClick={() => handleCreateShipment(o)}
+          disabled={creatingShipmentFor === o.id}
+          className="
+            w-full
+            border
+            border-primary
+            py-2
+            text-[10px]
+            uppercase
+            tracking-[0.2em]
+            hover:bg-primary
+            hover:text-primary-foreground
+            disabled:opacity-50
+          "
+        >
+          {creatingShipmentFor === o.id
+            ? "CREATION..."
+            : "CREER LE COLIS"}
+        </button>
+
+      ) : null}
+
+    </div>
+
+  </div>
+
+  <div className="mt-5 pt-4 border-t border-border flex justify-between items-end">
+
+    <div>
+
+      <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground mb-2">
+        PRODUITS
+      </div>
+
+      <div className="text-sm">
+
+        {(o.order_items ?? [])
+          .map(
+            (item: OrderItem) =>
+              `${item.product_name} ×${item.quantity}`
+          )
+          .join(", ")}
+
+      </div>
+
+    </div>
+
+    <div className="text-right">
+
+      <div className="text-xl font-display text-primary-hi">
+        {o.total} MAD
+      </div>
+
+      <div className="text-[9px] uppercase text-muted-foreground">
+        {o.subtotal} + {o.shipping_fee} livraison
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
 
 
                 <div className="text-muted-foreground">
