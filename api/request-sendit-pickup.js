@@ -187,29 +187,31 @@ export default async function handler(req, res) {
       pickupJson.data?.code ??
       null;
 
-      if (!pickupCode) {
-      return res.status(500).json({
-        error: "Pickup créé mais aucun code retourné par Sendit.",
-      });
-    }
+if (!pickupCode) {
+  return res.status(500).json({
+    error: "Pickup créé mais aucun code retourné par Sendit.",
+  });
+}
 
-    const trackingNumbers = orders.map((o) => o.tracking_number);
+const trackingNumbers = orders
+  .map((o) => o.tracking_number)
+  .filter(Boolean);
 
-    const {
-      error: updateError,
-    } = await supabase
-      .from("orders")
-      .update({
-        pickup_code: pickupCode,
-      })
-      .in("tracking_number", trackingNumbers);
+const { error: updateError } = await supabase
+  .from("orders")
+  .update({
+    pickup_code: pickupCode,
+    pickup_status: "PENDING",
+    pickup_created_at: new Date().toISOString(),
+  })
+  .in("tracking_number", trackingNumbers);
 
-    if (updateError) {
-      return res.status(500).json({
-        error: "Ramassage créé mais impossible de mettre à jour la base.",
-        details: updateError,
-      });
-    }
+if (updateError) {
+  return res.status(500).json({
+    error: "Ramassage créé mais impossible de mettre à jour la base.",
+    details: updateError,
+  });
+}
 
     return res.status(200).json({
       success: true,
