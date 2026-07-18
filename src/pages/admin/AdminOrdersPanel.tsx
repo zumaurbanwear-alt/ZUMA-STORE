@@ -72,12 +72,14 @@ const grouped = Object.values(
         code: row.pickup_code,
         status: row.pickup_status,
         created_at: row.pickup_created_at,
+        total: 0,
         orders: [],
       };
 
     }
 
     acc[row.pickup_code].orders.push(row);
+    acc[row.pickup_code].total += row.total;
 
     return acc;
 
@@ -326,18 +328,18 @@ const shipmentsReady = orders.some(
 
     <div className="border border-border p-4">
 
-      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-4">
+      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-3">
         CLIENT
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
 
         <div>
           <div className="text-[9px] uppercase text-muted-foreground">
             Nom
           </div>
 
-          <div className="mt-1">
+          <div className="mt-1 text-sm">
             {o.customer_name}
           </div>
         </div>
@@ -347,7 +349,7 @@ const shipmentsReady = orders.some(
             Téléphone
           </div>
 
-          <div className="mt-1">
+          <div className="mt-1 text-sm">
             {o.customer_phone}
           </div>
         </div>
@@ -357,7 +359,7 @@ const shipmentsReady = orders.some(
             Email
           </div>
 
-          <div className="mt-1 break-all">
+          <div className="mt-1 text-sm break-all">
             {o.customer_email}
           </div>
         </div>
@@ -371,11 +373,11 @@ const shipmentsReady = orders.some(
 
     <div className="border border-border p-4">
 
-      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-4">
+      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-3">
         LIVRAISON
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
 
         <div>
 
@@ -383,7 +385,7 @@ const shipmentsReady = orders.some(
             Ville
           </div>
 
-          <div className="mt-1">
+          <div className="mt-1 text-sm">
             {o.customer_city}
           </div>
 
@@ -395,7 +397,7 @@ const shipmentsReady = orders.some(
             District
           </div>
 
-          <div className="mt-1">
+          <div className="mt-1 text-sm">
             {o.customer_district ?? "—"}
           </div>
 
@@ -407,7 +409,7 @@ const shipmentsReady = orders.some(
             Adresse
           </div>
 
-          <div className="mt-1 leading-relaxed">
+          <div className="mt-1 text-sm leading-relaxed">
             {o.customer_address}
           </div>
 
@@ -422,7 +424,7 @@ const shipmentsReady = orders.some(
 
     <div className="border border-border p-4">
 
-      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-4">
+      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-3">
         SENDIT
       </div>
 
@@ -430,7 +432,7 @@ const shipmentsReady = orders.some(
 
         <>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
 
             <div>
 
@@ -438,7 +440,7 @@ const shipmentsReady = orders.some(
                 Tracking
               </div>
 
-              <div className="mt-1 font-display tracking-[0.12em]">
+              <div className="mt-1 text-sm font-display tracking-[0.12em]">
                 {o.tracking_number}
               </div>
 
@@ -450,19 +452,19 @@ const shipmentsReady = orders.some(
                 Status
               </div>
 
-              <div className="mt-1 uppercase">
+              <div className="mt-1 text-sm uppercase">
                 {o.shipping_status}
               </div>
 
               {o.pickup_code && (
   <>
-    <div className="pt-3 border-t border-border mt-3">
+    <div className="pt-2 border-t border-border mt-2">
 
       <div className="text-[9px] uppercase text-muted-foreground">
         Pickup
       </div>
 
-      <div className="mt-1 font-display tracking-[0.12em]">
+      <div className="mt-1 text-sm font-display tracking-[0.12em]">
         {o.pickup_code}
       </div>
 
@@ -474,7 +476,7 @@ const shipmentsReady = orders.some(
         Pickup status
       </div>
 
-      <div className="mt-1 uppercase">
+      <div className="mt-1 text-sm uppercase">
         {o.pickup_status}
       </div>
 
@@ -588,7 +590,7 @@ const shipmentsReady = orders.some(
 
     <div className="text-right">
 
-      <div className="text-xl font-display text-primary-hi">
+      <div className="text-lg font-display text-primary-hi">
         {o.total} MAD
       </div>
 
@@ -622,16 +624,24 @@ SENDIT PICKUPS ({pickups.length})
 
 <div
 key={p.code}
-className="p-5 flex justify-between"
+className="p-4 flex justify-between"
 >
 
 <div>
 
 <div className="text-[9px] uppercase text-muted-foreground">
+PICKUP
+</div>
+
+<div className="text-sm font-display tracking-[0.12em]">
+{p.code}
+</div>
+
+<div className="text-[9px] uppercase text-muted-foreground mt-2">
 TRACKING
 </div>
 
-<div className="font-display">
+<div className="text-sm font-display">
 {p.orders.map((o:any)=>o.tracking_number).join(", ")}
 </div>
 
@@ -649,15 +659,28 @@ TRACKING
 STATUS
 </div>
 
-<div className="uppercase">
+<div className="text-sm uppercase">
 {p.status}
 </div>
 
+<div className="text-[9px] uppercase text-muted-foreground mt-2">
+COLIS
+</div>
+
+<div className="text-sm">
+{p.orders.length}
+</div>
+
+<div className="text-[9px] uppercase text-muted-foreground mt-2">
+TOTAL
+</div>
+
+<div className="text-sm">
+{p.total} MAD
+</div>
 
 <div className="text-xs mt-2">
-{new Date (
-  p.created_at)
-.toLocaleDateString()}
+{new Date(p.created_at).toLocaleDateString()}
 </div>
 
 
