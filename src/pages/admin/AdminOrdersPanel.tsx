@@ -17,8 +17,8 @@ export const AdminOrdersPanel = () => {
   const [creatingShipmentFor, setCreatingShipmentFor] = useState<string | null>(null);
   const [confirmingOrderFor, setConfirmingOrderFor] = useState<string | null>(null);
   const [creatingPickup, setCreatingPickup] = useState(false);
-  const [pickups, setPickups] = useState<Pickup[]>([]);
-
+  const [pickups, setPickups] = useState<any[]>([]);
+  
   const loadOrders = async () => {
     const { data: ordersData, error } = await supabase
       .from("orders")
