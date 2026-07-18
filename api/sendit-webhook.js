@@ -3,6 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req,res){
 
+  const webhookKey = req.headers["x-api-key"];
+
+if(webhookKey !== process.env.SENDIT_WEBHOOK_KEY){
+  return res.status(401).json({
+    error:"Invalid webhook key"
+  });
+}
+
 if(req.method !== "POST"){
 return res.status(405).json({
 error:"Method not allowed"
