@@ -3,13 +3,21 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
 
+type Pickup = {
+  pickup_code: string;
+  pickup_status: string | null;
+  pickup_created_at: string | null;
+  tracking_number: string;
+  customer_name: string;
+};
+
 export const AdminOrdersPanel = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [unified, setUnified] = useState<LedgerRow[]>([]);
   const [creatingShipmentFor, setCreatingShipmentFor] = useState<string | null>(null);
   const [confirmingOrderFor, setConfirmingOrderFor] = useState<string | null>(null);
   const [creatingPickup, setCreatingPickup] = useState(false);
-  const [pickups, setPickups] = useState([]);
+  const [pickups, setPickups] = useState<Pickup[]>([]);
 
   const loadOrders = async () => {
     const { data: ordersData, error } = await supabase
@@ -18,7 +26,9 @@ export const AdminOrdersPanel = () => {
  *,
  order_items (*)
 `)
-.neq("shipping_status", "DELIVERED")
+.or(
+  "shipping_status.is.null,shipping_status.neq.DELIVERED"
+)
 .order("created_at", { ascending:false })
 .limit(50);
 
@@ -51,7 +61,35 @@ export const AdminOrdersPanel = () => {
  ascending:false
 });
 
-setPickups(pickupsData ?? []);
+
+const groupedPickups = Object.values(
+  (pickupsData ?? []).reduce((acc:any, item:any)=>{
+
+    if(!acc[item.pickup_code]){
+      acc[item.pickup_code] = {
+        pickup_code:item.pickup_code,
+        pickup_status:item.pickup_status,
+        pickup_created_at:item.pickup_created_at,
+        tracking_number:[],
+        customer_name:[]
+      };
+    }
+
+    acc[item.pickup_code].tracking_number.push(
+      item.tracking_number
+    );
+
+    acc[item.pickup_code].customer_name.push(
+      item.customer_name
+    );
+
+    return acc;
+
+  },{})
+);
+
+
+setPickups(groupedPickups as any);
   };
 
   useEffect(() => {
@@ -586,7 +624,7 @@ SENDIT PICKUPS ({pickups.length})
 
 <div className="border border-border divide-y">
 
-{pickups.map((p,i)=>(
+{pickups.map((p)=>(
 
 <div
 key={i}
@@ -600,12 +638,12 @@ TRACKING
 </div>
 
 <div className="font-display">
-{p.tracking_number}
+{p.tracking_number.join(", ")}
 </div>
 
 
 <div className="text-sm mt-2">
-{p.customer_name}
+{p.customer_name.join(", ")}
 </div>
 
 </div>
