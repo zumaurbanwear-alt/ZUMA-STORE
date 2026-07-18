@@ -74,7 +74,9 @@ export const AdminOrdersPanel = () => {
       `Commande #${order.display_id}\n` +
       `${order.customer_name}\n` +
       `${order.customer_phone}\n` +
-      `${order.customer_address}, ${order.customer_city}`
+      `${order.customer_address}
+       ${order.customer_district ? `District : ${order.customer_district}\n` : ""}
+       Ville : ${order.customer_city}`
     );
 
     if (!confirm) return;
@@ -177,10 +179,18 @@ export const AdminOrdersPanel = () => {
 
 
                 <div className="text-muted-foreground">
-                  {o.customer_email}
-                  <br />
-                  {o.customer_city}
-                </div>
+  {o.customer_email}
+  <br />
+  {o.customer_city}
+  {o.customer_district && (
+    <>
+      <br />
+      <span className="text-primary-hi">
+        {o.customer_district}
+      </span>
+    </>
+  )}
+</div>
 
 
                 <div className="text-muted-foreground">
@@ -212,11 +222,58 @@ export const AdminOrdersPanel = () => {
 
                   {o.tracking_number ? (
 
-                    <div className="text-[9px] uppercase mt-2">
-                      SENDIT : {o.tracking_number}
-                    </div>
+  <div className="mt-3 border border-border p-3 text-left">
 
-                  ) : status === "pending" ? (
+    <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi">
+      SENDIT
+    </div>
+
+    <div className="mt-2 text-[9px] uppercase text-muted-foreground">
+      Tracking
+    </div>
+
+    <div className="font-display tracking-[0.15em]">
+      {o.tracking_number}
+    </div>
+
+    <div className="mt-3 text-[9px] uppercase text-muted-foreground">
+      Status
+    </div>
+
+    <div className="uppercase">
+      {o.shipping_status}
+    </div>
+
+    <div className="flex gap-2 mt-4">
+
+      {o.shipping_label_url && (
+        <a
+          href={o.shipping_label_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="
+            flex-1
+            border
+            border-primary
+            px-3
+            py-2
+            text-center
+            text-[9px]
+            uppercase
+            tracking-[0.2em]
+            hover:bg-primary
+            hover:text-primary-foreground
+          "
+        >
+          Bordereau
+        </a>
+      )}
+
+    </div>
+
+  </div>
+
+) : status === "pending" ? (
 
                     <button
                       onClick={() => handleConfirmOrder(o)}
