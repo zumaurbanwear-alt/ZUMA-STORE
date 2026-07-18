@@ -517,6 +517,66 @@ setPickups(grouped);
 
 };
 
+const escapeCsvField = (value: any) => {
+  const str = String(value ?? "");
+
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+
+  return str;
+};
+
+const handleExportCSV = () => {
+
+  const headers = [
+    "Commande",
+    "Client",
+    "Téléphone",
+    "Ville",
+    "Tracking",
+    "Pickup",
+    "Status",
+    "Montant",
+    "Date",
+  ];
+
+  const rows = displayedOrders.map((o: any) => [
+    o.display_id,
+    o.customer_name,
+    o.customer_phone,
+    o.customer_city,
+    o.tracking_number ?? "",
+    o.pickup_code ?? "",
+    o.shipping_status ?? o.status,
+    o.total,
+    o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
+  ]);
+
+  const csv = [headers, ...rows]
+    .map((row) => row.map(escapeCsvField).join(","))
+    .join("\n");
+
+  // BOM pour qu'Excel reconnaisse l'UTF-8 (accents) correctement.
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `commandes_${new Date().toISOString().slice(0, 10)}.csv`;
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+
+  toast.success(`${displayedOrders.length} commande(s) exportée(s)`);
+};
+
 const handleSyncSendit = async () => {
 
   setSyncingSendit(true);
@@ -838,6 +898,25 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
       "
     >
       {sortDir === "asc" ? "↑" : "↓"}
+    </button>
+
+    <button
+      onClick={handleExportCSV}
+      disabled={displayedOrders.length === 0}
+      className="
+        border
+        border-primary
+        px-3
+        py-1.5
+        text-[9px]
+        uppercase
+        tracking-[0.15em]
+        hover:bg-primary
+        hover:text-primary-foreground
+        disabled:opacity-40
+      "
+    >
+      EXPORT CSV
     </button>
 
   </div>
