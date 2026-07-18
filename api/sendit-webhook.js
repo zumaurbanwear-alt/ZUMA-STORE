@@ -20,15 +20,17 @@ JSON.stringify(body,null,2)
 );
 
 
+const payload = body.data ?? body;
+
 const tracking =
-body.code ??
-body.tracking_number ??
-body.delivery?.code;
+  payload.code ??
+  payload.tracking_number ??
+  payload.delivery?.code;
 
 
 const status =
-body.status ??
-body.delivery?.status;
+  payload.status ??
+  payload.delivery?.status;
 
 
 if(!tracking){
