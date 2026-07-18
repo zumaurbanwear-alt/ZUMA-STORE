@@ -9,16 +9,18 @@ export const AdminOrdersPanel = () => {
   const [creatingShipmentFor, setCreatingShipmentFor] = useState<string | null>(null);
   const [confirmingOrderFor, setConfirmingOrderFor] = useState<string | null>(null);
   const [creatingPickup, setCreatingPickup] = useState(false);
+  const [pickups, setPickups] = useState([]);
 
   const loadOrders = async () => {
     const { data: ordersData, error } = await supabase
       .from("orders")
-      .select(`
-        *,
-        order_items (*)
-      `)
-      .order("created_at", { ascending: false })
-      .limit(50);
+.select(`
+ *,
+ order_items (*)
+`)
+.neq("shipping_status", "DELIVERED")
+.order("created_at", { ascending:false })
+.limit(50);
 
     if (error) {
       console.error(error);
@@ -34,6 +36,22 @@ export const AdminOrdersPanel = () => {
       .limit(500);
 
     setUnified((ledgerData as LedgerRow[]) ?? []);
+
+    const { data: pickupsData } = await supabase
+.from("orders")
+.select(`
+ pickup_code,
+ pickup_status,
+ pickup_created_at,
+ tracking_number,
+ customer_name
+`)
+.not("pickup_code", "is", null)
+.order("pickup_created_at", {
+ ascending:false
+});
+
+setPickups(pickupsData ?? []);
   };
 
   useEffect(() => {
@@ -559,7 +577,68 @@ const shipmentsReady = orders.some(
 
       </section>
 
+<section className="mb-12">
 
+<h2 className="font-display text-lg tracking-[0.25em] mb-4">
+SENDIT PICKUPS ({pickups.length})
+</h2>
+
+
+<div className="border border-border divide-y">
+
+{pickups.map((p,i)=>(
+
+<div
+key={i}
+className="p-5 flex justify-between"
+>
+
+<div>
+
+<div className="text-[9px] uppercase text-muted-foreground">
+TRACKING
+</div>
+
+<div className="font-display">
+{p.tracking_number}
+</div>
+
+
+<div className="text-sm mt-2">
+{p.customer_name}
+</div>
+
+</div>
+
+
+<div className="text-right">
+
+<div className="text-[9px] uppercase text-muted-foreground">
+STATUS
+</div>
+
+<div className="uppercase">
+{p.pickup_status}
+</div>
+
+
+<div className="text-xs mt-2">
+{new Date(
+p.pickup_created_at
+).toLocaleDateString()}
+</div>
+
+
+</div>
+
+</div>
+
+))}
+
+</div>
+
+</section>
+      
       <section className="mb-12">
 
         <h2 className="font-display text-lg tracking-[0.25em] mb-4">
