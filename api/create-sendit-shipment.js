@@ -163,6 +163,26 @@ export default async function handler(req, res) {
       });
     }
 
+    // Idempotence : un colis existe déjà pour cette commande — on
+    // renvoie ce colis au lieu d'en recréer un second chez Sendit.
+    // Couvre le double-clic ou une requête rejouée par le client.
+    if (order.tracking_number) {
+
+      console.log(
+        "SENDIT: colis déjà créé pour",
+        order.id,
+        order.tracking_number
+      );
+
+      return res.status(200).json({
+        success: true,
+        already_created: true,
+        tracking_number: order.tracking_number,
+        sendit_order_id: order.sendit_order_id,
+        label: order.shipping_label_url,
+      });
+    }
+
     const district = {
   district_id: order.sendit_district_id,
 };
@@ -267,7 +287,10 @@ console.log(parsed);
 
 console.log("ORDER ID FROM REQUEST:", orderId);
 console.log("ORDER ID FROM DB:", order.id);
-    
+
+    // Deuxième filet de sécurité : si une requête concurrente a créé
+    // le colis entre le check ci-dessus et maintenant, on ne réécrase
+    // pas le tracking_number déjà enregistré.
     const {
   data: updatedRows,
   error: updateError,
@@ -282,6 +305,7 @@ console.log("ORDER ID FROM DB:", order.id);
     shipping_label_url: parsed.shipping_label_url,
   })
   .eq("id", order.id)
+  .is("tracking_number", null)
   .select();
 
 console.log("UPDATED ROWS:", updatedRows);
@@ -302,6 +326,13 @@ console.log(updateError);
 
       });
 
+    }
+
+    if (!updatedRows || updatedRows.length === 0) {
+      console.warn(
+        "SENDIT: colis créé chez Sendit mais commande déjà mise à jour ailleurs (course concurrente) — tracking:",
+        parsed.tracking_number
+      );
     }
 
     
