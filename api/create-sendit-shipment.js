@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 function buildSenditPayload(order, districtId) {
   return {
-    pickup_district_id: 46,
+    pickup_district_id: 538,
 
     district_id: Number(districtId),
 
