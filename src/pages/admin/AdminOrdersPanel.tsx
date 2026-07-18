@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
@@ -54,19 +54,29 @@ export const AdminOrdersPanel = () => {
   const [creatingPickup, setCreatingPickup] = useState(false);
   const [syncingSendit, setSyncingSendit] = useState(false);
   const [pickups, setPickups] = useState<any[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "city" | "status">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
   
   const loadOrders = async () => {
-    const { data: ordersData, error } = await supabase
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data: ordersData, error, count } = await supabase
       .from("orders")
       .select(`
       *,
       order_items (*)
-      `)
+      `, { count: "exact" })
      .or(
      "shipping_status.is.null,shipping_status.neq.DELIVERED"
 )
      .order("created_at", { ascending:false })
-     .limit(50);
+     .range(from, to);
 
     if (error) {
       console.error(error);
@@ -75,6 +85,7 @@ export const AdminOrdersPanel = () => {
     }
 
     setOrders((ordersData as Order[]) ?? []);
+    setTotalCount(count ?? 0);
 
     const { data: ledgerData } = await supabase
       .from("admin_orders_full" as any)
@@ -127,7 +138,7 @@ setPickups(grouped);
   
  useEffect(() => {
   loadOrders();
-}, []);
+}, [page, pageSize]);
 
   const handleConfirmOrder = async (order: Order) => {
     setConfirmingOrderFor(order.id);
@@ -352,7 +363,100 @@ const shipmentsReady = orders.some(
     !o.pickup_code &&
     o.shipping_status === "PENDING"
 );
-  
+
+// Regroupe le statut interne (pending/confirmed) et le statut Sendit
+// (shipping_status) en une seule catégorie pour les filtres.
+const getOrderCategory = (o: any): string => {
+
+  if (o.shipping_status === "DELIVERED") return "delivered";
+
+  if (
+    o.shipping_status_return ||
+    o.shipping_status === "CANCELED" ||
+    o.shipping_status === "REJECTED"
+  ) {
+    return "returned";
+  }
+
+  if (
+    o.pickup_code ||
+    o.shipping_status === "TO_PICKUP" ||
+    o.shipping_status === "PICKEDUP"
+  ) {
+    return "pickup";
+  }
+
+  if (
+    ["WAREHOUSE", "TRANSIT", "DISTRIBUTED", "DELIVERING", "UNREACHABLE", "POSTPONED"]
+      .includes(o.shipping_status)
+  ) {
+    return "transit";
+  }
+
+  if (o.status?.trim().toLowerCase() === "confirmed") return "confirmed";
+
+  return "pending";
+};
+
+const STATUS_FILTERS: { key: string; label: string }[] = [
+  { key: "all", label: "Toutes" },
+  { key: "pending", label: "Pending" },
+  { key: "confirmed", label: "Confirmed" },
+  { key: "pickup", label: "Pickup" },
+  { key: "transit", label: "Transit" },
+  { key: "delivered", label: "Delivered" },
+  { key: "returned", label: "Returned" },
+];
+
+const displayedOrders = useMemo(() => {
+
+  let list = orders as any[];
+
+  if (statusFilter !== "all") {
+    list = list.filter((o) => getOrderCategory(o) === statusFilter);
+  }
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.trim().toLowerCase();
+
+    list = list.filter(
+      (o) =>
+        String(o.display_id ?? "").toLowerCase().includes(q) ||
+        String(o.tracking_number ?? "").toLowerCase().includes(q) ||
+        String(o.pickup_code ?? "").toLowerCase().includes(q) ||
+        String(o.customer_phone ?? "").toLowerCase().includes(q) ||
+        String(o.customer_name ?? "").toLowerCase().includes(q) ||
+        String(o.customer_email ?? "").toLowerCase().includes(q)
+    );
+  }
+
+  const sorted = [...list].sort((a, b) => {
+
+    let compare = 0;
+
+    if (sortBy === "date") {
+      compare =
+        new Date(a.created_at).getTime() -
+        new Date(b.created_at).getTime();
+    } else if (sortBy === "amount") {
+      compare = Number(a.total) - Number(b.total);
+    } else if (sortBy === "city") {
+      compare = String(a.customer_city ?? "").localeCompare(
+        String(b.customer_city ?? "")
+      );
+    } else if (sortBy === "status") {
+      compare = getOrderCategory(a).localeCompare(getOrderCategory(b));
+    }
+
+    return sortDir === "asc" ? compare : -compare;
+  });
+
+  return sorted;
+
+}, [orders, statusFilter, searchQuery, sortBy, sortDir]);
+
+const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
     return (
     <>
       <section className="mb-12">
@@ -360,7 +464,7 @@ const shipmentsReady = orders.some(
   <div className="flex items-center justify-between mb-6">
 
     <h2 className="font-display text-lg tracking-[0.25em]">
-      RECENT ORDERS ({orders.length})
+      RECENT ORDERS ({displayedOrders.length})
     </h2>
 
     <div className="flex gap-3">
@@ -411,9 +515,89 @@ const shipmentsReady = orders.some(
 
   </div>
 
+  <div className="flex flex-wrap gap-2 mb-4">
+
+    {STATUS_FILTERS.map((f) => (
+      <button
+        key={f.key}
+        onClick={() => setStatusFilter(f.key)}
+        className={`
+          border
+          px-4
+          py-2
+          text-[10px]
+          uppercase
+          tracking-[0.2em]
+          ${statusFilter === f.key
+            ? "bg-primary text-primary-foreground border-primary"
+            : "border-border hover:border-primary"}
+        `}
+      >
+        {f.label}
+      </button>
+    ))}
+
+  </div>
+
+  <div className="flex flex-wrap items-center gap-3 mb-6">
+
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      placeholder="Rechercher..."
+      className="
+        border
+        border-border
+        px-4
+        py-2
+        text-sm
+        flex-1
+        min-w-[220px]
+        bg-transparent
+      "
+    />
+
+    <select
+      value={sortBy}
+      onChange={(e) => setSortBy(e.target.value as any)}
+      className="
+        border
+        border-border
+        px-3
+        py-2
+        text-[10px]
+        uppercase
+        tracking-[0.15em]
+        bg-transparent
+      "
+    >
+      <option value="date">Date</option>
+      <option value="amount">Montant</option>
+      <option value="city">Ville</option>
+      <option value="status">Status</option>
+    </select>
+
+    <button
+      onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+      className="
+        border
+        border-border
+        px-3
+        py-2
+        text-[10px]
+        uppercase
+        tracking-[0.15em]
+      "
+    >
+      {sortDir === "asc" ? "↑ ASC" : "↓ DESC"}
+    </button>
+
+  </div>
+
         <div className="border border-border divide-y divide-border">
 
-          {orders.map((o) => {
+          {displayedOrders.map((o) => {
 
             const status = o.status?.trim().toLowerCase();
 
@@ -722,6 +906,60 @@ const shipmentsReady = orders.some(
           })}
 
         </div>
+
+  <div className="flex flex-wrap items-center justify-between gap-4 mt-6 text-[10px] uppercase tracking-[0.15em]">
+
+    <div className="flex items-center gap-2">
+
+      <span className="text-muted-foreground">Par page :</span>
+
+      {[50, 100, 200].map((size) => (
+        <button
+          key={size}
+          onClick={() => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          className={`
+            border
+            px-3
+            py-1
+            ${pageSize === size
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border"}
+          `}
+        >
+          {size}
+        </button>
+      ))}
+
+    </div>
+
+    <div className="flex items-center gap-3">
+
+      <button
+        onClick={() => setPage((p) => Math.max(1, p - 1))}
+        disabled={page <= 1}
+        className="border border-border px-3 py-1 disabled:opacity-40"
+      >
+        ←
+      </button>
+
+      <span className="text-muted-foreground normal-case tracking-normal">
+        Page {page} / {totalPages} ({totalCount} commandes)
+      </span>
+
+      <button
+        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+        disabled={page >= totalPages}
+        className="border border-border px-3 py-1 disabled:opacity-40"
+      >
+        →
+      </button>
+
+    </div>
+
+  </div>
 
       </section>
 
