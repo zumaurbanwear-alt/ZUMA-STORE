@@ -163,33 +163,15 @@ export default async function handler(req, res) {
       });
     }
 
+    const district = {
+  district_id: order.sendit_district_id,
+};
 
-
-    const {
-      data: district,
-      error: districtError,
-    } =
-      await supabase
-        .from("sendit_districts")
-        .select("district_id")
-        .eq("ville", order.customer_city)
-        .order("district_id", {
-          ascending: false,
-        })
-        .limit(1)
-        .single();
-
-
-
-    if (districtError || !district) {
-      return res.status(400).json({
-        error: "Sendit district not found for city",
-        city: order.customer_city,
-      });
-    }
-
-
-
+if (!district.district_id) {
+  return res.status(400).json({
+    error: "No Sendit district selected for this order",
+  });
+}
 
     const loginResponse = await fetch(
   `${process.env.SENDIT_API_URL}/login`,
