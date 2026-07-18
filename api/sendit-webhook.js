@@ -27,6 +27,7 @@ console.log(
 JSON.stringify(body,null,2)
 );
 
+  console.log("HEADERS:", req.headers);
 
 const payload = body.data ?? body;
 
