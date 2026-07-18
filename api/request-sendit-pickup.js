@@ -132,7 +132,8 @@ export default async function handler(req, res) {
     const senditToken = loginJson.data.token;
 
     const payload = {
-  district_id: settings.pickup_district_id,
+  pickup_district_id: 538,
+  district_id: 538,
   name: settings.pickup_name,
   phone: settings.pickup_phone,
   address: settings.pickup_address,
@@ -140,6 +141,8 @@ export default async function handler(req, res) {
   deliveries,
   movements: "",
 };
+
+    
     console.log(
       "PICKUP PAYLOAD:",
       JSON.stringify(payload, null, 2)
