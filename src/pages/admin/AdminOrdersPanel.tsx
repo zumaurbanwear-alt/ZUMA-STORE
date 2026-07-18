@@ -22,15 +22,15 @@ export const AdminOrdersPanel = () => {
   const loadOrders = async () => {
     const { data: ordersData, error } = await supabase
       .from("orders")
-.select(`
- *,
- order_items (*)
-`)
-.or(
-  "shipping_status.is.null,shipping_status.neq.DELIVERED"
+      .select(`
+      *,
+      order_items (*)
+      `)
+     .or(
+     "shipping_status.is.null,shipping_status.neq.DELIVERED"
 )
-.order("created_at", { ascending:false })
-.limit(50);
+     .order("created_at", { ascending:false })
+     .limit(50);
 
     if (error) {
       console.error(error);
@@ -48,54 +48,48 @@ export const AdminOrdersPanel = () => {
     setUnified((ledgerData as LedgerRow[]) ?? []);
 
     const { data: pickupsData } = await supabase
-.from("orders")
-.select(`
- pickup_code,
- pickup_status,
- pickup_created_at,
- tracking_number,
- customer_name
-`)
-.not("pickup_code", "is", null)
-.order("pickup_created_at", {
- ascending:false
-});
+  .from("orders")
+  .select(`
+    pickup_code,
+    pickup_status,
+    pickup_created_at,
+    tracking_number,
+    customer_name,
+    total
+  `)
+  .not("pickup_code", "is", null)
+  .order("pickup_created_at", {
+    ascending: false,
+  });
 
 
-const groupedPickups = Object.values(
-  (pickupsData ?? []).reduce((acc:any, item:any)=>{
+const grouped = Object.values(
+  (pickupsData ?? []).reduce((acc: any, row: any) => {
 
-    if(!acc[item.pickup_code]){
-      acc[item.pickup_code] = {
-        pickup_code:item.pickup_code,
-        pickup_status:item.pickup_status,
-        pickup_created_at:item.pickup_created_at,
-        tracking_number:[],
-        customer_name:[]
+    if (!acc[row.pickup_code]) {
+
+      acc[row.pickup_code] = {
+        code: row.pickup_code,
+        status: row.pickup_status,
+        created_at: row.pickup_created_at,
+        orders: [],
       };
+
     }
 
-    acc[item.pickup_code].tracking_number.push(
-      item.tracking_number
-    );
-
-    acc[item.pickup_code].customer_name.push(
-      item.customer_name
-    );
+    acc[row.pickup_code].orders.push(row);
 
     return acc;
 
-  },{})
+  }, {})
 );
 
-
-setPickups(groupedPickups as any);
+setPickups(grouped);
   };
-
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
+  
+ useEffect(() => {
+  loadOrders();
+}, []);
 
   const handleConfirmOrder = async (order: Order) => {
     setConfirmingOrderFor(order.id);
@@ -624,10 +618,10 @@ SENDIT PICKUPS ({pickups.length})
 
 <div className="border border-border divide-y">
 
-{pickups.map((p)=>(
+{pickups.map((p: any) => (
 
 <div
-key={i}
+key={p.code}
 className="p-5 flex justify-between"
 >
 
@@ -638,12 +632,12 @@ TRACKING
 </div>
 
 <div className="font-display">
-{p.tracking_number.join(", ")}
+{p.orders.map((o:any)=>o.tracking_number).join(", ")}
 </div>
 
 
 <div className="text-sm mt-2">
-{p.customer_name.join(", ")}
+{p.orders.map((o:any)=>o.customer_name).join(", ")}
 </div>
 
 </div>
@@ -656,14 +650,14 @@ STATUS
 </div>
 
 <div className="uppercase">
-{p.pickup_status}
+{p.status}
 </div>
 
 
 <div className="text-xs mt-2">
-{new Date(
-p.pickup_created_at
-).toLocaleDateString()}
+{new Date (
+  p.created_at)
+.toLocaleDateString()}
 </div>
 
 
