@@ -17,6 +17,7 @@ export const AdminOrdersPanel = () => {
   const [creatingShipmentFor, setCreatingShipmentFor] = useState<string | null>(null);
   const [confirmingOrderFor, setConfirmingOrderFor] = useState<string | null>(null);
   const [creatingPickup, setCreatingPickup] = useState(false);
+  const [syncingSendit, setSyncingSendit] = useState(false);
   const [pickups, setPickups] = useState<any[]>([]);
   
   const loadOrders = async () => {
@@ -257,6 +258,59 @@ setPickups(grouped);
 
 };
 
+const handleSyncSendit = async () => {
+
+  setSyncingSendit(true);
+
+  try {
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      toast.error("Session expirée");
+      return;
+    }
+
+    const res = await fetch(
+      "/api/sync-sendit-status",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      toast.error(json.error ?? "Erreur synchronisation");
+      console.error(json);
+      return;
+    }
+
+    toast.success(
+      `${json.updated} commande(s) mise(s) à jour sur ${json.checked}`
+    );
+
+    await loadOrders();
+
+  } catch (err) {
+
+    console.error(err);
+
+    toast.error("Erreur serveur");
+
+  } finally {
+
+    setSyncingSendit(false);
+
+  }
+
+};
+
 const shipmentsReady = orders.some(
   (o) =>
     o.tracking_number &&
@@ -273,6 +327,29 @@ const shipmentsReady = orders.some(
     <h2 className="font-display text-lg tracking-[0.25em]">
       RECENT ORDERS ({orders.length})
     </h2>
+
+    <div className="flex gap-3">
+
+    <button
+  onClick={handleSyncSendit}
+  disabled={syncingSendit}
+      className="
+        border
+        border-primary
+        px-6
+        py-3
+        text-[11px]
+        uppercase
+        tracking-[0.25em]
+        hover:bg-primary
+        hover:text-primary-foreground
+        disabled:opacity-50
+      "
+    >
+      {syncingSendit
+        ? "SYNCHRONISATION..."
+        : "SYNCHRONISER SENDIT"}
+    </button>
 
     <button
   onClick={handleRequestPickup}
@@ -294,6 +371,8 @@ const shipmentsReady = orders.some(
         ? "DEMANDE..."
         : "DEMANDER LE RAMASSAGE"}
     </button>
+
+    </div>
 
   </div>
 
