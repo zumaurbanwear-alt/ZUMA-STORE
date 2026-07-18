@@ -2,15 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 
 type Pickup = {
   pickup_code: string;
@@ -52,6 +43,65 @@ const StatusDot = ({ status }: { status: string | null | undefined }) => {
       className="inline-block w-2 h-2 rounded-full shrink-0"
       style={{ backgroundColor: color }}
     />
+  );
+};
+
+// Petite courbe de ventes en SVG pur — évite d'ajouter une dépendance
+// (recharts) que Vercel ne peut pas résoudre sans passer par package.json.
+const SalesChart = ({ data }: { data: { date: string; total: number }[] }) => {
+
+  const width = 600;
+  const height = 180;
+  const padding = 24;
+
+  const max = Math.max(1, ...data.map((d) => d.total));
+  const count = Math.max(1, data.length - 1);
+
+  const getX = (i: number) =>
+    padding + (i / count) * (width - padding * 2);
+
+  const getY = (v: number) =>
+    height - padding - (v / max) * (height - padding * 2);
+
+  const points = data.map((d, i) => `${getX(i)},${getY(d.total)}`);
+  const pathD = points.length ? `M${points.join(" L")}` : "";
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full"
+      style={{ height: 180 }}
+      preserveAspectRatio="none"
+    >
+
+      <line
+        x1={padding}
+        y1={height - padding}
+        x2={width - padding}
+        y2={height - padding}
+        stroke="#e5e5e5"
+      />
+
+      {pathD && (
+        <path d={pathD} fill="none" stroke="#111111" strokeWidth={2} />
+      )}
+
+      {data.map((d, i) =>
+        i % 5 === 0 ? (
+          <text
+            key={i}
+            x={getX(i)}
+            y={height - 6}
+            fontSize="8"
+            textAnchor="middle"
+            fill="#9CA3AF"
+          >
+            {d.date}
+          </text>
+        ) : null
+      )}
+
+    </svg>
   );
 };
 
@@ -650,37 +700,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
             VENTES — 30 DERNIERS JOURS {loadingStats ? "(chargement...)" : ""}
           </div>
 
-          <div style={{ width: "100%", height: 220 }}>
-            <ResponsiveContainer>
-              <LineChart data={salesByDay} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 9 }}
-                  interval={4}
-                  axisLine={{ stroke: "#e5e5e5" }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 9 }}
-                  axisLine={{ stroke: "#e5e5e5" }}
-                  tickLine={false}
-                  width={40}
-                />
-                <Tooltip
-                  formatter={(value: number) => [`${value} MAD`, "Ventes"]}
-                  contentStyle={{ fontSize: 11, borderRadius: 0 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="total"
-                  stroke="#111111"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <SalesChart data={salesByDay} />
 
         </div>
 
