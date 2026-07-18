@@ -2,6 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 type Pickup = {
   pickup_code: string;
@@ -46,6 +55,50 @@ const StatusDot = ({ status }: { status: string | null | undefined }) => {
   );
 };
 
+// Regroupe le statut interne (pending/confirmed) et le statut Sendit
+// (shipping_status) en une seule catégorie, pour les filtres et les stats.
+const getOrderCategory = (o: any): string => {
+
+  if (o.shipping_status === "DELIVERED") return "delivered";
+
+  if (
+    o.shipping_status_return ||
+    o.shipping_status === "CANCELED" ||
+    o.shipping_status === "REJECTED"
+  ) {
+    return "returned";
+  }
+
+  if (
+    o.pickup_code ||
+    o.shipping_status === "TO_PICKUP" ||
+    o.shipping_status === "PICKEDUP"
+  ) {
+    return "pickup";
+  }
+
+  if (
+    ["WAREHOUSE", "TRANSIT", "DISTRIBUTED", "DELIVERING", "UNREACHABLE", "POSTPONED"]
+      .includes(o.shipping_status)
+  ) {
+    return "transit";
+  }
+
+  if (o.status?.trim().toLowerCase() === "confirmed") return "confirmed";
+
+  return "pending";
+};
+
+const STATUS_FILTERS: { key: string; label: string }[] = [
+  { key: "all", label: "Toutes" },
+  { key: "pending", label: "Pending" },
+  { key: "confirmed", label: "Confirmed" },
+  { key: "pickup", label: "Pickup" },
+  { key: "transit", label: "Transit" },
+  { key: "delivered", label: "Delivered" },
+  { key: "returned", label: "Returned" },
+];
+
 export const AdminOrdersPanel = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [unified, setUnified] = useState<LedgerRow[]>([]);
@@ -61,6 +114,16 @@ export const AdminOrdersPanel = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [totalCount, setTotalCount] = useState(0);
+  const [stats, setStats] = useState({
+    todayCount: 0,
+    monthCount: 0,
+    monthRevenue: 0,
+    transitCount: 0,
+    deliveredCount: 0,
+    returnedCount: 0,
+  });
+  const [salesByDay, setSalesByDay] = useState<{ date: string; total: number }[]>([]);
+  const [loadingStats, setLoadingStats] = useState(false);
   
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
@@ -135,7 +198,104 @@ const grouped = Object.values(
 
 setPickups(grouped);
   };
-  
+
+  const loadStats = async () => {
+
+    setLoadingStats(true);
+
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    since.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select(`
+        id,
+        total,
+        created_at,
+        status,
+        shipping_status,
+        shipping_status_return,
+        pickup_code
+      `)
+      .gte("created_at", since.toISOString())
+      .limit(2000);
+
+    if (error) {
+      console.error(error);
+      toast.error("Erreur chargement statistiques");
+      setLoadingStats(false);
+      return;
+    }
+
+    const rows = (data as any[]) ?? [];
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let todayCount = 0;
+    let monthCount = 0;
+    let monthRevenue = 0;
+    let transitCount = 0;
+    let deliveredCount = 0;
+    let returnedCount = 0;
+
+    const dayTotals: Record<string, number> = {};
+
+    for (const o of rows) {
+
+      const created = new Date(o.created_at);
+
+      if (created >= startOfToday) {
+        todayCount++;
+      }
+
+      if (created >= startOfMonth) {
+        monthCount++;
+        monthRevenue += Number(o.total) || 0;
+      }
+
+      const category = getOrderCategory(o);
+
+      if (category === "transit") transitCount++;
+      if (category === "delivered") deliveredCount++;
+      if (category === "returned") returnedCount++;
+
+      const dayKey = created.toISOString().slice(0, 10);
+      dayTotals[dayKey] = (dayTotals[dayKey] ?? 0) + (Number(o.total) || 0);
+    }
+
+    const chartData: { date: string; total: number }[] = [];
+
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+
+      chartData.push({
+        date: key.slice(5),
+        total: dayTotals[key] ?? 0,
+      });
+    }
+
+    setStats({
+      todayCount,
+      monthCount,
+      monthRevenue,
+      transitCount,
+      deliveredCount,
+      returnedCount,
+    });
+
+    setSalesByDay(chartData);
+    setLoadingStats(false);
+  };
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
  useEffect(() => {
   loadOrders();
 }, [page, pageSize]);
@@ -156,6 +316,7 @@ setPickups(grouped);
 
       toast.success(`Commande #${order.display_id} validée`);
       await loadOrders();
+    await loadStats();
 
     } catch (error) {
       console.error(error);
@@ -228,6 +389,7 @@ setPickups(grouped);
 
 
       await loadOrders();
+    await loadStats();
 
 
     } catch (error) {
@@ -289,6 +451,7 @@ setPickups(grouped);
     );
 
     await loadOrders();
+    await loadStats();
 
   } catch (err) {
 
@@ -342,6 +505,7 @@ const handleSyncSendit = async () => {
     );
 
     await loadOrders();
+    await loadStats();
 
   } catch (err) {
 
@@ -363,50 +527,6 @@ const shipmentsReady = orders.some(
     !o.pickup_code &&
     o.shipping_status === "PENDING"
 );
-
-// Regroupe le statut interne (pending/confirmed) et le statut Sendit
-// (shipping_status) en une seule catégorie pour les filtres.
-const getOrderCategory = (o: any): string => {
-
-  if (o.shipping_status === "DELIVERED") return "delivered";
-
-  if (
-    o.shipping_status_return ||
-    o.shipping_status === "CANCELED" ||
-    o.shipping_status === "REJECTED"
-  ) {
-    return "returned";
-  }
-
-  if (
-    o.pickup_code ||
-    o.shipping_status === "TO_PICKUP" ||
-    o.shipping_status === "PICKEDUP"
-  ) {
-    return "pickup";
-  }
-
-  if (
-    ["WAREHOUSE", "TRANSIT", "DISTRIBUTED", "DELIVERING", "UNREACHABLE", "POSTPONED"]
-      .includes(o.shipping_status)
-  ) {
-    return "transit";
-  }
-
-  if (o.status?.trim().toLowerCase() === "confirmed") return "confirmed";
-
-  return "pending";
-};
-
-const STATUS_FILTERS: { key: string; label: string }[] = [
-  { key: "all", label: "Toutes" },
-  { key: "pending", label: "Pending" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "pickup", label: "Pickup" },
-  { key: "transit", label: "Transit" },
-  { key: "delivered", label: "Delivered" },
-  { key: "returned", label: "Returned" },
-];
 
 const displayedOrders = useMemo(() => {
 
@@ -459,15 +579,122 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     return (
     <>
+
+      <section className="mb-12">
+
+        <h2 className="font-display text-base tracking-[0.2em] mb-4">
+          DASHBOARD
+        </h2>
+
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
+
+          <div className="border border-border p-3">
+            <div className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
+              COMMANDES / JOUR
+            </div>
+            <div className="text-lg font-display text-primary-hi">
+              {stats.todayCount}
+            </div>
+          </div>
+
+          <div className="border border-border p-3">
+            <div className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
+              COMMANDES / MOIS
+            </div>
+            <div className="text-lg font-display text-primary-hi">
+              {stats.monthCount}
+            </div>
+          </div>
+
+          <div className="border border-border p-3">
+            <div className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
+              CA / MOIS
+            </div>
+            <div className="text-lg font-display text-primary-hi">
+              {stats.monthRevenue} MAD
+            </div>
+          </div>
+
+          <div className="border border-border p-3">
+            <div className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
+              EN TRANSIT
+            </div>
+            <div className="text-lg font-display text-primary-hi">
+              {stats.transitCount}
+            </div>
+          </div>
+
+          <div className="border border-border p-3">
+            <div className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
+              LIVRÉES
+            </div>
+            <div className="text-lg font-display text-primary-hi">
+              {stats.deliveredCount}
+            </div>
+          </div>
+
+          <div className="border border-border p-3">
+            <div className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
+              RETOURS
+            </div>
+            <div className="text-lg font-display text-primary-hi">
+              {stats.returnedCount}
+            </div>
+          </div>
+
+        </div>
+
+        <div className="border border-border p-3">
+
+          <div className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mb-3">
+            VENTES — 30 DERNIERS JOURS {loadingStats ? "(chargement...)" : ""}
+          </div>
+
+          <div style={{ width: "100%", height: 220 }}>
+            <ResponsiveContainer>
+              <LineChart data={salesByDay} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 9 }}
+                  interval={4}
+                  axisLine={{ stroke: "#e5e5e5" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 9 }}
+                  axisLine={{ stroke: "#e5e5e5" }}
+                  tickLine={false}
+                  width={40}
+                />
+                <Tooltip
+                  formatter={(value: number) => [`${value} MAD`, "Ventes"]}
+                  contentStyle={{ fontSize: 11, borderRadius: 0 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#111111"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+        </div>
+
+      </section>
+
       <section className="mb-12">
 
   <div className="flex items-center justify-between mb-6">
 
-    <h2 className="font-display text-lg tracking-[0.25em]">
+    <h2 className="font-display text-base tracking-[0.2em]">
       RECENT ORDERS ({displayedOrders.length})
     </h2>
 
-    <div className="flex gap-3">
+    <div className="flex gap-2">
 
     <button
   onClick={handleSyncSendit}
@@ -475,19 +702,19 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
       className="
         border
         border-primary
-        px-6
-        py-3
-        text-[11px]
+        px-3
+        py-1.5
+        text-[9px]
         uppercase
-        tracking-[0.25em]
+        tracking-[0.15em]
         hover:bg-primary
         hover:text-primary-foreground
         disabled:opacity-50
       "
     >
       {syncingSendit
-        ? "SYNCHRONISATION..."
-        : "SYNCHRONISER SENDIT"}
+        ? "SYNC..."
+        : "SYNCHRONISER"}
     </button>
 
     <button
@@ -496,11 +723,11 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
       className="
         border
         border-primary
-        px-6
-        py-3
-        text-[11px]
+        px-3
+        py-1.5
+        text-[9px]
         uppercase
-        tracking-[0.25em]
+        tracking-[0.15em]
         hover:bg-primary
         hover:text-primary-foreground
         disabled:opacity-50
@@ -508,14 +735,14 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
     >
       {creatingPickup
         ? "DEMANDE..."
-        : "DEMANDER LE RAMASSAGE"}
+        : "RAMASSAGE"}
     </button>
 
     </div>
 
   </div>
 
-  <div className="flex flex-wrap gap-2 mb-4">
+  <div className="flex flex-wrap gap-1.5 mb-3">
 
     {STATUS_FILTERS.map((f) => (
       <button
@@ -523,11 +750,11 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         onClick={() => setStatusFilter(f.key)}
         className={`
           border
-          px-4
-          py-2
-          text-[10px]
+          px-2.5
+          py-1
+          text-[9px]
           uppercase
-          tracking-[0.2em]
+          tracking-[0.15em]
           ${statusFilter === f.key
             ? "bg-primary text-primary-foreground border-primary"
             : "border-border hover:border-primary"}
@@ -539,7 +766,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   </div>
 
-  <div className="flex flex-wrap items-center gap-3 mb-6">
+  <div className="flex flex-wrap items-center gap-2 mb-4">
 
     <input
       type="text"
@@ -549,11 +776,11 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
       className="
         border
         border-border
-        px-4
-        py-2
-        text-sm
+        px-3
+        py-1.5
+        text-xs
         flex-1
-        min-w-[220px]
+        min-w-[180px]
         bg-transparent
       "
     />
@@ -564,11 +791,11 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
       className="
         border
         border-border
-        px-3
-        py-2
-        text-[10px]
+        px-2
+        py-1.5
+        text-[9px]
         uppercase
-        tracking-[0.15em]
+        tracking-[0.1em]
         bg-transparent
       "
     >
@@ -583,14 +810,14 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
       className="
         border
         border-border
-        px-3
-        py-2
-        text-[10px]
+        px-2
+        py-1.5
+        text-[9px]
         uppercase
-        tracking-[0.15em]
+        tracking-[0.1em]
       "
     >
-      {sortDir === "asc" ? "↑ ASC" : "↓ DESC"}
+      {sortDir === "asc" ? "↑" : "↓"}
     </button>
 
   </div>
@@ -605,59 +832,86 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
               <div
   key={o.id}
-  className="border-b border-border p-6"
+  className="border-b border-border p-4"
 >
 
-  <div className="flex items-center justify-between mb-5">
+  <div className="flex items-center justify-between gap-3 mb-3">
 
-    <div className="font-display tracking-[0.25em] text-primary-hi">
+    <div className="text-sm font-display tracking-[0.15em] text-primary-hi">
       #{o.display_id}
     </div>
 
-    <div className="text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
-      STATUS : <StatusDot status={status} />{status}
+    <div className="flex items-center gap-2">
+
+      <div className="text-[9px] uppercase tracking-[0.15em] flex items-center gap-1.5">
+        <StatusDot status={status} />{status}
+      </div>
+
+      {o.shipping_label_url && (
+
+        <a
+          href={o.shipping_label_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="
+            border
+            border-primary
+            px-2
+            py-1
+            text-[9px]
+            tracking-[0.1em]
+            uppercase
+            hover:bg-primary
+            hover:text-primary-foreground
+          "
+        >
+          Bordereau
+        </a>
+
+      )}
+
     </div>
 
   </div>
 
-  <div className="grid lg:grid-cols-3 gap-4">
+  <div className="grid lg:grid-cols-3 gap-3">
 
     {/* CLIENT */}
 
-    <div className="border border-border p-4">
+    <div className="border border-border p-3">
 
-      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-3">
+      <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
         CLIENT
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
 
         <div>
-          <div className="text-[9px] uppercase text-muted-foreground">
+          <div className="text-[8px] uppercase text-muted-foreground">
             Nom
           </div>
 
-          <div className="mt-1 text-sm">
+          <div className="mt-0.5 text-xs">
             {o.customer_name}
           </div>
         </div>
 
         <div>
-          <div className="text-[9px] uppercase text-muted-foreground">
+          <div className="text-[8px] uppercase text-muted-foreground">
             Téléphone
           </div>
 
-          <div className="mt-1 text-sm">
+          <div className="mt-0.5 text-xs">
             {o.customer_phone}
           </div>
         </div>
 
         <div>
-          <div className="text-[9px] uppercase text-muted-foreground">
+          <div className="text-[8px] uppercase text-muted-foreground">
             Email
           </div>
 
-          <div className="mt-1 text-sm break-all">
+          <div className="mt-0.5 text-xs break-all">
             {o.customer_email}
           </div>
         </div>
@@ -669,21 +923,21 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     {/* LIVRAISON */}
 
-    <div className="border border-border p-4">
+    <div className="border border-border p-3">
 
-      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-3">
+      <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
         LIVRAISON
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
 
         <div>
 
-          <div className="text-[9px] uppercase text-muted-foreground">
+          <div className="text-[8px] uppercase text-muted-foreground">
             Ville
           </div>
 
-          <div className="mt-1 text-sm">
+          <div className="mt-0.5 text-xs">
             {o.customer_city}
           </div>
 
@@ -691,11 +945,11 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
         <div>
 
-          <div className="text-[9px] uppercase text-muted-foreground">
+          <div className="text-[8px] uppercase text-muted-foreground">
             District
           </div>
 
-          <div className="mt-1 text-sm">
+          <div className="mt-0.5 text-xs">
             {o.customer_district ?? "—"}
           </div>
 
@@ -703,11 +957,11 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
         <div>
 
-          <div className="text-[9px] uppercase text-muted-foreground">
+          <div className="text-[8px] uppercase text-muted-foreground">
             Adresse
           </div>
 
-          <div className="mt-1 text-sm leading-relaxed">
+          <div className="mt-0.5 text-xs leading-relaxed">
             {o.customer_address}
           </div>
 
@@ -720,9 +974,9 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     {/* SENDIT */}
 
-    <div className="border border-border p-4">
+    <div className="border border-border p-3">
 
-      <div className="text-[9px] uppercase tracking-[0.25em] text-primary-hi mb-3">
+      <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
         SENDIT
       </div>
 
@@ -730,15 +984,15 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
         <>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
 
             <div>
 
-              <div className="text-[9px] uppercase text-muted-foreground">
+              <div className="text-[8px] uppercase text-muted-foreground">
                 Tracking
               </div>
 
-              <div className="mt-1 text-sm font-display tracking-[0.12em]">
+              <div className="mt-0.5 text-xs font-display tracking-[0.1em]">
                 {o.tracking_number}
               </div>
 
@@ -746,23 +1000,23 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
             <div>
 
-              <div className="text-[9px] uppercase text-muted-foreground">
+              <div className="text-[8px] uppercase text-muted-foreground">
                 Status
               </div>
 
-              <div className="mt-1 text-sm uppercase flex items-center gap-2">
+              <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
                 <StatusDot status={o.shipping_status} />{o.shipping_status}
               </div>
 
               {o.pickup_code && (
   <>
-    <div className="pt-2 border-t border-border mt-2">
+    <div className="pt-1.5 border-t border-border mt-1.5">
 
-      <div className="text-[9px] uppercase text-muted-foreground">
+      <div className="text-[8px] uppercase text-muted-foreground">
         Pickup
       </div>
 
-      <div className="mt-1 text-sm font-display tracking-[0.12em]">
+      <div className="mt-0.5 text-xs font-display tracking-[0.1em]">
         {o.pickup_code}
       </div>
 
@@ -770,11 +1024,11 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     <div>
 
-      <div className="text-[9px] uppercase text-muted-foreground">
+      <div className="text-[8px] uppercase text-muted-foreground">
         Pickup status
       </div>
 
-      <div className="mt-1 text-sm uppercase flex items-center gap-2">
+      <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
         <StatusDot status={o.pickup_status} />{o.pickup_status}
       </div>
 
@@ -785,31 +1039,6 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
             </div>
 
           </div>
-
-          {o.shipping_label_url && (
-
-            <a
-              href={o.shipping_label_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="
-                mt-5
-                block
-                border
-                border-primary
-                py-2
-                text-center
-                text-[10px]
-                tracking-[0.2em]
-                uppercase
-                hover:bg-primary
-                hover:text-primary-foreground
-              "
-            >
-              Bordereau
-            </a>
-
-          )}
 
         </>
 
@@ -822,10 +1051,10 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
             w-full
             border
             border-primary
-            py-2
-            text-[10px]
+            py-1.5
+            text-[9px]
             uppercase
-            tracking-[0.2em]
+            tracking-[0.15em]
             hover:bg-primary
             hover:text-primary-foreground
             disabled:opacity-50
@@ -845,10 +1074,10 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
             w-full
             border
             border-primary
-            py-2
-            text-[10px]
+            py-1.5
+            text-[9px]
             uppercase
-            tracking-[0.2em]
+            tracking-[0.15em]
             hover:bg-primary
             hover:text-primary-foreground
             disabled:opacity-50
@@ -865,15 +1094,15 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   </div>
 
-  <div className="mt-5 pt-4 border-t border-border flex justify-between items-end">
+  <div className="mt-3 pt-3 border-t border-border flex justify-between items-end">
 
     <div>
 
-      <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground mb-2">
+      <div className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
         PRODUITS
       </div>
 
-      <div className="text-sm">
+      <div className="text-xs">
 
         {(o.order_items ?? [])
           .map(
@@ -888,11 +1117,11 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     <div className="text-right">
 
-      <div className="text-lg font-display text-primary-hi">
+      <div className="text-base font-display text-primary-hi">
         {o.total} MAD
       </div>
 
-      <div className="text-[9px] uppercase text-muted-foreground">
+      <div className="text-[8px] uppercase text-muted-foreground">
         {o.subtotal} + {o.shipping_fee} livraison
       </div>
 
@@ -965,7 +1194,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
 <section className="mb-12">
 
-<h2 className="font-display text-lg tracking-[0.25em] mb-4">
+<h2 className="font-display text-base tracking-[0.2em] mb-3">
 SENDIT PICKUPS ({pickups.length})
 </h2>
 
@@ -976,29 +1205,29 @@ SENDIT PICKUPS ({pickups.length})
 
 <div
 key={p.code}
-className="p-4 flex justify-between"
+className="p-3 flex justify-between"
 >
 
 <div>
 
-<div className="text-[9px] uppercase text-muted-foreground">
+<div className="text-[8px] uppercase text-muted-foreground">
 PICKUP
 </div>
 
-<div className="text-sm font-display tracking-[0.12em]">
+<div className="text-xs font-display tracking-[0.1em]">
 {p.code}
 </div>
 
-<div className="text-[9px] uppercase text-muted-foreground mt-2">
+<div className="text-[8px] uppercase text-muted-foreground mt-1.5">
 TRACKING
 </div>
 
-<div className="text-sm font-display">
+<div className="text-xs font-display">
 {p.orders.map((o:any)=>o.tracking_number).join(", ")}
 </div>
 
 
-<div className="text-sm mt-2">
+<div className="text-xs mt-1.5">
 {p.orders.map((o:any)=>o.customer_name).join(", ")}
 </div>
 
@@ -1007,31 +1236,31 @@ TRACKING
 
 <div className="text-right">
 
-<div className="text-[9px] uppercase text-muted-foreground">
+<div className="text-[8px] uppercase text-muted-foreground">
 STATUS
 </div>
 
-<div className="text-sm uppercase flex items-center justify-end gap-2">
+<div className="text-xs uppercase flex items-center justify-end gap-1.5">
 {p.status}<StatusDot status={p.status} />
 </div>
 
-<div className="text-[9px] uppercase text-muted-foreground mt-2">
+<div className="text-[8px] uppercase text-muted-foreground mt-1.5">
 COLIS
 </div>
 
-<div className="text-sm">
+<div className="text-xs">
 {p.orders.length}
 </div>
 
-<div className="text-[9px] uppercase text-muted-foreground mt-2">
+<div className="text-[8px] uppercase text-muted-foreground mt-1.5">
 TOTAL
 </div>
 
-<div className="text-sm">
+<div className="text-xs">
 {p.total} MAD
 </div>
 
-<div className="text-xs mt-2">
+<div className="text-[10px] mt-1.5">
 {new Date(p.created_at).toLocaleDateString()}
 </div>
 
@@ -1048,14 +1277,14 @@ TOTAL
       
       <section className="mb-12">
 
-        <h2 className="font-display text-lg tracking-[0.25em] mb-4">
+        <h2 className="font-display text-base tracking-[0.2em] mb-3">
           ALL-IN-ONE LEDGER ({unified.length})
         </h2>
 
 
         <div className="border border-border overflow-x-auto">
 
-          <table className="w-full text-[11px]">
+          <table className="w-full text-[10px]">
 
             <thead className="bg-muted/30 text-[9px] uppercase">
 
@@ -1078,7 +1307,7 @@ TOTAL
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-2 py-2 text-left whitespace-nowrap"
+                    className="px-2 py-1.5 text-left whitespace-nowrap"
                   >
                     {h}
                   </th>
@@ -1097,59 +1326,59 @@ TOTAL
                   className="hover:bg-muted/20"
                 >
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     #{r.order_id}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
 
-                  <td className="px-2 py-2 uppercase">
+                  <td className="px-2 py-1.5 uppercase">
                     {r.status}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.product_name}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.size ?? "—"}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.color ?? "—"}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.quantity}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.unit_price}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.line_total}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.customer_name}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.customer_email}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.customer_phone}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.customer_city}
                   </td>
 
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-1.5">
                     {r.customer_address}
                   </td>
 
