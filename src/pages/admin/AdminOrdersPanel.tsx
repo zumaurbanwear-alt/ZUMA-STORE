@@ -11,6 +11,41 @@ type Pickup = {
   customer_name: string;
 };
 
+// Couleur par statut — modifie les valeurs hex ici pour ajuster.
+// pending = gris, confirmed = rouge, delivered = rouge (tel que demandé).
+const STATUS_COLORS: Record<string, string> = {
+  pending: "#9CA3AF",
+  to_prepare: "#9CA3AF",
+  new_destination: "#9CA3AF",
+  confirmed: "#DC2626",
+  to_pickup: "#F59E0B",
+  pickedup: "#F59E0B",
+  warehouse: "#3B82F6",
+  transit: "#3B82F6",
+  distributed: "#3B82F6",
+  delivering: "#3B82F6",
+  unreachable: "#F59E0B",
+  postponed: "#F59E0B",
+  delivered: "#DC2626",
+  canceled: "#DC2626",
+  cancelled: "#DC2626",
+  rejected: "#DC2626",
+};
+
+const DEFAULT_STATUS_COLOR = "#9CA3AF";
+
+const StatusDot = ({ status }: { status: string | null | undefined }) => {
+  const key = (status ?? "").trim().toLowerCase();
+  const color = STATUS_COLORS[key] ?? DEFAULT_STATUS_COLOR;
+
+  return (
+    <span
+      className="inline-block w-2 h-2 rounded-full shrink-0"
+      style={{ backgroundColor: color }}
+    />
+  );
+};
+
 export const AdminOrdersPanel = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [unified, setUnified] = useState<LedgerRow[]>([]);
@@ -395,8 +430,8 @@ const shipmentsReady = orders.some(
       #{o.display_id}
     </div>
 
-    <div className="text-[10px] uppercase tracking-[0.2em]">
-      STATUS : {status}
+    <div className="text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
+      STATUS : <StatusDot status={status} />{status}
     </div>
 
   </div>
@@ -531,8 +566,8 @@ const shipmentsReady = orders.some(
                 Status
               </div>
 
-              <div className="mt-1 text-sm uppercase">
-                {o.shipping_status}
+              <div className="mt-1 text-sm uppercase flex items-center gap-2">
+                <StatusDot status={o.shipping_status} />{o.shipping_status}
               </div>
 
               {o.pickup_code && (
@@ -555,8 +590,8 @@ const shipmentsReady = orders.some(
         Pickup status
       </div>
 
-      <div className="mt-1 text-sm uppercase">
-        {o.pickup_status}
+      <div className="mt-1 text-sm uppercase flex items-center gap-2">
+        <StatusDot status={o.pickup_status} />{o.pickup_status}
       </div>
 
     </div>
@@ -738,8 +773,8 @@ TRACKING
 STATUS
 </div>
 
-<div className="text-sm uppercase">
-{p.status}
+<div className="text-sm uppercase flex items-center justify-end gap-2">
+{p.status}<StatusDot status={p.status} />
 </div>
 
 <div className="text-[9px] uppercase text-muted-foreground mt-2">
