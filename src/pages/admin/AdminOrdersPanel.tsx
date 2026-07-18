@@ -8,6 +8,7 @@ export const AdminOrdersPanel = () => {
   const [unified, setUnified] = useState<LedgerRow[]>([]);
   const [creatingShipmentFor, setCreatingShipmentFor] = useState<string | null>(null);
   const [confirmingOrderFor, setConfirmingOrderFor] = useState<string | null>(null);
+  const [creatingPickup, setCreatingPickup] = useState(false);
 
   const loadOrders = async () => {
     const { data: ordersData, error } = await supabase
@@ -141,13 +142,108 @@ export const AdminOrdersPanel = () => {
 
     }
   };
+
+  const handleRequestPickup = async () => {
+
+  if (
+    !window.confirm(
+      "Demander un ramassage Sendit pour tous les colis en attente ?"
+    )
+  ) {
+    return;
+  }
+
+  setCreatingPickup(true);
+
+  try {
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      toast.error("Session expirée");
+      return;
+    }
+
+   const res = await fetch(
+  "/api/request-sendit-pickup",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  }
+);
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      toast.error(json.error ?? "Erreur ramassage");
+      console.error(json);
+      return;
+    }
+
+    toast.success(
+      `Ramassage ${json.pickup_code} créé`
+    );
+
+    await loadOrders();
+
+  } catch (err) {
+
+    console.error(err);
+
+    toast.error("Erreur serveur");
+
+  } finally {
+
+    setCreatingPickup(false);
+
+  }
+
+};
+
+const shipmentsReady = orders.some(
+  (o) =>
+    o.tracking_number &&
+    !o.pickup_code &&
+    o.shipping_status === "PENDING"
+);
+  
     return (
     <>
       <section className="mb-12">
 
-        <h2 className="font-display text-lg tracking-[0.25em] mb-4">
-          RECENT ORDERS ({orders.length})
-        </h2>
+  <div className="flex items-center justify-between mb-6">
+
+    <h2 className="font-display text-lg tracking-[0.25em]">
+      RECENT ORDERS ({orders.length})
+    </h2>
+
+    <button
+  onClick={handleRequestPickup}
+  disabled={creatingPickup || !shipmentsReady}
+      className="
+        border
+        border-primary
+        px-6
+        py-3
+        text-[11px]
+        uppercase
+        tracking-[0.25em]
+        hover:bg-primary
+        hover:text-primary-foreground
+        disabled:opacity-50
+      "
+    >
+      {creatingPickup
+        ? "DEMANDE..."
+        : "DEMANDER LE RAMASSAGE"}
+    </button>
+
+  </div>
 
         <div className="border border-border divide-y divide-border">
 
@@ -307,6 +403,34 @@ export const AdminOrdersPanel = () => {
               <div className="mt-1 uppercase">
                 {o.shipping_status}
               </div>
+
+              {o.pickup_code && (
+  <>
+    <div className="pt-3 border-t border-border mt-3">
+
+      <div className="text-[9px] uppercase text-muted-foreground">
+        Pickup
+      </div>
+
+      <div className="mt-1 font-display tracking-[0.12em]">
+        {o.pickup_code}
+      </div>
+
+    </div>
+
+    <div>
+
+      <div className="text-[9px] uppercase text-muted-foreground">
+        Pickup status
+      </div>
+
+      <div className="mt-1 uppercase">
+        {o.pickup_status}
+      </div>
+
+    </div>
+  </>
+)}
 
             </div>
 
