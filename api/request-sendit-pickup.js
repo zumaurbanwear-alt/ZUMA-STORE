@@ -132,14 +132,14 @@ export default async function handler(req, res) {
     const senditToken = loginJson.data.token;
 
     const payload = {
-      district_id: settings.pickup_district_id,
-      name: settings.pickup_name,
-      phone: settings.pickup_phone,
-      address: settings.pickup_address,
-      note: settings.pickup_note ?? "",
-      deliveries,
-      movements: "",
-    };
+  district_id: 538,
+  name: "Leyla Sara Louai",
+  phone: "0600365283",
+  address: "Riad Bouskoura, Lot 13, V18, Bouskoura, Maroc",
+  note: "",
+  deliveries,
+  movements: "",
+};
 
     console.log(
       "PICKUP PAYLOAD:",
