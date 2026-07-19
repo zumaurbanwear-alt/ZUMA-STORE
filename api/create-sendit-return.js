@@ -107,6 +107,20 @@ export default async function handler(req, res) {
       });
     }
 
+    // Pour un retour HOME, le district de destination est celui du
+    // CLIENT (là où le livreur ramène le colis) — pas l'entrepôt.
+    // Pour WAREHOUSE, c'est bien l'entrepôt Sendit (538).
+    const returnDistrictId =
+      RETURN_TYPE === "HOME"
+        ? order.sendit_district_id
+        : RETURN_DISTRICT_ID;
+
+    if (!returnDistrictId) {
+      return res.status(400).json({
+        error: "Aucun district Sendit sur cette commande — impossible de créer le retour.",
+      });
+    }
+
     // Idempotence : une demande de retour existe déjà pour ce colis.
     if (order.return_code) {
 
@@ -153,7 +167,7 @@ export default async function handler(req, res) {
 
     const payload = {
       type: RETURN_TYPE,
-      district_id: RETURN_DISTRICT_ID,
+      district_id: returnDistrictId,
       name: order.customer_name,
       phone: String(order.customer_phone)
         .replace(/\s+/g, "")
