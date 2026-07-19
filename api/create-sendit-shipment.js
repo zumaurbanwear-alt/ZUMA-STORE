@@ -333,6 +333,19 @@ console.log(updateError);
         "SENDIT: colis créé chez Sendit mais commande déjà mise à jour ailleurs (course concurrente) — tracking:",
         parsed.tracking_number
       );
+    } else {
+
+      const { error: eventError } = await supabase
+        .from("order_events")
+        .insert({
+          order_id: order.id,
+          event: "shipment_created",
+          message: `Colis créé — ${parsed.tracking_number}`,
+        });
+
+      if (eventError) {
+        console.error("ORDER_EVENTS INSERT ERROR:", eventError);
+      }
     }
 
     
