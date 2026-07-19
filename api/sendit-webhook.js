@@ -64,6 +64,19 @@ async function autoCreateReturn(supabase, order) {
   // Idempotence : déjà en cours, on ne redemande pas.
   if (order.return_code) return;
 
+  // Pour un retour HOME, le district de destination est celui du
+  // CLIENT (là où le livreur ramène le colis) — pas l'entrepôt.
+  const returnDistrictId =
+    RETURN_TYPE === "HOME" ? order.sendit_district_id : RETURN_DISTRICT_ID;
+
+  if (!returnDistrictId) {
+    console.error(
+      "AUTO RETURN: pas de district Sendit sur la commande",
+      order.id
+    );
+    return;
+  }
+
   try {
 
     const loginResponse = await fetch(
@@ -91,7 +104,7 @@ async function autoCreateReturn(supabase, order) {
 
     const payload = {
       type: RETURN_TYPE,
-      district_id: RETURN_DISTRICT_ID,
+      district_id: returnDistrictId,
       name: order.customer_name,
       phone: String(order.customer_phone)
         .replace(/\s+/g, "")
