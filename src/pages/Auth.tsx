@@ -23,7 +23,7 @@ const Auth = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      nav("/admin");
+      nav("/zm-portal-x92");
     } catch (err) {
       console.error(err);
       toast.error("Invalid email or password");
