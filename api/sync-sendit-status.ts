@@ -352,6 +352,93 @@ export default async function handler(req, res) {
       }
     }
 
+    // --- Retours : les commandes avec un retour en cours ne sont PAS
+    // couvertes par la requête `orders` plus haut (leur shipping_status
+    // est souvent REJECTED/CANCELED, exclu du filtre principal). On les
+    // resynchronise séparément via GET /returns/{code}.
+    const {
+      data: returnOrders,
+      error: returnOrdersError,
+    } = await supabase
+      .from("orders")
+      .select("id, return_code, return_status")
+      .not("return_code", "is", null);
+
+    if (returnOrdersError) {
+      errors.push({
+        context: "return_orders_fetch",
+        error: returnOrdersError.message,
+      });
+    } else {
+
+      for (const order of returnOrders ?? []) {
+
+        try {
+
+          const returnResponse = await fetch(
+            `${process.env.SENDIT_API_URL}/returns/${order.return_code}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${senditToken}`,
+              },
+            }
+          );
+
+          const returnText = await returnResponse.text();
+
+          let returnJson;
+
+          try {
+            returnJson = JSON.parse(returnText);
+          } catch {
+            returnJson = { raw: returnText };
+          }
+
+          if (!returnResponse.ok) {
+            console.error("SYNC RETURN ERROR:", order.return_code, returnJson);
+            errors.push({ order_id: order.id, error: returnJson });
+            continue;
+          }
+
+          const data = returnJson.data ?? returnJson;
+          const newReturnStatus = data.status ?? null;
+
+          if (newReturnStatus && newReturnStatus !== order.return_status) {
+
+            const { error: updateError } = await supabase
+              .from("orders")
+              .update({ return_status: newReturnStatus })
+              .eq("id", order.id);
+
+            if (updateError) {
+              console.error("SYNC RETURN UPDATE ERROR:", order.id, updateError);
+              errors.push({ order_id: order.id, error: updateError });
+            } else {
+
+              updatedCount++;
+
+              const { error: eventError } = await supabase
+                .from("order_events")
+                .insert({
+                  order_id: order.id,
+                  event: "return_status_update",
+                  message: `Statut retour → ${newReturnStatus}`,
+                });
+
+              if (eventError) {
+                console.error("ORDER_EVENTS INSERT ERROR:", eventError);
+              }
+            }
+          }
+
+        } catch (err) {
+          console.error("SYNC RETURN FETCH ERROR:", order.return_code, err);
+          errors.push({ order_id: order.id, error: err.message });
+        }
+      }
+    }
+
     return res.status(200).json({
       success: true,
       checked: orders.length,
