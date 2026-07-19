@@ -236,6 +236,20 @@ export default async function handler(req, res) {
             errors.push({ order_id: order.id, error: updateError });
           } else {
             updatedCount++;
+
+            if (updates.shipping_status) {
+              const { error: eventError } = await supabase
+                .from("order_events")
+                .insert({
+                  order_id: order.id,
+                  event: updates.shipping_status.toLowerCase(),
+                  message: `Statut Sendit → ${updates.shipping_status}`,
+                });
+
+              if (eventError) {
+                console.error("ORDER_EVENTS INSERT ERROR:", eventError);
+              }
+            }
           }
         }
 
@@ -315,6 +329,20 @@ export default async function handler(req, res) {
             errors.push({ order_id: order.id, error: updateError });
           } else {
             updatedCount++;
+
+            if (updates.shipping_status) {
+              const { error: eventError } = await supabase
+                .from("order_events")
+                .insert({
+                  order_id: order.id,
+                  event: updates.shipping_status.toLowerCase(),
+                  message: `Statut Sendit → ${updates.shipping_status}`,
+                });
+
+              if (eventError) {
+                console.error("ORDER_EVENTS INSERT ERROR:", eventError);
+              }
+            }
           }
         }
 
