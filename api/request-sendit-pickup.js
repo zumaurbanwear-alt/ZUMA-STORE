@@ -199,20 +199,38 @@ const trackingNumbers = orders
   .map((o) => o.tracking_number)
   .filter(Boolean);
 
-const { error: updateError } = await supabase
+const { data: updatedOrders, error: updateError } = await supabase
   .from("orders")
   .update({
     pickup_code: pickupCode,
     pickup_status: "PENDING",
     pickup_created_at: new Date().toISOString(),
   })
-  .in("tracking_number", trackingNumbers);
+  .in("tracking_number", trackingNumbers)
+  .select("id, tracking_number");
 
 if (updateError) {
   return res.status(500).json({
     error: "Ramassage créé mais impossible de mettre à jour la base.",
     details: updateError,
   });
+}
+
+const events = (updatedOrders ?? []).map((o) => ({
+  order_id: o.id,
+  event: "pickup_requested",
+  message: `Ramassage demandé — ${pickupCode}`,
+}));
+
+if (events.length > 0) {
+
+  const { error: eventsError } = await supabase
+    .from("order_events")
+    .insert(events);
+
+  if (eventsError) {
+    console.error("ORDER_EVENTS INSERT ERROR:", eventsError);
+  }
 }
 
     return res.status(200).json({
