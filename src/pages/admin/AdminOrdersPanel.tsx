@@ -149,6 +149,44 @@ const STATUS_FILTERS: { key: string; label: string }[] = [
   { key: "returned", label: "Returned" },
 ];
 
+// Étapes fixes de la timeline affichée dans le drawer. "created" n'a pas
+// d'event loggé (la commande naît au checkout, hors admin) — on utilise
+// directement created_at pour cette étape-là.
+const TIMELINE_STEPS: { key: string; label: string }[] = [
+  { key: "created", label: "Commande créée" },
+  { key: "confirmed", label: "Confirmée" },
+  { key: "shipment_created", label: "Colis créé" },
+  { key: "pickup_requested", label: "Ramassage" },
+  { key: "transit", label: "En transit" },
+  { key: "delivered", label: "Livrée" },
+];
+
+const TRANSIT_RAW_STATUSES = [
+  "warehouse",
+  "transit",
+  "distributed",
+  "delivering",
+  "to_pickup",
+  "pickedup",
+  "unreachable",
+  "postponed",
+];
+
+// Les events loggés par sync/webhook portent le statut Sendit brut en
+// minuscule (ex: "transit", "delivered") ; ceux loggés par les actions
+// admin portent une clé fixe ("confirmed", "shipment_created", ...).
+const mapEventToStep = (eventKey: string): string | null => {
+  const k = (eventKey ?? "").toLowerCase();
+
+  if (k === "confirmed") return "confirmed";
+  if (k === "shipment_created") return "shipment_created";
+  if (k === "pickup_requested") return "pickup_requested";
+  if (k === "delivered") return "delivered";
+  if (TRANSIT_RAW_STATUSES.includes(k)) return "transit";
+
+  return null;
+};
+
 export const AdminOrdersPanel = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [unified, setUnified] = useState<LedgerRow[]>([]);
@@ -174,6 +212,9 @@ export const AdminOrdersPanel = () => {
   });
   const [salesByDay, setSalesByDay] = useState<{ date: string; total: number }[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [orderEvents, setOrderEvents] = useState<any[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
@@ -577,6 +618,32 @@ const handleExportCSV = () => {
   toast.success(`${displayedOrders.length} commande(s) exportée(s)`);
 };
 
+const openDrawer = async (o: any) => {
+
+  setSelectedOrder(o);
+  setOrderEvents([]);
+  setLoadingEvents(true);
+
+  const { data, error } = await supabase
+    .from("order_events")
+    .select("*")
+    .eq("order_id", o.id)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    toast.error("Erreur chargement historique");
+  }
+
+  setOrderEvents(data ?? []);
+  setLoadingEvents(false);
+};
+
+const closeDrawer = () => {
+  setSelectedOrder(null);
+  setOrderEvents([]);
+};
+
 const handleSyncSendit = async () => {
 
   setSyncingSendit(true);
@@ -930,308 +997,93 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
             return (
 
               <div
-  key={o.id}
-  className="border-b border-border p-4"
->
+                key={o.id}
+                onClick={() => openDrawer(o)}
+                className="border-b border-border p-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/10"
+              >
 
-  <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
 
-    <div className="text-sm font-display tracking-[0.15em] text-primary-hi">
-      #{o.display_id}
-    </div>
+                  <div className="text-xs font-display tracking-[0.1em] text-primary-hi shrink-0">
+                    #{o.display_id}
+                  </div>
 
-    <div className="flex items-center gap-2">
+                  <div className="text-xs truncate">
+                    {o.customer_name}
+                  </div>
 
-      <div className="text-[9px] uppercase tracking-[0.15em] flex items-center gap-1.5">
-        <StatusDot status={status} />{status}
-      </div>
+                  <div className="text-[9px] uppercase text-muted-foreground shrink-0 hidden sm:block">
+                    {o.customer_city}
+                  </div>
 
-      {o.shipping_label_url && (
+                </div>
 
-        <a
-          href={o.shipping_label_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="
-            border
-            border-primary
-            px-2
-            py-1
-            text-[9px]
-            tracking-[0.1em]
-            uppercase
-            hover:bg-primary
-            hover:text-primary-foreground
-          "
-        >
-          Bordereau
-        </a>
+                <div className="flex items-center gap-3 shrink-0">
 
-      )}
+                  <div className="text-[9px] uppercase flex items-center gap-1.5">
+                    <StatusDot status={status} />{status}
+                  </div>
 
-    </div>
+                  <div className="text-xs font-display text-primary-hi w-16 text-right">
+                    {o.total} MAD
+                  </div>
 
-  </div>
+                  {status === "pending" && !o.tracking_number && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleConfirmOrder(o);
+                      }}
+                      disabled={confirmingOrderFor === o.id}
+                      className="
+                        border
+                        border-primary
+                        px-2
+                        py-1
+                        text-[8px]
+                        uppercase
+                        tracking-[0.1em]
+                        hover:bg-primary
+                        hover:text-primary-foreground
+                        disabled:opacity-50
+                      "
+                    >
+                      {confirmingOrderFor === o.id ? "..." : "VALIDER"}
+                    </button>
+                  )}
 
-  <div className="grid lg:grid-cols-3 gap-3">
+                  {status === "confirmed" && !o.tracking_number && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCreateShipment(o);
+                      }}
+                      disabled={creatingShipmentFor === o.id}
+                      className="
+                        border
+                        border-primary
+                        px-2
+                        py-1
+                        text-[8px]
+                        uppercase
+                        tracking-[0.1em]
+                        hover:bg-primary
+                        hover:text-primary-foreground
+                        disabled:opacity-50
+                      "
+                    >
+                      {creatingShipmentFor === o.id ? "..." : "COLIS"}
+                    </button>
+                  )}
 
-    {/* CLIENT */}
+                </div>
 
-    <div className="border border-border p-3">
-
-      <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
-        CLIENT
-      </div>
-
-      <div className="space-y-1.5">
-
-        <div>
-          <div className="text-[8px] uppercase text-muted-foreground">
-            Nom
-          </div>
-
-          <div className="mt-0.5 text-xs">
-            {o.customer_name}
-          </div>
-        </div>
-
-        <div>
-          <div className="text-[8px] uppercase text-muted-foreground">
-            Téléphone
-          </div>
-
-          <div className="mt-0.5 text-xs">
-            {o.customer_phone}
-          </div>
-        </div>
-
-        <div>
-          <div className="text-[8px] uppercase text-muted-foreground">
-            Email
-          </div>
-
-          <div className="mt-0.5 text-xs break-all">
-            {o.customer_email}
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-
-
-    {/* LIVRAISON */}
-
-    <div className="border border-border p-3">
-
-      <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
-        LIVRAISON
-      </div>
-
-      <div className="space-y-1.5">
-
-        <div>
-
-          <div className="text-[8px] uppercase text-muted-foreground">
-            Ville
-          </div>
-
-          <div className="mt-0.5 text-xs">
-            {o.customer_city}
-          </div>
-
-        </div>
-
-        <div>
-
-          <div className="text-[8px] uppercase text-muted-foreground">
-            District
-          </div>
-
-          <div className="mt-0.5 text-xs">
-            {o.customer_district ?? "—"}
-          </div>
-
-        </div>
-
-        <div>
-
-          <div className="text-[8px] uppercase text-muted-foreground">
-            Adresse
-          </div>
-
-          <div className="mt-0.5 text-xs leading-relaxed">
-            {o.customer_address}
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-
-    {/* SENDIT */}
-
-    <div className="border border-border p-3">
-
-      <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
-        SENDIT
-      </div>
-
-      {o.tracking_number ? (
-
-        <>
-
-          <div className="space-y-1.5">
-
-            <div>
-
-              <div className="text-[8px] uppercase text-muted-foreground">
-                Tracking
               </div>
-
-              <div className="mt-0.5 text-xs font-display tracking-[0.1em]">
-                {o.tracking_number}
-              </div>
-
-            </div>
-
-            <div>
-
-              <div className="text-[8px] uppercase text-muted-foreground">
-                Status
-              </div>
-
-              <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
-                <StatusDot status={o.shipping_status} />{o.shipping_status}
-              </div>
-
-              {o.pickup_code && (
-  <>
-    <div className="pt-1.5 border-t border-border mt-1.5">
-
-      <div className="text-[8px] uppercase text-muted-foreground">
-        Pickup
-      </div>
-
-      <div className="mt-0.5 text-xs font-display tracking-[0.1em]">
-        {o.pickup_code}
-      </div>
-
-    </div>
-
-    <div>
-
-      <div className="text-[8px] uppercase text-muted-foreground">
-        Pickup status
-      </div>
-
-      <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
-        <StatusDot status={o.pickup_status} />{o.pickup_status}
-      </div>
-
-    </div>
-  </>
-)}
-
-            </div>
-
-          </div>
-
-        </>
-
-      ) : status === "pending" ? (
-
-        <button
-          onClick={() => handleConfirmOrder(o)}
-          disabled={confirmingOrderFor === o.id}
-          className="
-            w-full
-            border
-            border-primary
-            py-1.5
-            text-[9px]
-            uppercase
-            tracking-[0.15em]
-            hover:bg-primary
-            hover:text-primary-foreground
-            disabled:opacity-50
-          "
-        >
-          {confirmingOrderFor === o.id
-            ? "VALIDATION..."
-            : "VALIDER LA COMMANDE"}
-        </button>
-
-      ) : status === "confirmed" ? (
-
-        <button
-          onClick={() => handleCreateShipment(o)}
-          disabled={creatingShipmentFor === o.id}
-          className="
-            w-full
-            border
-            border-primary
-            py-1.5
-            text-[9px]
-            uppercase
-            tracking-[0.15em]
-            hover:bg-primary
-            hover:text-primary-foreground
-            disabled:opacity-50
-          "
-        >
-          {creatingShipmentFor === o.id
-            ? "CREATION..."
-            : "CREER LE COLIS"}
-        </button>
-
-      ) : null}
-
-    </div>
-
-  </div>
-
-  <div className="mt-3 pt-3 border-t border-border flex justify-between items-end">
-
-    <div>
-
-      <div className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
-        PRODUITS
-      </div>
-
-      <div className="text-xs">
-
-        {(o.order_items ?? [])
-          .map(
-            (item: OrderItem) =>
-              `${item.product_name} ×${item.quantity}`
-          )
-          .join(", ")}
-
-      </div>
-
-    </div>
-
-    <div className="text-right">
-
-      <div className="text-base font-display text-primary-hi">
-        {o.total} MAD
-      </div>
-
-      <div className="text-[8px] uppercase text-muted-foreground">
-        {o.subtotal} + {o.shipping_fee} livraison
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
 
             );
           })}
+
+        </div>
 
         </div>
 
@@ -1492,6 +1344,273 @@ TOTAL
         </div>
 
       </section>
+
+      {selectedOrder && (
+
+        <>
+
+          <div
+            onClick={closeDrawer}
+            className="fixed inset-0 bg-black/40 z-40"
+          />
+
+          <div className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-background border-l border-border z-50 overflow-y-auto p-4">
+
+            <div className="flex items-center justify-between mb-4">
+
+              <div className="text-sm font-display tracking-[0.15em] text-primary-hi">
+                #{selectedOrder.display_id}
+              </div>
+
+              <button
+                onClick={closeDrawer}
+                className="border border-border px-2 py-1 text-[9px] uppercase tracking-[0.1em]"
+              >
+                Fermer
+              </button>
+
+            </div>
+
+            <div className="text-[9px] uppercase tracking-[0.15em] flex items-center gap-1.5 mb-4">
+              <StatusDot status={selectedOrder.status?.trim().toLowerCase()} />
+              {selectedOrder.status}
+            </div>
+
+            {selectedOrder.shipping_label_url && (
+              <a
+                href={selectedOrder.shipping_label_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="
+                  block
+                  border
+                  border-primary
+                  px-2
+                  py-1.5
+                  text-[9px]
+                  text-center
+                  uppercase
+                  tracking-[0.1em]
+                  mb-4
+                  hover:bg-primary
+                  hover:text-primary-foreground
+                "
+              >
+                Bordereau
+              </a>
+            )}
+
+            <div className="space-y-3 mb-4">
+
+              {/* CLIENT */}
+              <div className="border border-border p-3">
+
+                <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
+                  CLIENT
+                </div>
+
+                <div className="space-y-1.5">
+
+                  <div>
+                    <div className="text-[8px] uppercase text-muted-foreground">Nom</div>
+                    <div className="mt-0.5 text-xs">{selectedOrder.customer_name}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-[8px] uppercase text-muted-foreground">Téléphone</div>
+                    <div className="mt-0.5 text-xs">{selectedOrder.customer_phone}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-[8px] uppercase text-muted-foreground">Email</div>
+                    <div className="mt-0.5 text-xs break-all">{selectedOrder.customer_email}</div>
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* LIVRAISON */}
+              <div className="border border-border p-3">
+
+                <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
+                  LIVRAISON
+                </div>
+
+                <div className="space-y-1.5">
+
+                  <div>
+                    <div className="text-[8px] uppercase text-muted-foreground">Ville</div>
+                    <div className="mt-0.5 text-xs">{selectedOrder.customer_city}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-[8px] uppercase text-muted-foreground">District</div>
+                    <div className="mt-0.5 text-xs">{selectedOrder.customer_district ?? "—"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-[8px] uppercase text-muted-foreground">Adresse</div>
+                    <div className="mt-0.5 text-xs leading-relaxed">{selectedOrder.customer_address}</div>
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* SENDIT */}
+              {selectedOrder.tracking_number && (
+                <div className="border border-border p-3">
+
+                  <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
+                    SENDIT
+                  </div>
+
+                  <div className="space-y-1.5">
+
+                    <div>
+                      <div className="text-[8px] uppercase text-muted-foreground">Tracking</div>
+                      <div className="mt-0.5 text-xs font-display tracking-[0.1em]">
+                        {selectedOrder.tracking_number}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[8px] uppercase text-muted-foreground">Status</div>
+                      <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
+                        <StatusDot status={selectedOrder.shipping_status} />
+                        {selectedOrder.shipping_status}
+                      </div>
+                    </div>
+
+                    {selectedOrder.pickup_code && (
+                      <>
+                        <div className="pt-1.5 border-t border-border mt-1.5">
+                          <div className="text-[8px] uppercase text-muted-foreground">Pickup</div>
+                          <div className="mt-0.5 text-xs font-display tracking-[0.1em]">
+                            {selectedOrder.pickup_code}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-[8px] uppercase text-muted-foreground">Pickup status</div>
+                          <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
+                            <StatusDot status={selectedOrder.pickup_status} />
+                            {selectedOrder.pickup_status}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+
+            {selectedOrder.status?.trim().toLowerCase() === "pending" && !selectedOrder.tracking_number && (
+              <button
+                onClick={() => handleConfirmOrder(selectedOrder)}
+                disabled={confirmingOrderFor === selectedOrder.id}
+                className="w-full border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 mb-4"
+              >
+                {confirmingOrderFor === selectedOrder.id ? "VALIDATION..." : "VALIDER LA COMMANDE"}
+              </button>
+            )}
+
+            {selectedOrder.status?.trim().toLowerCase() === "confirmed" && !selectedOrder.tracking_number && (
+              <button
+                onClick={() => handleCreateShipment(selectedOrder)}
+                disabled={creatingShipmentFor === selectedOrder.id}
+                className="w-full border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 mb-4"
+              >
+                {creatingShipmentFor === selectedOrder.id ? "CREATION..." : "CREER LE COLIS"}
+              </button>
+            )}
+
+            <div className="border-t border-border pt-3 mb-4 flex justify-between items-end">
+
+              <div>
+                <div className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
+                  PRODUITS
+                </div>
+                <div className="text-xs">
+                  {(selectedOrder.order_items ?? [])
+                    .map((item: OrderItem) => `${item.product_name} ×${item.quantity}`)
+                    .join(", ")}
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-base font-display text-primary-hi">
+                  {selectedOrder.total} MAD
+                </div>
+                <div className="text-[8px] uppercase text-muted-foreground">
+                  {selectedOrder.subtotal} + {selectedOrder.shipping_fee} livraison
+                </div>
+              </div>
+
+            </div>
+
+            <div>
+
+              <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
+                HISTORIQUE
+              </div>
+
+              {loadingEvents ? (
+                <div className="text-xs text-muted-foreground">Chargement...</div>
+              ) : (
+                <div className="space-y-2">
+
+                  {TIMELINE_STEPS.map((step) => {
+
+                    if (step.key === "created") {
+                      return (
+                        <div key={step.key} className="flex items-center gap-2 text-xs">
+                          <span className="w-2 h-2 rounded-full shrink-0 bg-black" />
+                          <span>{step.label}</span>
+                          <span className="text-[9px] text-muted-foreground ml-auto">
+                            {selectedOrder.created_at
+                              ? new Date(selectedOrder.created_at).toLocaleString()
+                              : ""}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    const matched = orderEvents.find(
+                      (e) => mapEventToStep(e.event) === step.key
+                    );
+
+                    return (
+                      <div key={step.key} className="flex items-center gap-2 text-xs">
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${matched ? "bg-black" : "bg-gray-300"}`}
+                        />
+                        <span className={matched ? "" : "text-muted-foreground"}>
+                          {step.label}
+                        </span>
+                        {matched && (
+                          <span className="text-[9px] text-muted-foreground ml-auto">
+                            {new Date(matched.created_at).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                </div>
+              )}
+
+            </div>
+
+          </div>
+
+        </>
+
+      )}
 
     </>
   );
