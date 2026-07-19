@@ -10,6 +10,19 @@ export const config = {
   },
 };
 
+// Statuts qui déclenchent automatiquement une demande de retour.
+// Volontairement restreint à REJECTED (refus client explicite) — le seul
+// cas sans ambiguïté. Sendit ne documente pas de règle officielle ; élargir
+// cette liste (ex: ajouter "CANCELED") une fois que le comportement réel
+// est observé, si besoin.
+const AUTO_RETURN_STATUSES = ["REJECTED"];
+
+// Destination du retour : HOME = livré à ton adresse automatiquement,
+// WAREHOUSE = tu dois aller le chercher à l'entrepôt Sendit. HOME est le
+// seul choix compatible avec une automatisation complète.
+const RETURN_TYPE = "HOME";
+const RETURN_DISTRICT_ID = 538;
+
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
     let data = "";
@@ -43,6 +56,121 @@ function verifySignature(rawBody, signature, secret) {
     return crypto.timingSafeEqual(expectedBuffer, signatureBuffer);
   } catch {
     return false;
+  }
+}
+
+async function autoCreateReturn(supabase, order) {
+
+  // Idempotence : déjà en cours, on ne redemande pas.
+  if (order.return_code) return;
+
+  try {
+
+    const loginResponse = await fetch(
+      `${process.env.SENDIT_API_URL}/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          public_key: process.env.SENDIT_PUBLIC_KEY,
+          secret_key: process.env.SENDIT_SECRET_KEY,
+        }),
+      }
+    );
+
+    const loginJson = await loginResponse.json();
+
+    if (!loginResponse.ok || !loginJson.success) {
+      console.error("AUTO RETURN — SENDIT LOGIN:", loginJson);
+      return;
+    }
+
+    const senditToken = loginJson.data.token;
+
+    const payload = {
+      type: RETURN_TYPE,
+      district_id: RETURN_DISTRICT_ID,
+      name: order.customer_name,
+      phone: String(order.customer_phone)
+        .replace(/\s+/g, "")
+        .replace(/^(\+212|212)/, "0"),
+      address: order.customer_address,
+      note: "Retour automatique — colis refusé (REJECTED)",
+      deliveries: order.tracking_number,
+    };
+
+    console.log("AUTO RETURN PAYLOAD:", JSON.stringify(payload, null, 2));
+
+    const returnResponse = await fetch(
+      `${process.env.SENDIT_API_URL}/returns`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${senditToken}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const returnText = await returnResponse.text();
+
+    let returnJson;
+
+    try {
+      returnJson = JSON.parse(returnText);
+    } catch {
+      returnJson = { raw: returnText };
+    }
+
+    if (!returnResponse.ok || returnJson.success === false) {
+      console.error("AUTO RETURN ERROR:", JSON.stringify(returnJson, null, 2));
+      return;
+    }
+
+    const data = returnJson.data ?? returnJson;
+    const returnCode = data.code ?? null;
+    const returnStatus = data.status ?? "PENDING";
+
+    if (!returnCode) {
+      console.error("AUTO RETURN: pas de code retourné par Sendit");
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({
+        return_code: returnCode,
+        return_status: returnStatus,
+        return_reason: "Retour automatique — colis refusé (REJECTED)",
+        return_created_at: new Date().toISOString(),
+      })
+      .eq("id", order.id)
+      .is("return_code", null);
+
+    if (updateError) {
+      console.error("AUTO RETURN — UPDATE ERROR:", updateError);
+      return;
+    }
+
+    console.log(`AUTO RETURN: ${returnCode} créé pour la commande ${order.id}`);
+
+    const { error: eventError } = await supabase
+      .from("order_events")
+      .insert({
+        order_id: order.id,
+        event: "return_requested",
+        message: `Retour automatique demandé — ${returnCode} (colis refusé)`,
+      });
+
+    if (eventError) {
+      console.error("ORDER_EVENTS INSERT ERROR:", eventError);
+    }
+
+  } catch (err) {
+    console.error("AUTO RETURN — UNEXPECTED ERROR:", err);
   }
 }
 
@@ -176,12 +304,12 @@ export default async function handler(req, res) {
         `SENDIT WEBHOOK: ${code} ${oldStatus ?? "?"} → ${newStatus}`
       );
 
-      const orderId = updatedRows[0].id;
+      const order = updatedRows[0];
 
       const { error: eventError } = await supabase
         .from("order_events")
         .insert({
-          order_id: orderId,
+          order_id: order.id,
           event: newStatus.toLowerCase(),
           message: message
             ? `Statut Sendit → ${newStatus} (${message})`
@@ -190,6 +318,10 @@ export default async function handler(req, res) {
 
       if (eventError) {
         console.error("ORDER_EVENTS INSERT ERROR:", eventError);
+      }
+
+      if (AUTO_RETURN_STATUSES.includes(newStatus)) {
+        await autoCreateReturn(supabase, order);
       }
     }
 
