@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminProductsPanel } from "@/pages/admin/AdminProductsPanel";
 import { AdminOrdersPanel } from "@/pages/admin/AdminOrdersPanel";
+import { AdminAuditPanel } from "@/pages/admin/AdminAuditPanel";
 
 const Admin = () => {
   const nav = useNavigate();
@@ -11,7 +12,7 @@ const Admin = () => {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) nav("/auth");
+    if (!user) nav("/zm-portal-x92-login");
   }, [user, loading, nav]);
 
   if (loading) return <div className="min-h-screen bg-background grid place-items-center text-muted-foreground text-xs">Loading...</div>;
@@ -23,7 +24,7 @@ const Admin = () => {
         <p className="text-xs text-muted-foreground leading-relaxed">
           Your account does not have admin privileges. Contact the store owner.
         </p>
-        <button onClick={() => supabase.auth.signOut().then(() => nav("/auth"))} className="mt-6 px-5 py-2 border border-primary text-primary text-[10px] tracking-[0.22em] uppercase hover:bg-primary hover:text-primary-foreground">Sign out</button>
+        <button onClick={() => supabase.auth.signOut().then(() => nav("/zm-portal-x92-login"))} className="mt-6 px-5 py-2 border border-primary text-primary text-[10px] tracking-[0.22em] uppercase hover:bg-primary hover:text-primary-foreground">Sign out</button>
       </div>
     </div>
   );
@@ -42,6 +43,7 @@ const Admin = () => {
 
       <AdminProductsPanel />
       <AdminOrdersPanel />
+      <AdminAuditPanel />
     </div>
   );
 };
