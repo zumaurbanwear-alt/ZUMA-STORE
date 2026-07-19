@@ -1626,7 +1626,10 @@ TOTAL
                   {selectedOrder.return_status && (
                     <div>
                       <span className="text-[8px] uppercase text-muted-foreground block">Status</span>
-                      {selectedOrder.return_status}
+                      <span className="flex items-center gap-1.5">
+                        <StatusDot status={selectedOrder.return_status} />
+                        {selectedOrder.return_status}
+                      </span>
                     </div>
                   )}
 
