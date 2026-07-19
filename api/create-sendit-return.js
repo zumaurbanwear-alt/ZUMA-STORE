@@ -5,6 +5,10 @@ import { createClient } from "@supabase/supabase-js";
 // ajuster si ce n'est pas le bon entrepôt pour les retours.
 const RETURN_DISTRICT_ID = 538;
 
+// HOME = Sendit livre le colis retourné à ton adresse automatiquement.
+// WAREHOUSE = tu dois aller le chercher à l'entrepôt Sendit toi-même.
+const RETURN_TYPE = "HOME";
+
 function parseReturnResponse(json) {
   const data = json.data ?? json;
 
@@ -148,7 +152,7 @@ export default async function handler(req, res) {
     const senditToken = loginJson.data.token;
 
     const payload = {
-      type: "WAREHOUSE",
+      type: RETURN_TYPE,
       district_id: RETURN_DISTRICT_ID,
       name: order.customer_name,
       phone: String(order.customer_phone)
