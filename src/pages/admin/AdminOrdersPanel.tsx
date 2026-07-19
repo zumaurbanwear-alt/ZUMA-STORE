@@ -112,6 +112,7 @@ const getOrderCategory = (o: any): string => {
   if (o.shipping_status === "DELIVERED") return "delivered";
 
   if (
+    o.return_code ||
     o.shipping_status_return ||
     o.shipping_status === "CANCELED" ||
     o.shipping_status === "REJECTED"
@@ -215,6 +216,7 @@ export const AdminOrdersPanel = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderEvents, setOrderEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [creatingReturnFor, setCreatingReturnFor] = useState<string | null>(null);
   
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
@@ -307,6 +309,7 @@ setPickups(grouped);
         status,
         shipping_status,
         shipping_status_return,
+        return_code,
         pickup_code
       `)
       .gte("created_at", since.toISOString())
@@ -642,6 +645,74 @@ const openDrawer = async (o: any) => {
 const closeDrawer = () => {
   setSelectedOrder(null);
   setOrderEvents([]);
+};
+
+const handleCreateReturn = async (order: any) => {
+
+  const reason = window.prompt(
+    "Raison du retour (optionnel) :"
+  );
+
+  // window.prompt renvoie null si l'admin annule — on n'envoie rien.
+  if (reason === null) return;
+
+  setCreatingReturnFor(order.id);
+
+  try {
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      toast.error("Session expirée");
+      return;
+    }
+
+    const res = await fetch(
+      "/api/create-sendit-return",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          reason: reason || undefined,
+        }),
+      }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      toast.error(json.error ?? "Erreur retour");
+      console.error(json);
+      return;
+    }
+
+    toast.success(`Retour ${json.return_code} demandé`);
+
+    await loadOrders();
+    await loadStats();
+
+    // Le drawer affiche selectedOrder — on le referme pour forcer un
+    // réaffichage propre avec les données à jour au prochain clic.
+    closeDrawer();
+
+  } catch (err) {
+
+    console.error(err);
+
+    toast.error("Erreur serveur");
+
+  } finally {
+
+    setCreatingReturnFor(null);
+
+  }
+
 };
 
 const handleSyncSendit = async () => {
@@ -1020,6 +1091,15 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
                 <div className="flex items-center gap-3 shrink-0">
 
+                  {(o.return_code || o.shipping_status_return) && (
+                    <span
+                      title="Retour en cours"
+                      className="text-[9px] text-red-600 shrink-0"
+                    >
+                      ⚠ Retour
+                    </span>
+                  )}
+
                   <div className="text-[9px] uppercase flex items-center gap-1.5">
                     <StatusDot status={status} />{status}
                   </div>
@@ -1082,8 +1162,6 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
             );
           })}
-
-        </div>
 
         </div>
 
@@ -1526,6 +1604,65 @@ TOTAL
                 className="w-full border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 mb-4"
               >
                 {creatingShipmentFor === selectedOrder.id ? "CREATION..." : "CREER LE COLIS"}
+              </button>
+            )}
+
+            {(selectedOrder.return_code || selectedOrder.shipping_status_return) && (
+              <div className="border border-red-600 p-3 mb-4">
+
+                <div className="text-[9px] text-red-600 uppercase tracking-[0.15em] mb-2">
+                  ⚠ Retour
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+
+                  {selectedOrder.return_code && (
+                    <div>
+                      <span className="text-[8px] uppercase text-muted-foreground block">Code retour</span>
+                      {selectedOrder.return_code}
+                    </div>
+                  )}
+
+                  {selectedOrder.return_status && (
+                    <div>
+                      <span className="text-[8px] uppercase text-muted-foreground block">Status</span>
+                      {selectedOrder.return_status}
+                    </div>
+                  )}
+
+                  {selectedOrder.shipping_status_return && (
+                    <div>
+                      <span className="text-[8px] uppercase text-muted-foreground block">Status Sendit</span>
+                      {selectedOrder.shipping_status_return}
+                    </div>
+                  )}
+
+                  {selectedOrder.return_reason && (
+                    <div>
+                      <span className="text-[8px] uppercase text-muted-foreground block">Raison</span>
+                      {selectedOrder.return_reason}
+                    </div>
+                  )}
+
+                  {selectedOrder.return_created_at && (
+                    <div>
+                      <span className="text-[8px] uppercase text-muted-foreground block">Demandé le</span>
+                      {new Date(selectedOrder.return_created_at).toLocaleString()}
+                    </div>
+                  )}
+
+                </div>
+
+              </div>
+            )}
+
+            {selectedOrder.tracking_number && !selectedOrder.return_code && (
+              <button
+                onClick={() => handleCreateReturn(selectedOrder)}
+                disabled={creatingReturnFor === selectedOrder.id}
+                className="w-full border border-red-600 text-red-600 py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-red-600 hover:text-white disabled:opacity-50 mb-4"
+              >
+                {creatingReturnFor === selectedOrder.id ? "DEMANDE..." : "DEMANDER UN RETOUR"}
               </button>
             )}
 
