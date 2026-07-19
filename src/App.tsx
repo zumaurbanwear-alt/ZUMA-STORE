@@ -51,7 +51,7 @@ const App = () => (
               <Route path="/shop" element={<Shop />} />
               <Route path="/product/:slug" element={<Product />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/zm-portal-x92" element={<Admin />} />
               <Route path="/faq" element={<Faq />} />
               <Route path="/shipping" element={<ShippingPolicy />} />
               <Route path="/returns" element={<ReturnPolicy />} />
