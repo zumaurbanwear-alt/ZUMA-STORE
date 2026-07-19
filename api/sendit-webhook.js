@@ -175,6 +175,22 @@ export default async function handler(req, res) {
       console.log(
         `SENDIT WEBHOOK: ${code} ${oldStatus ?? "?"} → ${newStatus}`
       );
+
+      const orderId = updatedRows[0].id;
+
+      const { error: eventError } = await supabase
+        .from("order_events")
+        .insert({
+          order_id: orderId,
+          event: newStatus.toLowerCase(),
+          message: message
+            ? `Statut Sendit → ${newStatus} (${message})`
+            : `Statut Sendit → ${newStatus}`,
+        });
+
+      if (eventError) {
+        console.error("ORDER_EVENTS INSERT ERROR:", eventError);
+      }
     }
 
     return res.status(200).json({
