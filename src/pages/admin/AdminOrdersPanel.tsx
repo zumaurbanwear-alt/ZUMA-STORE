@@ -142,12 +142,53 @@ const getOrderCategory = (o: any): string => {
 
 const STATUS_FILTERS: { key: string; label: string }[] = [
   { key: "all", label: "Toutes" },
-  { key: "pending", label: "Pending" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "pickup", label: "Pickup" },
-  { key: "transit", label: "Transit" },
-  { key: "delivered", label: "Delivered" },
-  { key: "returned", label: "Returned" },
+  { key: "pending", label: "En attente" },
+  { key: "confirmed", label: "Confirmée" },
+  { key: "pickup", label: "Ramassage" },
+  { key: "transit", label: "En transit" },
+  { key: "delivered", label: "Livrée" },
+  { key: "returned", label: "Retour" },
+];
+
+// Libellés français pour tous les statuts affichés (interne + Sendit brut).
+// Les valeurs Sendit viennent de GET /all-status-deliveries. Fallback :
+// affiche la valeur brute telle quelle si elle n'est pas dans la liste
+// (utile pour les statuts de retour, dont on ne connaît pas encore
+// toutes les valeurs possibles).
+const STATUS_LABELS_FR: Record<string, string> = {
+  pending: "En attente",
+  to_prepare: "À préparer",
+  new_destination: "À changer",
+  confirmed: "Confirmée",
+  to_pickup: "Ramassage en cours",
+  pickedup: "Ramassé",
+  warehouse: "Entrepôt",
+  transit: "En transit",
+  distributed: "Distribué",
+  delivering: "En cours de livraison",
+  unreachable: "Injoignable",
+  postponed: "Reporté",
+  delivered: "Livré",
+  canceled: "Annulé",
+  cancelled: "Annulé",
+  rejected: "Refusé",
+};
+
+const translateStatus = (status: string | null | undefined): string => {
+  if (!status) return "—";
+  const key = status.trim().toLowerCase();
+  return STATUS_LABELS_FR[key] ?? status;
+};
+
+// Un retour n'a de sens que si Sendit a déjà tenté/terminé la livraison.
+// En dehors de ces statuts, l'API Sendit refuse la demande (comme on
+// vient de le voir : "colis invalide" tant qu'il est encore en transit).
+const RETURN_ELIGIBLE_STATUSES = [
+  "DELIVERED",
+  "REJECTED",
+  "UNREACHABLE",
+  "POSTPONED",
+  "CANCELED",
 ];
 
 // Étapes fixes de la timeline affichée dans le drawer. "created" n'a pas
@@ -1061,107 +1102,21 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
         <div className="border border-border divide-y divide-border">
 
-          {displayedOrders.map((o) => {
+          {displayedOrders.map((o) => (
 
-            const status = o.status?.trim().toLowerCase();
+            <div
+              key={o.id}
+              onClick={() => openDrawer(o)}
+              className="border-b border-border p-3 cursor-pointer hover:bg-muted/10"
+            >
 
-            return (
-
-              <div
-                key={o.id}
-                onClick={() => openDrawer(o)}
-                className="border-b border-border p-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/10"
-              >
-
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-
-                  <div className="text-xs font-display tracking-[0.1em] text-primary-hi shrink-0">
-                    #{o.display_id}
-                  </div>
-
-                  <div className="text-xs truncate">
-                    {o.customer_name}
-                  </div>
-
-                  <div className="text-[9px] uppercase text-muted-foreground shrink-0 hidden sm:block">
-                    {o.customer_city}
-                  </div>
-
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-
-                  {(o.return_code || o.shipping_status_return) && (
-                    <span
-                      title="Retour en cours"
-                      className="text-[9px] text-red-600 shrink-0"
-                    >
-                      ⚠ Retour
-                    </span>
-                  )}
-
-                  <div className="text-[9px] uppercase flex items-center gap-1.5">
-                    <StatusDot status={status} />{status}
-                  </div>
-
-                  <div className="text-xs font-display text-primary-hi w-16 text-right">
-                    {o.total} MAD
-                  </div>
-
-                  {status === "pending" && !o.tracking_number && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleConfirmOrder(o);
-                      }}
-                      disabled={confirmingOrderFor === o.id}
-                      className="
-                        border
-                        border-primary
-                        px-2
-                        py-1
-                        text-[8px]
-                        uppercase
-                        tracking-[0.1em]
-                        hover:bg-primary
-                        hover:text-primary-foreground
-                        disabled:opacity-50
-                      "
-                    >
-                      {confirmingOrderFor === o.id ? "..." : "VALIDER"}
-                    </button>
-                  )}
-
-                  {status === "confirmed" && !o.tracking_number && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCreateShipment(o);
-                      }}
-                      disabled={creatingShipmentFor === o.id}
-                      className="
-                        border
-                        border-primary
-                        px-2
-                        py-1
-                        text-[8px]
-                        uppercase
-                        tracking-[0.1em]
-                        hover:bg-primary
-                        hover:text-primary-foreground
-                        disabled:opacity-50
-                      "
-                    >
-                      {creatingShipmentFor === o.id ? "..." : "COLIS"}
-                    </button>
-                  )}
-
-                </div>
-
+              <div className="text-xs font-display tracking-[0.1em] text-primary-hi">
+                #{o.display_id}
               </div>
 
-            );
-          })}
+            </div>
+
+          ))}
 
         </div>
 
