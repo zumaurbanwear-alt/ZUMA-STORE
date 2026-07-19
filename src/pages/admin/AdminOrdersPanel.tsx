@@ -258,6 +258,17 @@ export const AdminOrdersPanel = () => {
   const [orderEvents, setOrderEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [creatingReturnFor, setCreatingReturnFor] = useState<string | null>(null);
+  const [expandedPickups, setExpandedPickups] = useState<Set<string>>(new Set());
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoicesPage, setInvoicesPage] = useState(1);
+  const [invoicesLastPage, setInvoicesLastPage] = useState(1);
+  const [invoicesTotal, setInvoicesTotal] = useState(0);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const [invoiceStartDate, setInvoiceStartDate] = useState("");
+  const [invoiceEndDate, setInvoiceEndDate] = useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [loadingInvoiceDetail, setLoadingInvoiceDetail] = useState(false);
   
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
@@ -664,6 +675,7 @@ const handleExportCSV = () => {
 
 const openDrawer = async (o: any) => {
 
+  setSelectedInvoice(null);
   setSelectedOrder(o);
   setOrderEvents([]);
   setLoadingEvents(true);
@@ -754,6 +766,115 @@ const handleCreateReturn = async (order: any) => {
 
   }
 
+};
+
+const loadInvoices = async (page: number) => {
+
+  setLoadingInvoices(true);
+
+  try {
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      toast.error("Session expirée");
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    if (invoiceStartDate) params.set("startDate", invoiceStartDate);
+    if (invoiceEndDate) params.set("endDate", invoiceEndDate);
+    if (invoiceSearch.trim()) params.set("querystring", invoiceSearch.trim());
+
+    const res = await fetch(`/api/sendit-invoices?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      toast.error(json.error ?? json.message ?? "Erreur factures");
+      console.error(json);
+      return;
+    }
+
+    setInvoices(json.data ?? []);
+    setInvoicesLastPage(json.last_page ?? 1);
+    setInvoicesTotal(json.total ?? 0);
+
+  } catch (err) {
+
+    console.error(err);
+    toast.error("Erreur serveur");
+
+  } finally {
+
+    setLoadingInvoices(false);
+
+  }
+
+};
+
+useEffect(() => {
+  loadInvoices(invoicesPage);
+}, [invoicesPage]);
+
+const openInvoiceDetail = async (code: string) => {
+
+  closeDrawer();
+  setSelectedInvoice({ code });
+  setLoadingInvoiceDetail(true);
+
+  try {
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      toast.error("Session expirée");
+      return;
+    }
+
+    const res = await fetch(
+      `/api/sendit-invoice-detail?code=${encodeURIComponent(code)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      toast.error(json.error ?? json.message ?? "Erreur détail facture");
+      console.error(json);
+      return;
+    }
+
+    setSelectedInvoice(json.data ?? json);
+
+  } catch (err) {
+
+    console.error(err);
+    toast.error("Erreur serveur");
+
+  } finally {
+
+    setLoadingInvoiceDetail(false);
+
+  }
+
+};
+
+const closeInvoiceDrawer = () => {
+  setSelectedInvoice(null);
 };
 
 const handleSyncSendit = async () => {
@@ -1185,7 +1306,23 @@ SENDIT PICKUPS ({pickups.length})
 
 <div className="border border-border divide-y">
 
-{pickups.map((p: any) => (
+{pickups.map((p: any) => {
+
+  const isExpanded = expandedPickups.has(p.code);
+
+  const toggleExpanded = () => {
+    setExpandedPickups((prev) => {
+      const next = new Set(prev);
+      if (next.has(p.code)) {
+        next.delete(p.code);
+      } else {
+        next.add(p.code);
+      }
+      return next;
+    });
+  };
+
+  return (
 
 <div
 key={p.code}
@@ -1210,10 +1347,18 @@ TRACKING
 {p.orders.map((o:any)=>o.tracking_number).join(", ")}
 </div>
 
-
-<div className="text-xs mt-1.5">
-{p.orders.map((o:any)=>o.customer_name).join(", ")}
-</div>
+{isExpanded ? (
+  <div className="text-xs mt-1.5">
+    {p.orders.map((o:any)=>o.customer_name).join(", ")}
+  </div>
+) : (
+  <button
+    onClick={toggleExpanded}
+    className="text-[9px] text-muted-foreground underline mt-1.5"
+  >
+    + détails
+  </button>
+)}
 
 </div>
 
@@ -1225,7 +1370,7 @@ STATUS
 </div>
 
 <div className="text-xs uppercase flex items-center justify-end gap-1.5">
-{p.status}<StatusDot status={p.status} />
+{translateStatus(p.status)}<StatusDot status={p.status} />
 </div>
 
 <div className="text-[8px] uppercase text-muted-foreground mt-1.5">
@@ -1248,17 +1393,134 @@ TOTAL
 {new Date(p.created_at).toLocaleDateString()}
 </div>
 
+{isExpanded && (
+  <button
+    onClick={toggleExpanded}
+    className="text-[9px] text-muted-foreground underline mt-1.5 block ml-auto"
+  >
+    réduire
+  </button>
+)}
+
 
 </div>
 
 </div>
 
-))}
+  );
+})}
 
 </div>
 
 </section>
-      
+
+      <section className="mb-12">
+
+        <h2 className="font-display text-base tracking-[0.2em] mb-3">
+          FACTURES SENDIT ({invoicesTotal})
+        </h2>
+
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+
+          <input
+            type="date"
+            value={invoiceStartDate}
+            onChange={(e) => setInvoiceStartDate(e.target.value)}
+            className="border border-border px-2 py-1.5 text-xs bg-transparent"
+          />
+
+          <input
+            type="date"
+            value={invoiceEndDate}
+            onChange={(e) => setInvoiceEndDate(e.target.value)}
+            className="border border-border px-2 py-1.5 text-xs bg-transparent"
+          />
+
+          <input
+            type="text"
+            value={invoiceSearch}
+            onChange={(e) => setInvoiceSearch(e.target.value)}
+            placeholder="Code / commentaire..."
+            className="border border-border px-3 py-1.5 text-xs flex-1 min-w-[160px] bg-transparent"
+          />
+
+          <button
+            onClick={() => {
+              setInvoicesPage(1);
+              loadInvoices(1);
+            }}
+            className="border border-primary px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground"
+          >
+            Filtrer
+          </button>
+
+        </div>
+
+        <div className="border border-border divide-y divide-border">
+
+          {loadingInvoices ? (
+            <div className="p-3 text-xs text-muted-foreground">Chargement...</div>
+          ) : invoices.length === 0 ? (
+            <div className="p-3 text-xs text-muted-foreground">Aucune facture</div>
+          ) : (
+            invoices.map((inv: any) => (
+              <div
+                key={inv.code}
+                onClick={() => openInvoiceDetail(inv.code)}
+                className="p-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/10"
+              >
+
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-xs font-display tracking-[0.1em] shrink-0">
+                    {inv.code}
+                  </span>
+                  <span className="text-[9px] text-muted-foreground shrink-0">
+                    {inv.date}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-[9px] uppercase flex items-center gap-1.5">
+                    <StatusDot status={inv.status} />
+                    {translateStatus(inv.status)}
+                  </span>
+                  <span className="text-xs font-display text-primary-hi w-20 text-right">
+                    {inv.amount} MAD
+                  </span>
+                </div>
+
+              </div>
+            ))
+          )}
+
+        </div>
+
+        <div className="flex items-center justify-between mt-3 text-[10px] uppercase tracking-[0.15em]">
+
+          <button
+            onClick={() => setInvoicesPage((p) => Math.max(1, p - 1))}
+            disabled={invoicesPage <= 1}
+            className="border border-border px-3 py-1 disabled:opacity-40"
+          >
+            ←
+          </button>
+
+          <span className="text-muted-foreground normal-case tracking-normal">
+            Page {invoicesPage} / {invoicesLastPage} ({invoicesTotal} factures)
+          </span>
+
+          <button
+            onClick={() => setInvoicesPage((p) => Math.min(invoicesLastPage, p + 1))}
+            disabled={invoicesPage >= invoicesLastPage}
+            className="border border-border px-3 py-1 disabled:opacity-40"
+          >
+            →
+          </button>
+
+        </div>
+
+      </section>
+
       <section className="mb-12">
 
         <h2 className="font-display text-base tracking-[0.2em] mb-3">
@@ -1406,7 +1668,7 @@ TOTAL
 
             <div className="text-[9px] uppercase tracking-[0.15em] flex items-center gap-1.5 mb-4">
               <StatusDot status={selectedOrder.status?.trim().toLowerCase()} />
-              {selectedOrder.status}
+              {translateStatus(selectedOrder.status)}
             </div>
 
             {selectedOrder.shipping_label_url && (
@@ -1512,7 +1774,7 @@ TOTAL
                       <div className="text-[8px] uppercase text-muted-foreground">Status</div>
                       <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
                         <StatusDot status={selectedOrder.shipping_status} />
-                        {selectedOrder.shipping_status}
+                        {translateStatus(selectedOrder.shipping_status)}
                       </div>
                     </div>
 
@@ -1529,7 +1791,7 @@ TOTAL
                           <div className="text-[8px] uppercase text-muted-foreground">Pickup status</div>
                           <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
                             <StatusDot status={selectedOrder.pickup_status} />
-                            {selectedOrder.pickup_status}
+                            {translateStatus(selectedOrder.pickup_status)}
                           </div>
                         </div>
                       </>
@@ -1614,7 +1876,9 @@ TOTAL
               </div>
             )}
 
-            {selectedOrder.tracking_number && !selectedOrder.return_code && (
+            {selectedOrder.tracking_number &&
+              !selectedOrder.return_code &&
+              RETURN_ELIGIBLE_STATUSES.includes(selectedOrder.shipping_status) && (
               <button
                 onClick={() => handleCreateReturn(selectedOrder)}
                 disabled={creatingReturnFor === selectedOrder.id}
@@ -1700,6 +1964,114 @@ TOTAL
               )}
 
             </div>
+
+          </div>
+
+        </>
+
+      )}
+
+      {selectedInvoice && (
+
+        <>
+
+          <div
+            onClick={closeInvoiceDrawer}
+            className="fixed inset-0 bg-black/40 z-40"
+          />
+
+          <div className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-background border-l border-border z-50 overflow-y-auto p-4">
+
+            <div className="flex items-center justify-between mb-4">
+
+              <div className="text-sm font-display tracking-[0.15em] text-primary-hi">
+                {selectedInvoice.code}
+              </div>
+
+              <button
+                onClick={closeInvoiceDrawer}
+                className="border border-border px-2 py-1 text-[9px] uppercase tracking-[0.1em]"
+              >
+                Fermer
+              </button>
+
+            </div>
+
+            {selectedInvoice.status && (
+              <div className="text-[9px] uppercase tracking-[0.15em] flex items-center gap-1.5 mb-4">
+                <StatusDot status={selectedInvoice.status} />
+                {translateStatus(selectedInvoice.status)}
+              </div>
+            )}
+
+            <div className="flex justify-between items-end mb-4 border-b border-border pb-3">
+
+              <div>
+                <div className="text-[8px] uppercase text-muted-foreground">Date</div>
+                <div className="text-xs mt-0.5">{selectedInvoice.date ?? "—"}</div>
+              </div>
+
+              <div className="text-base font-display text-primary-hi">
+                {selectedInvoice.amount ?? "—"} MAD
+              </div>
+
+            </div>
+
+            <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
+              DÉTAIL
+            </div>
+
+            {loadingInvoiceDetail ? (
+              <div className="text-xs text-muted-foreground">Chargement...</div>
+            ) : (selectedInvoice.items ?? []).length === 0 ? (
+              <div className="text-xs text-muted-foreground">Aucune ligne</div>
+            ) : (
+              <div className="space-y-2">
+
+                {(selectedInvoice.items ?? []).map((item: any, i: number) => (
+                  <div key={i} className="border border-border p-2 text-xs">
+
+                    <div className="flex justify-between items-center">
+                      <span className="uppercase text-[8px] text-muted-foreground">
+                        {item.type}
+                      </span>
+                      <span className="font-display text-primary-hi">
+                        {item.amount} MAD
+                      </span>
+                    </div>
+
+                    <div className="mt-1">{item.code}</div>
+
+                    {item.label && (
+                      <div className="text-[9px] text-muted-foreground mt-1">
+                        {item.label}
+                      </div>
+                    )}
+
+                    {item.status && (
+                      <div className="text-[9px] text-muted-foreground mt-1 flex items-center gap-1.5">
+                        <StatusDot status={item.status} />
+                        {translateStatus(item.status)}
+                      </div>
+                    )}
+
+                    {item.fee !== undefined && (
+                      <div className="text-[9px] text-muted-foreground mt-1">
+                        Frais : {item.fee} MAD
+                      </div>
+                    )}
+
+                    {item.date && (
+                      <div className="text-[9px] text-muted-foreground mt-1">
+                        {item.date}
+                      </div>
+                    )}
+
+                  </div>
+                ))}
+
+              </div>
+            )}
 
           </div>
 
