@@ -154,8 +154,12 @@ export default async function handler(req, res) {
 
       try {
 
+        const pickupUrl = `${process.env.SENDIT_API_URL}/pickups/${pickupCode}`;
+
+        console.log("SYNC PICKUP URL:", pickupUrl);
+
         const pickupResponse = await fetch(
-          `${process.env.SENDIT_API_URL}/pickups/${pickupCode}`,
+          pickupUrl,
           {
             method: "GET",
             headers: {
