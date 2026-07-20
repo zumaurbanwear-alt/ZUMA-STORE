@@ -20,6 +20,7 @@ const Product = lazy(() => import("./pages/Product.preload").then((m) => m.prelo
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Admin = lazy(() => import("./pages/Admin"));
+const AdminDepenses = lazy(() => import("./pages/AdminDepenses"));
 const Faq = lazy(() => import("./pages/Faq"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
@@ -50,8 +51,9 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/product/:slug" element={<Product />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/zm-portal-x92-login" element={<Auth />} />
+              <Route path="/zm-portal-x92" element={<Admin />} />
+              <Route path="/zm-portal-x92-depenses" element={<AdminDepenses />} />
               <Route path="/faq" element={<Faq />} />
               <Route path="/shipping" element={<ShippingPolicy />} />
               <Route path="/returns" element={<ReturnPolicy />} />

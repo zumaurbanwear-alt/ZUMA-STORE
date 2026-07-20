@@ -10,8 +10,12 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
-    persistSession: true,
+    // Deliberately NOT persisted: this client is only used for admin login
+    // (see Auth.tsx / Admin.tsx — the storefront has no customer accounts).
+    // With persistSession/localStorage, a logged-in admin stays logged in
+    // forever across restarts. We want the opposite: every fresh visit to
+    // the admin area must re-authenticate.
+    persistSession: false,
     autoRefreshToken: true,
   }
 });

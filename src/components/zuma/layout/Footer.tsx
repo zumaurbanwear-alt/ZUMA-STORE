@@ -50,7 +50,7 @@ export const Footer = () => {
 
       <div className="px-6 md:px-10 py-5 border-t border-border flex flex-row justify-between items-center gap-3">
         <p className="text-[7px] sm:text-[8px] tracking-[0.12em] sm:tracking-[0.16em] text-muted-foreground uppercase">
-          © {year} ZÜMA. {t("footerRights")}
+          <Link to="/zm-portal-x92" className="no-underline text-inherit hover:text-inherit">©</Link> {year} ZÜMA. {t("footerRights")}
         </p>
         <div className="flex gap-2 sm:gap-4 shrink-0">
           {[
