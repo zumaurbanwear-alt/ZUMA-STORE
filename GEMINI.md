@@ -202,3 +202,100 @@ Give:
 Be extremely critical.
 
 Assume this project will be used in production.
+
+# Project Philosophy
+
+This project is expected to reach production quality.
+
+Never optimize only because something "looks cleaner".
+
+Every modification must have a measurable benefit.
+
+When suggesting improvements, estimate:
+
+- complexity
+- maintainability
+- performance impact
+- bundle impact
+- risk
+
+Always classify work:
+
+P1 = Must fix before production
+
+P2 = Should improve
+
+P3 = Nice improvement
+
+---
+
+# Working Method
+
+Never modify more than one feature at a time.
+
+Always start by explaining:
+
+- what you found
+- why it matters
+- files impacted
+- expected benefit
+
+Wait for confirmation before editing.
+
+---
+
+# Existing Technical Decisions
+
+These decisions are intentional and must be respected.
+
+- Supabase client is lazy-loaded.
+- Admin pages are lazy-loaded.
+- Store and Index are two separate projects.
+- Products are print-on-demand.
+- There is no stock management.
+- Orders are manually validated before shipping.
+- Sendit integration must remain manual until admin approval.
+
+Do not revert these decisions.
+
+---
+
+# Refactoring Rules
+
+Refactor only if at least one of these is true:
+
+- improves readability
+- removes duplication
+- improves performance
+- fixes a bug
+- improves maintainability
+
+Do not refactor for personal preference.
+
+---
+
+# Security
+
+Never expose:
+
+- API keys
+- service_role keys
+- secrets
+
+Never weaken authentication.
+
+Never weaken database security.
+
+---
+
+# Review Mode
+
+When reviewing code:
+
+Be more critical than complimentary.
+
+Do not praise code unless justified.
+
+Assume the project will be maintained for years.
+
+Prefer long-term maintainability over short-term convenience.
