@@ -53,7 +53,7 @@ const Index = () => {
             loading="eager"
             decoding="async"
             className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
-            style={{ objectPosition: "center 32%" }}
+            style={{ objectPosition: "center 15%" }}
           />
         </picture>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
