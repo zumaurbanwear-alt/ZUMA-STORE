@@ -16,6 +16,10 @@ const schema = z.object({
   phone: z.string().trim().regex(/^\+?[0-9\s-]{8,20}$/, "Invalid phone"),
   address: z.string().trim().min(10, "Address too short").max(300),
   city: z.string().trim().min(2).max(80),
+  senditDistrictId: z
+    .number()
+    .nullable()
+    .refine((v) => v !== null, { message: "District required" }),
 });
 
 export const CheckoutDialog = ({
@@ -60,7 +64,7 @@ const [form, setForm] = useState({
 
     const { data, error } = await supabase
       .from("sendit_districts")
-      .select("district_id, name, ville")
+      .select("district_id, name, ville, price")
       .eq("ville", form.city)
       .order("name");
 
@@ -78,7 +82,20 @@ const [form, setForm] = useState({
 
   if (!open) return null;
   const subtotal = cart.reduce((s, i) => s + i.qty * Number(i.price), 0);
-  const shippingFee = getShippingFee(form.city);
+
+  // Le prix réel Sendit varie par district (pas seulement par ville) —
+  // s'il y a un district sélectionné, on utilise SON prix (synchronisé
+  // depuis Sendit via /api/import-sendit-districts), pas la table
+  // statique par ville qui ne connaît qu'un tarif générique par ville.
+  const selectedDistrict = districts.find(
+    (d) => d.district_id === form.senditDistrictId
+  );
+
+  const shippingFee =
+    selectedDistrict?.price != null
+      ? Number(selectedDistrict.price)
+      : getShippingFee(form.city);
+
   const total = subtotal + shippingFee;
 
   const submit = async (e: React.FormEvent) => {
@@ -229,6 +246,7 @@ const [form, setForm] = useState({
       district: name,
     });
   }}
+  err={errors.senditDistrictId}
   placeholder="Select district"
   className="sm:col-span-2"
 />
