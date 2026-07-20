@@ -273,6 +273,9 @@ export const AdminOrdersPanel = () => {
   const [rateComparison, setRateComparison] = useState<any[] | null>(null);
   const [loadingRates, setLoadingRates] = useState(false);
   const [showAllRates, setShowAllRates] = useState(false);
+  const [notesDraft, setNotesDraft] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [savingRefund, setSavingRefund] = useState(false);
   
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
@@ -681,6 +684,7 @@ const openDrawer = async (o: any) => {
 
   setSelectedInvoice(null);
   setSelectedOrder(o);
+  setNotesDraft(o.admin_notes ?? "");
   setOrderEvents([]);
   setLoadingEvents(true);
 
@@ -952,6 +956,89 @@ const loadRateComparison = async () => {
   } finally {
 
     setLoadingRates(false);
+
+  }
+
+};
+
+const updateOrderAdminFields = async (orderId: string, fields: Record<string, any>) => {
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    toast.error("Session expirée");
+    return null;
+  }
+
+  const res = await fetch("/api/update-order-admin-fields", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ orderId, fields }),
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    toast.error(json.error ?? "Erreur mise à jour");
+    console.error(json);
+    return null;
+  }
+
+  return json.order;
+};
+
+const handleSaveNotes = async () => {
+
+  if (!selectedOrder) return;
+
+  setSavingNotes(true);
+
+  try {
+
+    const updated = await updateOrderAdminFields(selectedOrder.id, {
+      admin_notes: notesDraft,
+    });
+
+    if (updated) {
+      setSelectedOrder((prev: any) => ({ ...prev, admin_notes: updated.admin_notes }));
+      toast.success("Notes enregistrées");
+      await loadOrders();
+    }
+
+  } finally {
+
+    setSavingNotes(false);
+
+  }
+
+};
+
+const handleToggleRefund = async () => {
+
+  if (!selectedOrder) return;
+
+  setSavingRefund(true);
+
+  try {
+
+    const updated = await updateOrderAdminFields(selectedOrder.id, {
+      refunded: !selectedOrder.refunded,
+    });
+
+    if (updated) {
+      setSelectedOrder((prev: any) => ({ ...prev, refunded: updated.refunded }));
+      toast.success(updated.refunded ? "Marquée comme remboursée" : "Marquée comme non remboursée");
+      await loadOrders();
+    }
+
+  } finally {
+
+    setSavingRefund(false);
 
   }
 
@@ -2062,6 +2149,60 @@ TOTAL
                   {selectedOrder.subtotal} + {selectedOrder.shipping_fee} livraison
                 </div>
               </div>
+
+            </div>
+
+            <div className="flex items-center justify-between border border-border p-3 mb-4">
+
+              <div>
+                <div className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
+                  Remboursement
+                </div>
+                <div className="text-xs">
+                  {selectedOrder.refunded ? "Remboursée" : "Non remboursée"}
+                </div>
+              </div>
+
+              <button
+                onClick={handleToggleRefund}
+                disabled={savingRefund}
+                className={`
+                  border px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] disabled:opacity-50
+                  ${selectedOrder.refunded
+                    ? "border-border hover:bg-muted"
+                    : "border-primary hover:bg-primary hover:text-primary-foreground"}
+                `}
+              >
+                {savingRefund
+                  ? "..."
+                  : selectedOrder.refunded
+                  ? "MARQUER NON REMBOURSÉE"
+                  : "MARQUER REMBOURSÉE"}
+              </button>
+
+            </div>
+
+            <div className="mb-4">
+
+              <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
+                Notes admin
+              </div>
+
+              <textarea
+                value={notesDraft}
+                onChange={(e) => setNotesDraft(e.target.value)}
+                rows={3}
+                placeholder="Note interne, visible uniquement par toi..."
+                className="w-full border border-border p-2 text-xs bg-transparent resize-none"
+              />
+
+              <button
+                onClick={handleSaveNotes}
+                disabled={savingNotes || notesDraft === (selectedOrder.admin_notes ?? "")}
+                className="mt-2 border border-primary px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
+              >
+                {savingNotes ? "ENREGISTREMENT..." : "ENREGISTRER LA NOTE"}
+              </button>
 
             </div>
 
