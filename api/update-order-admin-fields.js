@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const updates = {};
+    const updates: Record<string, any> = {};
 
     for (const key of Object.keys(fields)) {
       if (ALLOWED_FIELDS.includes(key)) {

@@ -148,7 +148,7 @@ export default async function handler(req, res) {
       ...new Set(withPickup.map((o) => o.pickup_code)),
     ];
 
-    const pickupDataByCode = {};
+    const pickupDataByCode: Record<string, any> = {};
 
     for (const pickupCode of uniquePickupCodes) {
 
@@ -200,7 +200,7 @@ export default async function handler(req, res) {
 
         if (!pickupData) continue;
 
-        const updates = {};
+        const updates: Record<string, any> = {};
 
         if (
           pickupData.pickup_status &&
@@ -300,7 +300,7 @@ export default async function handler(req, res) {
 
         const parsed = parseDeliveryStatus(deliveryJson);
 
-        const updates = {};
+        const updates: Record<string, any> = {};
 
         if (
           parsed.shipping_status &&
