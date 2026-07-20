@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
+import { getShippingFee, isKnownCity } from "@/lib/shipping";
 
 type Pickup = {
   pickup_code: string;
@@ -269,6 +270,9 @@ export const AdminOrdersPanel = () => {
   const [invoiceEndDate, setInvoiceEndDate] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [loadingInvoiceDetail, setLoadingInvoiceDetail] = useState(false);
+  const [rateComparison, setRateComparison] = useState<any[] | null>(null);
+  const [loadingRates, setLoadingRates] = useState(false);
+  const [showAllRates, setShowAllRates] = useState(false);
   
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
@@ -875,6 +879,82 @@ const openInvoiceDetail = async (code: string) => {
 
 const closeInvoiceDrawer = () => {
   setSelectedInvoice(null);
+};
+
+const loadRateComparison = async () => {
+
+  setLoadingRates(true);
+
+  try {
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      toast.error("Session expirée");
+      return;
+    }
+
+    const res = await fetch("/api/sendit-districts", {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      toast.error(json.error ?? json.message ?? "Erreur districts Sendit");
+      console.error(json);
+      return;
+    }
+
+    const districts = json.districts ?? [];
+
+    // Une ville peut apparaître via `name` ("Casablanca - Ain sebaa") ou
+    // `ville` selon le district — on essaie les deux avec notre logique
+    // de matching existante (celle utilisée au checkout).
+    const comparison = districts.map((d: any) => {
+
+      const label = d.name ?? d.ville ?? "—";
+      const senditPrice = Number(d.price ?? 0);
+
+      const ourFee = getShippingFee(label);
+      const known = isKnownCity(label);
+
+      return {
+        district_id: d.id,
+        label,
+        ville: d.ville,
+        sendit_price: senditPrice,
+        our_fee: ourFee,
+        known,
+        mismatch: !known || ourFee !== senditPrice,
+      };
+    });
+
+    setRateComparison(comparison);
+
+    const mismatches = comparison.filter((c: any) => c.mismatch).length;
+
+    if (mismatches === 0) {
+      toast.success(`${comparison.length} villes vérifiées, aucun écart`);
+    } else {
+      toast.error(`${mismatches} écart(s) sur ${comparison.length} villes`);
+    }
+
+  } catch (err) {
+
+    console.error(err);
+    toast.error("Erreur serveur");
+
+  } finally {
+
+    setLoadingRates(false);
+
+  }
+
 };
 
 const handleSyncSendit = async () => {
@@ -1518,6 +1598,79 @@ TOTAL
           </button>
 
         </div>
+
+      </section>
+
+      <section className="mb-12">
+
+        <div className="flex items-center justify-between mb-3">
+
+          <h2 className="font-display text-base tracking-[0.2em]">
+            TARIFS SENDIT VS CHECKOUT
+          </h2>
+
+          <button
+            onClick={loadRateComparison}
+            disabled={loadingRates}
+            className="border border-primary px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
+          >
+            {loadingRates ? "CHARGEMENT..." : "COMPARER"}
+          </button>
+
+        </div>
+
+        {rateComparison && (
+
+          <>
+
+            <div className="flex items-center justify-between mb-2 text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
+
+              <span>
+                {rateComparison.filter((c) => c.mismatch).length} écart(s) sur {rateComparison.length} villes
+              </span>
+
+              <button
+                onClick={() => setShowAllRates((v) => !v)}
+                className="underline"
+              >
+                {showAllRates ? "Afficher les écarts uniquement" : "Tout afficher"}
+              </button>
+
+            </div>
+
+            <div className="border border-border divide-y divide-border max-h-[400px] overflow-y-auto">
+
+              {rateComparison
+                .filter((c) => showAllRates || c.mismatch)
+                .map((c) => (
+                  <div
+                    key={c.district_id ?? c.label}
+                    className={`p-2 flex items-center justify-between gap-3 text-xs ${c.mismatch ? "bg-red-50" : ""}`}
+                  >
+                    <span className="truncate">{c.label}</span>
+                    <span className="flex items-center gap-3 shrink-0">
+                      <span className="text-muted-foreground text-[9px]">
+                        {c.known ? "" : "ville inconnue → "}
+                        checkout: {c.our_fee}
+                      </span>
+                      <span className={c.mismatch ? "text-red-600 font-display" : "font-display"}>
+                        sendit: {c.sendit_price}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+
+              {rateComparison.filter((c) => showAllRates || c.mismatch).length === 0 && (
+                <div className="p-3 text-xs text-muted-foreground">
+                  Aucun écart détecté 🎉
+                </div>
+              )}
+
+            </div>
+
+          </>
+
+        )}
 
       </section>
 
