@@ -711,13 +711,16 @@ const handleDownloadLabelsZip = async () => {
       return;
     }
 
-    const res = await fetch("/api/download-labels-zip", {
+    const res = await fetch("/api/order-admin-actions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ orderIds: Array.from(selectedOrderIds) }),
+      body: JSON.stringify({
+        action: "download-labels",
+        orderIds: Array.from(selectedOrderIds),
+      }),
     });
 
     if (!res.ok) {
@@ -1054,13 +1057,13 @@ const updateOrderAdminFields = async (orderId: string, fields: Record<string, an
     return null;
   }
 
-  const res = await fetch("/api/update-order-admin-fields", {
+  const res = await fetch("/api/order-admin-actions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ orderId, fields }),
+    body: JSON.stringify({ action: "update-fields", orderId, fields }),
   });
 
   const json = await res.json();

@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
+// Seuls ces champs peuvent être modifiés via action "update-fields" —
+// whitelist stricte pour ne jamais exposer une écriture arbitraire sur
+// la table orders depuis le client.
+const ALLOWED_FIELDS = ["admin_notes", "refunded"];
+
 // --- ZIP writer minimal, méthode STORE (pas de compression) ---
 // Volontairement sans dépendance npm (jszip/archiver) : une dépendance
 // mal résolue au build a déjà fait planter le déploiement une fois
@@ -41,7 +46,6 @@ function dosDateTime(date) {
 }
 
 function buildZip(files) {
-  // files: [{ name: string, data: Buffer }]
   const { time, day } = dosDateTime(new Date());
 
   const localParts = [];
@@ -58,7 +62,7 @@ function buildZip(files) {
     localHeader.writeUInt32LE(0x04034b50, 0);
     localHeader.writeUInt16LE(20, 4);
     localHeader.writeUInt16LE(0, 6);
-    localHeader.writeUInt16LE(0, 8); // store
+    localHeader.writeUInt16LE(0, 8);
     localHeader.writeUInt16LE(time, 10);
     localHeader.writeUInt16LE(day, 12);
     localHeader.writeUInt32LE(crc, 14);
@@ -74,7 +78,7 @@ function buildZip(files) {
     centralHeader.writeUInt16LE(20, 4);
     centralHeader.writeUInt16LE(20, 6);
     centralHeader.writeUInt16LE(0, 8);
-    centralHeader.writeUInt16LE(0, 10); // store
+    centralHeader.writeUInt16LE(0, 10);
     centralHeader.writeUInt16LE(time, 12);
     centralHeader.writeUInt16LE(day, 14);
     centralHeader.writeUInt32LE(crc, 16);
@@ -109,10 +113,137 @@ function buildZip(files) {
   return Buffer.concat([...localParts, ...centralParts, end]);
 }
 
-// Nom de fichier sûr (évite tout caractère qui casserait le zip ou le
-// système de fichiers de l'admin qui télécharge).
 function safeFileName(raw) {
   return String(raw).replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+async function handleUpdateFields(req, res, supabase) {
+
+  const { orderId, fields } = req.body;
+
+  if (!orderId || !fields || typeof fields !== "object") {
+    return res.status(400).json({
+      error: "orderId and fields required",
+    });
+  }
+
+  const updates: Record<string, any> = {};
+
+  for (const key of Object.keys(fields)) {
+    if (ALLOWED_FIELDS.includes(key)) {
+      updates[key] = fields[key];
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({
+      error: "No valid fields to update",
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("orders")
+    .update(updates)
+    .eq("id", orderId)
+    .select();
+
+  if (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    order: data?.[0] ?? null,
+  });
+}
+
+async function handleDownloadLabels(req, res, supabase) {
+
+  const { orderIds } = req.body;
+
+  if (!Array.isArray(orderIds) || orderIds.length === 0) {
+    return res.status(400).json({
+      error: "orderIds required",
+    });
+  }
+
+  if (orderIds.length > 100) {
+    return res.status(400).json({
+      error: "Trop de commandes sélectionnées (max 100).",
+    });
+  }
+
+  const {
+    data: orders,
+    error: ordersError,
+  } = await supabase
+    .from("orders")
+    .select("id, display_id, shipping_label_url")
+    .in("id", orderIds);
+
+  if (ordersError) {
+    return res.status(500).json({
+      error: ordersError.message,
+    });
+  }
+
+  const withLabel = (orders ?? []).filter((o) => o.shipping_label_url);
+
+  if (withLabel.length === 0) {
+    return res.status(400).json({
+      error: "Aucune des commandes sélectionnées n'a de bordereau.",
+    });
+  }
+
+  const files = [];
+  const skipped = [];
+
+  for (const order of withLabel) {
+
+    try {
+
+      const labelResponse = await fetch(order.shipping_label_url);
+
+      if (!labelResponse.ok) {
+        skipped.push(order.display_id);
+        continue;
+      }
+
+      const arrayBuffer = await labelResponse.arrayBuffer();
+
+      files.push({
+        name: `commande-${safeFileName(order.display_id)}.pdf`,
+        data: Buffer.from(arrayBuffer),
+      });
+
+    } catch (err) {
+      console.error("LABEL FETCH ERROR:", order.id, err);
+      skipped.push(order.display_id);
+    }
+  }
+
+  if (files.length === 0) {
+    return res.status(500).json({
+      error: "Impossible de récupérer les bordereaux (tous les téléchargements ont échoué).",
+    });
+  }
+
+  const zipBuffer = buildZip(files);
+
+  if (skipped.length > 0) {
+    console.warn("LABELS SKIPPED:", skipped);
+  }
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="bordereaux-${Date.now()}.zip"`
+  );
+  res.setHeader("X-Skipped-Count", String(skipped.length));
+
+  return res.status(200).send(zipBuffer);
 }
 
 export default async function handler(req, res) {
@@ -134,20 +265,6 @@ export default async function handler(req, res) {
     if (!token) {
       return res.status(401).json({
         error: "Missing token",
-      });
-    }
-
-    const { orderIds } = req.body;
-
-    if (!Array.isArray(orderIds) || orderIds.length === 0) {
-      return res.status(400).json({
-        error: "orderIds required",
-      });
-    }
-
-    if (orderIds.length > 100) {
-      return res.status(400).json({
-        error: "Trop de commandes sélectionnées (max 100).",
       });
     }
 
@@ -189,79 +306,23 @@ export default async function handler(req, res) {
       });
     }
 
-    const {
-      data: orders,
-      error: ordersError,
-    } = await supabase
-      .from("orders")
-      .select("id, display_id, shipping_label_url")
-      .in("id", orderIds);
+    const { action } = req.body;
 
-    if (ordersError) {
-      return res.status(500).json({
-        error: ordersError.message,
-      });
+    if (action === "download-labels") {
+      return await handleDownloadLabels(req, res, supabase);
     }
 
-    const withLabel = (orders ?? []).filter((o) => o.shipping_label_url);
-
-    if (withLabel.length === 0) {
-      return res.status(400).json({
-        error: "Aucune des commandes sélectionnées n'a de bordereau.",
-      });
+    if (action === "update-fields") {
+      return await handleUpdateFields(req, res, supabase);
     }
 
-    const files = [];
-    const skipped = [];
-
-    for (const order of withLabel) {
-
-      try {
-
-        const labelResponse = await fetch(order.shipping_label_url);
-
-        if (!labelResponse.ok) {
-          skipped.push(order.display_id);
-          continue;
-        }
-
-        const arrayBuffer = await labelResponse.arrayBuffer();
-
-        files.push({
-          name: `commande-${safeFileName(order.display_id)}.pdf`,
-          data: Buffer.from(arrayBuffer),
-        });
-
-      } catch (err) {
-        console.error("LABEL FETCH ERROR:", order.id, err);
-        skipped.push(order.display_id);
-      }
-    }
-
-    if (files.length === 0) {
-      return res.status(500).json({
-        error: "Impossible de récupérer les bordereaux (tous les téléchargements ont échoué).",
-      });
-    }
-
-    const zipBuffer = buildZip(files);
-
-    if (skipped.length > 0) {
-      console.warn("LABELS SKIPPED:", skipped);
-    }
-
-    res.setHeader("Content-Type", "application/zip");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="bordereaux-${Date.now()}.zip"`
-    );
-    res.setHeader("X-Skipped-Count", String(skipped.length));
-
-    return res.status(200).send(zipBuffer);
+    return res.status(400).json({
+      error: "Unknown action",
+    });
 
   } catch (error) {
 
-    console.error("DOWNLOAD LABELS ZIP ERROR:", error);
+    console.error("ORDER ADMIN ACTIONS ERROR:", error);
 
     return res.status(500).json({
       error: error.message,
