@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { AdminProductsPanel } from "@/pages/admin/AdminProductsPanel";
 import { AdminOrdersPanel } from "@/pages/admin/AdminOrdersPanel";
 import { AdminAuditPanel } from "@/pages/admin/AdminAuditPanel";
-import { AdminExpensesSection } from "@/pages/admin/AdminExpensesSection";
 
 const Admin = () => {
   const nav = useNavigate();
@@ -45,7 +44,6 @@ const Admin = () => {
       <AdminProductsPanel />
       <AdminOrdersPanel />
       <AdminAuditPanel />
-      <AdminExpensesSection />
     </div>
   );
 };
