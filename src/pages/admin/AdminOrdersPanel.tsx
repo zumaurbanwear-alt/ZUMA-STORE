@@ -276,6 +276,8 @@ export const AdminOrdersPanel = () => {
   const [notesDraft, setNotesDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingRefund, setSavingRefund] = useState(false);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [downloadingLabels, setDownloadingLabels] = useState(false);
   
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
@@ -678,6 +680,86 @@ const handleExportCSV = () => {
   URL.revokeObjectURL(url);
 
   toast.success(`${displayedOrders.length} commande(s) exportée(s)`);
+};
+
+const toggleOrderSelection = (id: string) => {
+  setSelectedOrderIds((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    return next;
+  });
+};
+
+const handleDownloadLabelsZip = async () => {
+
+  if (selectedOrderIds.size === 0) return;
+
+  setDownloadingLabels(true);
+
+  try {
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      toast.error("Session expirée");
+      return;
+    }
+
+    const res = await fetch("/api/download-labels-zip", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ orderIds: Array.from(selectedOrderIds) }),
+    });
+
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      toast.error(json.error ?? "Erreur téléchargement bordereaux");
+      return;
+    }
+
+    const skippedCount = Number(res.headers.get("X-Skipped-Count") ?? "0");
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `bordereaux-${new Date().toISOString().slice(0, 10)}.zip`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+    if (skippedCount > 0) {
+      toast.error(`${skippedCount} bordereau(x) n'ont pas pu être récupérés`);
+    } else {
+      toast.success("Bordereaux téléchargés");
+    }
+
+    setSelectedOrderIds(new Set());
+
+  } catch (err) {
+
+    console.error(err);
+    toast.error("Erreur serveur");
+
+  } finally {
+
+    setDownloadingLabels(false);
+
+  }
+
 };
 
 const openDrawer = async (o: any) => {
@@ -1386,6 +1468,42 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
       EXPORT CSV
     </button>
 
+    {selectedOrderIds.size > 0 && (
+
+      <>
+
+        <button
+          onClick={handleDownloadLabelsZip}
+          disabled={downloadingLabels}
+          className="
+            border
+            border-primary
+            px-3
+            py-1.5
+            text-[9px]
+            uppercase
+            tracking-[0.15em]
+            hover:bg-primary
+            hover:text-primary-foreground
+            disabled:opacity-50
+          "
+        >
+          {downloadingLabels
+            ? "ZIP..."
+            : `BORDEREAUX (${selectedOrderIds.size})`}
+        </button>
+
+        <button
+          onClick={() => setSelectedOrderIds(new Set())}
+          className="border border-border px-3 py-1.5 text-[9px] uppercase tracking-[0.15em]"
+        >
+          Vider
+        </button>
+
+      </>
+
+    )}
+
   </div>
 
         <div className="border border-border divide-y divide-border">
@@ -1395,8 +1513,16 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
             <div
               key={o.id}
               onClick={() => openDrawer(o)}
-              className="border-b border-border p-3 cursor-pointer hover:bg-muted/10"
+              className="border-b border-border p-3 cursor-pointer hover:bg-muted/10 flex items-center gap-3"
             >
+
+              <input
+                type="checkbox"
+                checked={selectedOrderIds.has(o.id)}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => toggleOrderSelection(o.id)}
+                className="shrink-0"
+              />
 
               <div className="text-xs font-display tracking-[0.1em] text-primary-hi">
                 #{o.display_id}
@@ -2376,3 +2502,4 @@ TOTAL
     </>
   );
 };
+
