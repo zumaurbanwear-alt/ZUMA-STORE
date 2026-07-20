@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      depenses: {
+        Row: {
+          id: string
+          nom: string
+          produits: string | null
+          prix: number
+          date: string
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nom: string
+          produits?: string | null
+          prix: number
+          date: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nom?: string
+          produits?: string | null
+          prix?: number
+          date?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       newsletters: {
         Row: {
           created_at: string

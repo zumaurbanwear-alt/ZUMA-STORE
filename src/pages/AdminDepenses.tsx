@@ -4,35 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 // ---------------------------------------------------------------------------
-// 100% local — no Supabase table, no API route. Everything lives in the
-// browser's localStorage on whichever machine is used to enter expenses.
-// This is intentional (personal tracking, not part of the store's data
-// model), but it also means it does NOT sync across devices/browsers.
+// Backed by the "depenses" table in Supabase (RLS: admin role only — see
+// migration 20260720000000_create_depenses_table.sql). Personal bookkeeping,
+// but it now syncs across devices and survives a cleared browser cache.
 // ---------------------------------------------------------------------------
 
 type Expense = {
   id: string;
   nom: string;
-  produits: string;
+  produits: string | null;
   prix: number;
   date: string; // ISO yyyy-mm-dd
-};
-
-const STORAGE_KEY = "zuma_depenses_v1";
-
-const loadExpenses = (): Expense[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveExpenses = (items: Expense[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
 };
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -56,8 +38,11 @@ const AdminDepenses = () => {
   const { user, isAdmin, loading } = useAuth();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string>(monthKey(todayIso()));
   const [exporting, setExporting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({ nom: "", produits: "", prix: "", date: todayIso() });
 
@@ -66,9 +51,26 @@ const AdminDepenses = () => {
     if (!user) nav("/zm-portal-x92-login");
   }, [user, loading, nav]);
 
+  const loadExpenses = async () => {
+    setFetching(true);
+    setFetchError(null);
+    const { data, error } = await supabase
+      .from("depenses")
+      .select("id, nom, produits, prix, date")
+      .order("date", { ascending: false });
+
+    if (error) {
+      setFetchError(error.message);
+    } else {
+      setExpenses((data as Expense[]) ?? []);
+    }
+    setFetching(false);
+  };
+
   useEffect(() => {
-    setExpenses(loadExpenses());
-  }, []);
+    if (!loading && user && isAdmin) loadExpenses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, user, isAdmin]);
 
   const availableMonths = useMemo(() => {
     const keys = new Set(expenses.map((e) => monthKey(e.date)));
@@ -77,38 +79,47 @@ const AdminDepenses = () => {
   }, [expenses]);
 
   const filtered = useMemo(
-    () =>
-      expenses
-        .filter((e) => monthKey(e.date) === selectedMonth)
-        .sort((a, b) => (a.date < b.date ? 1 : -1)),
+    () => expenses.filter((e) => monthKey(e.date) === selectedMonth),
     [expenses, selectedMonth]
   );
 
   const total = useMemo(() => filtered.reduce((sum, e) => sum + (Number.isFinite(e.prix) ? e.prix : 0), 0), [filtered]);
 
-  const addExpense = () => {
+  const addExpense = async () => {
     const prixNum = parseFloat(form.prix.replace(",", "."));
     if (!form.nom.trim() || !form.date || !Number.isFinite(prixNum)) return;
 
-    const next: Expense = {
-      id: crypto.randomUUID(),
-      nom: form.nom.trim(),
-      produits: form.produits.trim(),
-      prix: prixNum,
-      date: form.date,
-    };
-    const updated = [...expenses, next];
-    setExpenses(updated);
-    saveExpenses(updated);
-    setForm({ nom: "", produits: "", prix: "", date: form.date });
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("depenses")
+      .insert({
+        nom: form.nom.trim(),
+        produits: form.produits.trim() || null,
+        prix: prixNum,
+        date: form.date,
+      })
+      .select("id, nom, produits, prix, date")
+      .single();
+    setSaving(false);
+
+    if (error) {
+      setFetchError(error.message);
+      return;
+    }
+
+    setExpenses((prev) => [data as Expense, ...prev]);
     setSelectedMonth(monthKey(form.date));
+    setForm({ nom: "", produits: "", prix: "", date: form.date });
   };
 
-  const deleteExpense = (id: string) => {
+  const deleteExpense = async (id: string) => {
     if (!window.confirm("Supprimer cette dépense ?")) return;
-    const updated = expenses.filter((e) => e.id !== id);
-    setExpenses(updated);
-    saveExpenses(updated);
+    const { error } = await supabase.from("depenses").delete().eq("id", id);
+    if (error) {
+      setFetchError(error.message);
+      return;
+    }
+    setExpenses((prev) => prev.filter((e) => e.id !== id));
   };
 
   const exportPdf = async () => {
@@ -164,13 +175,19 @@ const AdminDepenses = () => {
         <div>
           <h1 className="font-display text-2xl md:text-3xl tracking-[0.3em]">DÉPENSES</h1>
           <p className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground mt-1">
-            Suivi personnel — stocké localement sur cet appareil
+            Suivi personnel — synchronisé sur ta base
           </p>
         </div>
         <button onClick={() => nav("/zm-portal-x92")} className="px-4 py-2 border border-border text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi">
           ← Retour admin
         </button>
       </header>
+
+      {fetchError && (
+        <div className="mb-6 border border-red-500/40 bg-red-500/10 text-red-500 text-xs px-4 py-3">
+          {fetchError}
+        </div>
+      )}
 
       {/* Add form */}
       <section className="mb-8 border border-border p-4">
@@ -207,9 +224,10 @@ const AdminDepenses = () => {
           <button
             type="button"
             onClick={addExpense}
-            className="border border-primary text-primary text-[10px] tracking-[0.2em] uppercase px-3 py-2 hover:bg-primary hover:text-primary-foreground"
+            disabled={saving}
+            className="border border-primary text-primary text-[10px] tracking-[0.2em] uppercase px-3 py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
           >
-            Ajouter
+            {saving ? "..." : "Ajouter"}
           </button>
         </div>
       </section>
@@ -253,14 +271,19 @@ const AdminDepenses = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filtered.length === 0 && (
+            {fetching && (
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-muted-foreground">Chargement...</td>
+              </tr>
+            )}
+            {!fetching && filtered.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-6 text-center text-muted-foreground">
                   Aucune dépense pour ce mois.
                 </td>
               </tr>
             )}
-            {filtered.map((e) => (
+            {!fetching && filtered.map((e) => (
               <tr key={e.id} className="hover:bg-muted/20">
                 <td className="px-3 py-2">{e.nom}</td>
                 <td className="px-3 py-2 text-muted-foreground">{e.produits || "—"}</td>
