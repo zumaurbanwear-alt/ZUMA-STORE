@@ -2,6 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
+import { StatusDot } from "./orders/StatusDot";
+import { SalesChart } from "./orders/SalesChart";
+import {
+  getOrderCategory,
+  STATUS_FILTERS,
+  translateStatus,
+  RETURN_ELIGIBLE_STATUSES,
+  TIMELINE_STEPS,
+  mapEventToStep,
+  escapeCsvField,
+} from "./orders/orderStatus";
 
 type Pickup = {
   pickup_code: string;
@@ -9,224 +20,6 @@ type Pickup = {
   pickup_created_at: string | null;
   tracking_number: string;
   customer_name: string;
-};
-
-// Couleur par statut — modifie les valeurs hex ici pour ajuster.
-// pending = gris, confirmed = rouge, delivered = rouge (tel que demandé).
-const STATUS_COLORS: Record<string, string> = {
-  pending: "#9CA3AF",
-  to_prepare: "#9CA3AF",
-  new_destination: "#9CA3AF",
-  confirmed: "#DC2626",
-  to_pickup: "#F59E0B",
-  pickedup: "#F59E0B",
-  warehouse: "#3B82F6",
-  transit: "#3B82F6",
-  distributed: "#3B82F6",
-  delivering: "#3B82F6",
-  unreachable: "#F59E0B",
-  postponed: "#F59E0B",
-  delivered: "#DC2626",
-  canceled: "#DC2626",
-  cancelled: "#DC2626",
-  rejected: "#DC2626",
-};
-
-const DEFAULT_STATUS_COLOR = "#9CA3AF";
-
-const StatusDot = ({ status }: { status: string | null | undefined }) => {
-  const key = (status ?? "").trim().toLowerCase();
-  const color = STATUS_COLORS[key] ?? DEFAULT_STATUS_COLOR;
-
-  return (
-    <span
-      className="inline-block w-2 h-2 rounded-full shrink-0"
-      style={{ backgroundColor: color }}
-    />
-  );
-};
-
-// Petite courbe de ventes en SVG pur — évite d'ajouter une dépendance
-// (recharts) que Vercel ne peut pas résoudre sans passer par package.json.
-const SalesChart = ({ data }: { data: { date: string; total: number }[] }) => {
-
-  const width = 600;
-  const height = 180;
-  const padding = 24;
-
-  const max = Math.max(1, ...data.map((d) => d.total));
-  const count = Math.max(1, data.length - 1);
-
-  const getX = (i: number) =>
-    padding + (i / count) * (width - padding * 2);
-
-  const getY = (v: number) =>
-    height - padding - (v / max) * (height - padding * 2);
-
-  const points = data.map((d, i) => `${getX(i)},${getY(d.total)}`);
-  const pathD = points.length ? `M${points.join(" L")}` : "";
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="w-full"
-      style={{ height: 180 }}
-      preserveAspectRatio="none"
-    >
-
-      <line
-        x1={padding}
-        y1={height - padding}
-        x2={width - padding}
-        y2={height - padding}
-        stroke="#e5e5e5"
-      />
-
-      {pathD && (
-        <path d={pathD} fill="none" stroke="#111111" strokeWidth={2} />
-      )}
-
-      {data.map((d, i) =>
-        i % 5 === 0 ? (
-          <text
-            key={i}
-            x={getX(i)}
-            y={height - 6}
-            fontSize="8"
-            textAnchor="middle"
-            fill="#9CA3AF"
-          >
-            {d.date}
-          </text>
-        ) : null
-      )}
-
-    </svg>
-  );
-};
-
-// Regroupe le statut interne (pending/confirmed) et le statut Sendit
-// (shipping_status) en une seule catégorie, pour les filtres et les stats.
-const getOrderCategory = (o: any): string => {
-
-  if (o.shipping_status === "DELIVERED") return "delivered";
-
-  if (
-    o.return_code ||
-    o.shipping_status_return ||
-    o.shipping_status === "CANCELED" ||
-    o.shipping_status === "REJECTED"
-  ) {
-    return "returned";
-  }
-
-  if (
-    o.pickup_code ||
-    o.shipping_status === "TO_PICKUP" ||
-    o.shipping_status === "PICKEDUP"
-  ) {
-    return "pickup";
-  }
-
-  if (
-    ["WAREHOUSE", "TRANSIT", "DISTRIBUTED", "DELIVERING", "UNREACHABLE", "POSTPONED"]
-      .includes(o.shipping_status)
-  ) {
-    return "transit";
-  }
-
-  if (o.status?.trim().toLowerCase() === "confirmed") return "confirmed";
-
-  return "pending";
-};
-
-const STATUS_FILTERS: { key: string; label: string }[] = [
-  { key: "all", label: "Toutes" },
-  { key: "pending", label: "En attente" },
-  { key: "confirmed", label: "Confirmée" },
-  { key: "pickup", label: "Ramassage" },
-  { key: "transit", label: "En transit" },
-  { key: "delivered", label: "Livrée" },
-  { key: "returned", label: "Retour" },
-];
-
-// Libellés français pour tous les statuts affichés (interne + Sendit brut).
-// Les valeurs Sendit viennent de GET /all-status-deliveries. Fallback :
-// affiche la valeur brute telle quelle si elle n'est pas dans la liste
-// (utile pour les statuts de retour, dont on ne connaît pas encore
-// toutes les valeurs possibles).
-const STATUS_LABELS_FR: Record<string, string> = {
-  pending: "En attente",
-  to_prepare: "À préparer",
-  new_destination: "À changer",
-  confirmed: "Confirmée",
-  to_pickup: "Ramassage en cours",
-  pickedup: "Ramassé",
-  warehouse: "Entrepôt",
-  transit: "En transit",
-  distributed: "Distribué",
-  delivering: "En cours de livraison",
-  unreachable: "Injoignable",
-  postponed: "Reporté",
-  delivered: "Livré",
-  canceled: "Annulé",
-  cancelled: "Annulé",
-  rejected: "Refusé",
-};
-
-const translateStatus = (status: string | null | undefined): string => {
-  if (!status) return "—";
-  const key = status.trim().toLowerCase();
-  return STATUS_LABELS_FR[key] ?? status;
-};
-
-// Un retour n'a de sens que si Sendit a déjà tenté/terminé la livraison.
-// En dehors de ces statuts, l'API Sendit refuse la demande (comme on
-// vient de le voir : "colis invalide" tant qu'il est encore en transit).
-const RETURN_ELIGIBLE_STATUSES = [
-  "DELIVERED",
-  "REJECTED",
-  "UNREACHABLE",
-  "POSTPONED",
-  "CANCELED",
-];
-
-// Étapes fixes de la timeline affichée dans le drawer. "created" n'a pas
-// d'event loggé (la commande naît au checkout, hors admin) — on utilise
-// directement created_at pour cette étape-là.
-const TIMELINE_STEPS: { key: string; label: string }[] = [
-  { key: "created", label: "Commande créée" },
-  { key: "confirmed", label: "Confirmée" },
-  { key: "shipment_created", label: "Colis créé" },
-  { key: "pickup_requested", label: "Ramassage" },
-  { key: "transit", label: "En transit" },
-  { key: "delivered", label: "Livrée" },
-];
-
-const TRANSIT_RAW_STATUSES = [
-  "warehouse",
-  "transit",
-  "distributed",
-  "delivering",
-  "to_pickup",
-  "pickedup",
-  "unreachable",
-  "postponed",
-];
-
-// Les events loggés par sync/webhook portent le statut Sendit brut en
-// minuscule (ex: "transit", "delivered") ; ceux loggés par les actions
-// admin portent une clé fixe ("confirmed", "shipment_created", ...).
-const mapEventToStep = (eventKey: string): string | null => {
-  const k = (eventKey ?? "").toLowerCase();
-
-  if (k === "confirmed") return "confirmed";
-  if (k === "shipment_created") return "shipment_created";
-  if (k === "pickup_requested") return "pickup_requested";
-  if (k === "delivered") return "delivered";
-  if (TRANSIT_RAW_STATUSES.includes(k)) return "transit";
-
-  return null;
 };
 
 export const AdminOrdersPanel = () => {
@@ -616,16 +409,6 @@ setPickups(grouped);
 
   }
 
-};
-
-const escapeCsvField = (value: any) => {
-  const str = String(value ?? "");
-
-  if (/[",\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-
-  return str;
 };
 
 const handleExportCSV = () => {

@@ -47,9 +47,6 @@ export const DistrictSelect = ({
               );
 
             if (district) {
-
-  console.log("DISTRICT SELECTED:", district);
-
   set(
     district.district_id,
     district.name
