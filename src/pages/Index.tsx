@@ -8,6 +8,7 @@ import { Countdown } from "@/components/zuma/marketing/Countdown";
 import { TextureBand } from "@/components/zuma/layout/TextureBand";
 import { ProductGrid } from "@/components/zuma/product/ProductGrid";
 import { NewsletterBand } from "@/components/zuma/marketing/NewsletterBand";
+import { OptimizedImage } from "@/components/zuma/common/OptimizedImage";
 
 import { SiteLayout } from "@/components/zuma/layout/SiteLayout";
 import { useProducts } from "@/hooks/useProducts";
@@ -40,17 +41,18 @@ const Index = () => {
               as the fallback for the rare browser without WebP support. */}
           <source media="(max-width: 767px)" srcSet={heroMobileWebp} type="image/webp" />
           <source srcSet={heroDesktopWebp} type="image/webp" />
-          <img
+          <OptimizedImage
             src={heroDesktopJpg}
             srcSet={`${heroMobileJpg} 750w, ${heroDesktopJpg} 1400w`}
-            sizes="100vw"
             alt=""
-            aria-hidden
-            fetchPriority="high"
-            loading="eager"
-            decoding="async"
+            width={1400}
             className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
             style={{ objectPosition: "center 15%" }}
+            loading="eager"
+            fetchPriority="high"
+            priority
+            sizes="100vw"
+            fallbackSrc={heroDesktopJpg}
           />
         </picture>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />

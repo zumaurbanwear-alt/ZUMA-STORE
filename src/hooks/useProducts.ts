@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { buildOptimizedImageUrl } from "@/components/zuma/common/imageUtils";
 
 export type DbProduct = {
   id: string;
@@ -46,23 +47,8 @@ export const resolveImage = (p: Pick<DbProduct, "slug" | "image_url">) => {
 // components/zuma/ProductImg.tsx) falls back to the original URL
 // automatically, so images never break — they just aren't right-sized
 // until the proxy responds.
-const WSRV_ENDPOINT = "https://wsrv.nl/";
-
-export const transformImage = (url: string, width: number, quality = 75): string => {
-  if (!url || !/^https?:\/\//.test(url)) return url;
-
-  const requestUrl = new URL(url);
-  requestUrl.searchParams.set("_", String(Date.now()));
-
-  const params = new URLSearchParams({
-    url: requestUrl.toString(),
-    w: String(width),
-    q: String(quality),
-    output: "webp",
-    fit: "cover",
-  });
-  return `${WSRV_ENDPOINT}?${params.toString()}`;
-};
+export const transformImage = (url: string, width: number, quality = 75): string =>
+  buildOptimizedImageUrl(url, width, quality);
 
 const productsQueryKey = (adminMode: boolean) => ["products", { adminMode }] as const;
 

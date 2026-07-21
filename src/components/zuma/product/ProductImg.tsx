@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { transformImage } from "@/hooks/useProducts";
+import { OptimizedImage } from "@/components/zuma/common/OptimizedImage";
 
 // Requests a size-appropriate version of a Supabase-hosted product image
 // instead of always downloading the full original. If image transforms
@@ -24,19 +23,15 @@ export const ProductImg = ({
   loading?: "lazy" | "eager";
   fetchPriority?: "high" | "low" | "auto";
   style?: React.CSSProperties;
-}) => {
-  const [failed, setFailed] = useState(false);
-  const resolvedSrc = !src || failed ? src : transformImage(src, width, quality);
-
-  return (
-    <img
-      src={resolvedSrc}
-      alt={alt}
-      className={className}
-      loading={loading}
-      fetchPriority={fetchPriority}
-      style={style}
-      onError={() => { if (!failed) setFailed(true); }}
-    />
-  );
-};
+}) => (
+  <OptimizedImage
+    src={src}
+    alt={alt}
+    width={width}
+    quality={quality}
+    className={className}
+    loading={loading}
+    fetchPriority={fetchPriority}
+    style={style}
+  />
+);

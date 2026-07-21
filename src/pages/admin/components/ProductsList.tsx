@@ -1,6 +1,7 @@
 import { Eye, EyeOff, Trash2, Plus } from "lucide-react";
 import type { DbProduct } from "@/hooks/useProducts";
 import { resolveImage } from "@/hooks/useProducts";
+import { OptimizedImage } from "@/components/zuma/common/OptimizedImage";
 
 type ProductsListProps = {
   products: DbProduct[];
@@ -21,7 +22,7 @@ export const ProductsList = ({ products, onEdit, onToggleVisible, onRemove, onCr
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {products.map((p) => (
         <div key={p.id} className={`border border-border p-4 flex gap-4 ${!p.is_visible ? "opacity-50" : ""}`}>
-          <img src={resolveImage(p)} alt={p.name} className="w-16 h-20 object-cover" />
+          <OptimizedImage src={resolveImage(p)} alt={p.name} width={160} className="w-16 h-20 object-cover" loading="lazy" fetchPriority="auto" />
           <div className="flex-1 min-w-0">
             <div className="font-display tracking-[0.15em] truncate">
               <span className="text-primary-hi mr-2">#{p.display_id ?? "—"}</span>{p.name}
