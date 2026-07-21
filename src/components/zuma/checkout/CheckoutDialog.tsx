@@ -7,6 +7,7 @@ import { useLang } from "@/context/LanguageContext";
 import { getShippingFee } from "@/lib/shipping";
 import { buildOrderSubmission } from "@/lib/orders";
 import { createOrderItems, createOrderRecord, getOrderDisplayId } from "@/lib/supabaseAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import { Field } from "@/components/zuma/checkout/Field";
 import { CitySelect } from "@/components/zuma/checkout/CitySelect";
 import { DistrictSelect } from "@/components/zuma/checkout/DistrictSelect";
@@ -70,21 +71,24 @@ export const CheckoutDialog = ({
 
       const cleanCity = form.city.trim();
 
-      const { data, error } = await import("@/integrations/supabase/client").then((mod) =>
-        mod.supabase
+      try {
+        const { data, error } = await supabase
           .from("sendit_districts")
           .select("district_id, name, ville, price")
           .ilike("ville", cleanCity)
-          .order("name")
-      );
+          .order("name");
 
-      if (error) {
-        console.error("Error loading districts:", error);
+        if (error) {
+          console.error("Error loading districts:", error);
+          setDistricts([]);
+          return;
+        }
+
+        setDistricts(data ?? []);
+      } catch (err) {
+        console.error("Unexpected error loading districts:", err);
         setDistricts([]);
-        return;
       }
-
-      setDistricts(data ?? []);
     }
 
     loadDistricts();
