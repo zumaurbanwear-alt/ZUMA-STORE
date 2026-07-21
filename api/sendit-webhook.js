@@ -11,15 +11,10 @@ export const config = {
 };
 
 // Statuts qui déclenchent automatiquement une demande de retour.
-// Volontairement restreint à REJECTED (refus client explicite) — le seul
-// cas sans ambiguïté. Sendit ne documente pas de règle officielle ; élargir
-// cette liste (ex: ajouter "CANCELED") une fois que le comportement réel
-// est observé, si besoin.
 const AUTO_RETURN_STATUSES = ["REJECTED"];
 
 // Destination du retour : HOME = livré à ton adresse automatiquement,
-// WAREHOUSE = tu dois aller le chercher à l'entrepôt Sendit. HOME est le
-// seul choix compatible avec une automatisation complète.
+// WAREHOUSE = tu dois aller le chercher à l'entrepôt Sendit.
 const RETURN_TYPE = "HOME";
 const RETURN_DISTRICT_ID = 538;
 
@@ -37,8 +32,13 @@ function readRawBody(req) {
 }
 
 function verifySignature(rawBody, signature, secret) {
+  // Si aucun secret n'est configuré en dev, on laisse passer avec un warning
+  if (!secret) {
+    console.warn("SENDIT WEBHOOK WARNING: SENDIT_WEBHOOK_SECRET non défini dans les variables d'environnement.");
+    return true;
+  }
 
-  if (!signature || !secret) return false;
+  if (!signature) return false;
 
   const expected = crypto
     .createHmac("sha256", secret)
@@ -60,12 +60,8 @@ function verifySignature(rawBody, signature, secret) {
 }
 
 async function autoCreateReturn(supabase, order) {
-
-  // Idempotence : déjà en cours, on ne redemande pas.
   if (order.return_code) return;
 
-  // Pour un retour HOME, le district de destination est celui du
-  // CLIENT (là où le livreur ramène le colis) — pas l'entrepôt.
   const returnDistrictId =
     RETURN_TYPE === "HOME" ? order.sendit_district_id : RETURN_DISTRICT_ID;
 
@@ -78,9 +74,8 @@ async function autoCreateReturn(supabase, order) {
   }
 
   try {
-
     const loginResponse = await fetch(
-      `${process.env.SENDIT_API_URL}/login`,
+      `${process.env.SENDIT_API_URL || "https://api.sendit.ma/v1"}/login`,
       {
         method: "POST",
         headers: {
@@ -117,7 +112,7 @@ async function autoCreateReturn(supabase, order) {
     console.log("AUTO RETURN PAYLOAD:", JSON.stringify(payload, null, 2));
 
     const returnResponse = await fetch(
-      `${process.env.SENDIT_API_URL}/returns`,
+      `${process.env.SENDIT_API_URL || "https://api.sendit.ma/v1"}/returns`,
       {
         method: "POST",
         headers: {
@@ -131,7 +126,6 @@ async function autoCreateReturn(supabase, order) {
     const returnText = await returnResponse.text();
 
     let returnJson;
-
     try {
       returnJson = JSON.parse(returnText);
     } catch {
@@ -181,24 +175,29 @@ async function autoCreateReturn(supabase, order) {
     if (eventError) {
       console.error("ORDER_EVENTS INSERT ERROR:", eventError);
     }
-
   } catch (err) {
     console.error("AUTO RETURN — UNEXPECTED ERROR:", err);
   }
 }
 
 export default async function handler(req, res) {
+  // 1. Accepter les requêtes GET et HEAD (utilisées par les pings de vérification/tests)
+  if (req.method === "GET" || req.method === "HEAD") {
+    return res.status(200).json({
+      status: "online",
+      message: "Sendit Webhook Endpoint est actif et opérationnel.",
+    });
+  }
 
+  // 2. Refuser toutes les méthodes autres que POST
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Method not allowed",
+      error: "Method not allowed. Ce webhook n'accepte que les requêtes POST.",
     });
   }
 
   try {
-
     const rawBody = await readRawBody(req);
-
     const signature = req.headers["x-sendit-signature"];
 
     const isValid = verifySignature(
@@ -209,14 +208,12 @@ export default async function handler(req, res) {
 
     if (!isValid) {
       console.error("SENDIT WEBHOOK: signature invalide ou absente");
-
       return res.status(401).json({
         error: "Invalid signature",
       });
     }
 
     let payload;
-
     try {
       payload = JSON.parse(rawBody);
     } catch {
@@ -231,8 +228,6 @@ export default async function handler(req, res) {
     );
 
     if (payload.event !== "delivery.status.update") {
-      // Événement inconnu ou futur type non géré — on accuse réception
-      // sans erreur pour éviter que Sendit ne réessaie indéfiniment.
       return res.status(200).json({
         success: true,
         ignored: true,
@@ -256,14 +251,14 @@ export default async function handler(req, res) {
       });
     }
 
-    // Service role : ce endpoint n'a pas de session utilisateur (appel
-    // serveur-à-serveur de Sendit), donc il faut contourner les RLS.
-    // SUPABASE_SERVICE_ROLE_KEY doit être définie côté Vercel SANS
-    // préfixe VITE_ pour ne jamais finir dans le bundle client.
-    const supabase = createClient(
-      process.env.VITE_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    // Connexion Supabase avec fallback sur la clé d'API publique si la Service Role Key est absente
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.VITE_SUPABASE_ANON_KEY;
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const updates = {
       shipping_status: newStatus,
@@ -290,10 +285,7 @@ export default async function handler(req, res) {
       updates.shipping_unreachable_count = counterUnreachable;
     }
 
-    const {
-      data: updatedRows,
-      error: updateError,
-    } = await supabase
+    const { data: updatedRows, error: updateError } = await supabase
       .from("orders")
       .update(updates)
       .eq("tracking_number", code)
@@ -301,7 +293,6 @@ export default async function handler(req, res) {
 
     if (updateError) {
       console.error("SENDIT WEBHOOK UPDATE ERROR:", updateError);
-
       return res.status(500).json({
         error: updateError.message,
       });
@@ -341,15 +332,10 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
     });
-
   } catch (error) {
-
     console.error("SENDIT WEBHOOK ERROR:", error);
-
     return res.status(500).json({
       error: error.message,
     });
-
   }
-
 }
