@@ -38,15 +38,9 @@ export const resolveImage = (p: Pick<DbProduct, "slug" | "image_url">) => {
   return "";
 };
 
-// A cart thumbnail displayed at 64px has no business downloading the same
-// file as the full-bleed product photo. Supabase's own image transforms
-// require a Pro plan, so this routes through wsrv.nl instead — a free,
-// no-signup image proxy/CDN that can resize and re-encode any publicly
-// reachable image URL (our Supabase bucket is already public). If it's
-// ever unreachable, the <ProductImg> component (see
-// components/zuma/ProductImg.tsx) falls back to the original URL
-// automatically, so images never break — they just aren't right-sized
-// until the proxy responds.
+// Product images are already optimized (webp, correctly sized) when they're
+// uploaded to Supabase Storage, so this is a passthrough to the original
+// URL — no proxy, no re-compression, full source quality preserved.
 export const transformImage = (url: string, width: number, quality = 75): string =>
   buildOptimizedImageUrl(url, width, quality);
 
