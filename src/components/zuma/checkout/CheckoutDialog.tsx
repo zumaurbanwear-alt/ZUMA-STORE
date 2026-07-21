@@ -2,13 +2,21 @@ import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { X, Check } from "lucide-react";
 import type { CartItem } from "@/context/CartContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLang } from "@/context/LanguageContext";
 import { getShippingFee } from "@/lib/shipping";
+import { buildOrderSubmission } from "@/lib/orders";
+import { createOrderItems, createOrderRecord, getOrderDisplayId } from "@/lib/supabaseAdmin";
 import { Field } from "@/components/zuma/checkout/Field";
 import { CitySelect } from "@/components/zuma/checkout/CitySelect";
 import { DistrictSelect } from "@/components/zuma/checkout/DistrictSelect";
+
+type SenditDistrict = {
+  district_id: number;
+  name: string;
+  ville: string;
+  price: number | string | null;
+};
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name required").max(80),
@@ -42,7 +50,7 @@ const [form, setForm] = useState({
   senditDistrictId: null as number | null,
 });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [districts, setDistricts] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<SenditDistrict[]>([]);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
   // Honeypot: a field real users never see or fill, but naive bots that
@@ -62,14 +70,11 @@ const [form, setForm] = useState({
       return;
     }
 
-    const { data, error } = await supabase
-      .from("sendit_districts")
-      .select("district_id, name, ville, price")
-      .eq("ville", form.city)
-      .order("name");
+    const { data, error } = await import("@/integrations/supabase/client").then((mod) =>
+      mod.supabase.from("sendit_districts").select("district_id, name, ville, price").eq("ville", form.city).order("name")
+    );
 
     if (error) {
-      console.error("District loading error:", error);
       setDistricts([]);
       return;
     }
@@ -119,61 +124,37 @@ const [form, setForm] = useState({
 
     try {
       const orderId = crypto.randomUUID();
-      const { error: orderErr } = await supabase.from("orders").insert({
-        id: orderId,
-        customer_name: form.name,
-        customer_email: form.email,
-        customer_phone: form.phone,
-        customer_city: form.city,
-        customer_address: form.address,
-        sendit_district_id: form.senditDistrictId,
-        customer_district: form.district,
+      const { order, items, whatsappUrl } = buildOrderSubmission({
+        orderId,
+        form,
+        cart,
         subtotal,
-        shipping_fee: shippingFee,
-        payment_method: "cash_on_delivery",
-        status: "pending",
-        notes: null,
+        shippingFee,
+        total,
+        whatsappNumber,
       });
+      const { error: orderErr } = await createOrderRecord(order);
       if (orderErr) throw orderErr;
 
-      const items = cart.map(i => ({
-        order_id: orderId,
-        product_id: i.id,
-        product_name: i.name,
-        unit_price: Number(i.price),
-        quantity: i.qty,
-        size: i.size ?? null,
-        color: i.color ?? null,
-      }));
-      const { error: itemsErr } = await supabase.from("order_items").insert(items);
+      const { error: itemsErr } = await createOrderItems(items);
       if (itemsErr) throw itemsErr;
 
-      const { data: displayIdData } = await supabase.rpc("get_order_display_id", { _order_id: orderId });
+      const { data: displayIdData } = await getOrderDisplayId(orderId);
       const shortId = (displayIdData as string) ?? orderId.slice(0, 8);
-
-      const lines = [
-        `*New Order — ZÜMA*`,
-        `Order: #${shortId}`,
-        `Name: ${form.name}`,
-        `Phone: ${form.phone}`,
-        `Email: ${form.email}`,
-        `City: ${form.city}`,
-        `Address: ${form.address}`,
-        ``,
-        `*Items:*`,
-        ...cart.map(i => `• ${i.name} × ${i.qty} — ${Number(i.price) * i.qty} MAD`),
-        ``,
-        `Subtotal: ${subtotal} MAD`,
-        `Delivery Fee: ${shippingFee} MAD`,
-        `*Total: ${total} MAD*`,
-        `Payment: Cash on Delivery`,
-      ].join("\n");
-      const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines)}`;
-      window.open(url, "_blank", "noopener,noreferrer");
+      const submission = buildOrderSubmission({
+        orderId,
+        form,
+        cart,
+        subtotal,
+        shippingFee,
+        total,
+        whatsappNumber,
+        shortId,
+      });
+      window.open(submission.whatsappUrl, "_blank", "noopener,noreferrer");
       toast.success(t("orderPlacedToast"));
       setDone(true);
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error(t("orderErrorToast"));
     } finally { setBusy(false); }
   };

@@ -26,9 +26,17 @@ export const STATUS_COLORS: Record<string, string> = {
 
 export const DEFAULT_STATUS_COLOR = "#9CA3AF";
 
+type OrderStatusLike = {
+  shipping_status?: string | null;
+  shipping_status_return?: string | null;
+  return_code?: string | null;
+  pickup_code?: string | null;
+  status?: string | null;
+};
+
 // Regroupe le statut interne (pending/confirmed) et le statut Sendit
 // (shipping_status) en une seule catégorie, pour les filtres et les stats.
-export const getOrderCategory = (o: any): string => {
+export const getOrderCategory = (o: OrderStatusLike): string => {
   if (o.shipping_status === "DELIVERED") return "delivered";
 
   if (
@@ -150,7 +158,7 @@ export const mapEventToStep = (eventKey: string): string | null => {
 };
 
 // Échappe une valeur pour l'export CSV (guillemets, virgules, retours ligne).
-export const escapeCsvField = (value: any) => {
+export const escapeCsvField = (value: unknown) => {
   const str = String(value ?? "");
 
   if (/[",\n]/.test(str)) {

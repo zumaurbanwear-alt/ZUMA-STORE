@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
 import { StatusDot } from "./orders/StatusDot";
 import { SalesChart } from "./orders/SalesChart";
+import type { AdminInvoice, AdminOrder, AdminOrderEvent, AdminPickup } from "./orders/types";
 import {
   getOrderCategory,
   STATUS_FILTERS,
@@ -14,22 +15,33 @@ import {
   escapeCsvField,
 } from "./orders/orderStatus";
 
-type Pickup = {
-  pickup_code: string;
-  pickup_status: string | null;
-  pickup_created_at: string | null;
-  tracking_number: string;
-  customer_name: string;
+type PickupRow = {
+  pickup_code?: string | null;
+  pickup_status?: string | null;
+  pickup_created_at?: string | null;
+  tracking_number?: string | null;
+  customer_name?: string | null;
+  total?: number | string | null;
+};
+
+type AdminStatsRow = Partial<AdminOrder> & {
+  created_at?: string | null;
+  total?: number | string | null;
+  status?: string | null;
+  shipping_status?: string | null;
+  shipping_status_return?: string | null;
+  return_code?: string | null;
+  pickup_code?: string | null;
 };
 
 export const AdminOrdersPanel = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [unified, setUnified] = useState<LedgerRow[]>([]);
   const [creatingShipmentFor, setCreatingShipmentFor] = useState<string | null>(null);
   const [confirmingOrderFor, setConfirmingOrderFor] = useState<string | null>(null);
   const [creatingPickup, setCreatingPickup] = useState(false);
   const [syncingSendit, setSyncingSendit] = useState(false);
-  const [pickups, setPickups] = useState<any[]>([]);
+  const [pickups, setPickups] = useState<AdminPickup[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "amount" | "city" | "status">("date");
@@ -47,12 +59,12 @@ export const AdminOrdersPanel = () => {
   });
   const [salesByDay, setSalesByDay] = useState<{ date: string; total: number }[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [orderEvents, setOrderEvents] = useState<any[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const [orderEvents, setOrderEvents] = useState<AdminOrderEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [creatingReturnFor, setCreatingReturnFor] = useState<string | null>(null);
   const [expandedPickups, setExpandedPickups] = useState<Set<string>>(new Set());
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<AdminInvoice[]>([]);
   const [invoicesPage, setInvoicesPage] = useState(1);
   const [invoicesLastPage, setInvoicesLastPage] = useState(1);
   const [invoicesTotal, setInvoicesTotal] = useState(0);
@@ -60,29 +72,30 @@ export const AdminOrdersPanel = () => {
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceStartDate, setInvoiceStartDate] = useState("");
   const [invoiceEndDate, setInvoiceEndDate] = useState("");
-  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<AdminInvoice | null>(null);
   const [loadingInvoiceDetail, setLoadingInvoiceDetail] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingRefund, setSavingRefund] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [downloadingLabels, setDownloadingLabels] = useState(false);
-  
+
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
     const { data: ordersData, error, count } = await supabase
       .from("orders")
-      .select(`
-      *,
-      order_items (*)
-      `, { count: "exact" })
-     .or(
-     "shipping_status.is.null,shipping_status.neq.DELIVERED"
-)
-     .order("created_at", { ascending:false })
-     .range(from, to);
+      .select(
+        `
+          *,
+          order_items (*)
+        `,
+        { count: "exact" }
+      )
+      .or("shipping_status.is.null,shipping_status.neq.DELIVERED")
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error(error);
@@ -94,48 +107,53 @@ export const AdminOrdersPanel = () => {
     setTotalCount(count ?? 0);
 
     const { data: ledgerData } = await supabase
-      .from("admin_orders_full" as any)
+      .from("admin_orders_full")
       .select("*")
       .limit(500);
 
     setUnified((ledgerData as LedgerRow[]) ?? []);
 
     const { data: pickupsData } = await supabase
-  .from("orders")
-  .select(`
-    pickup_code,
-    pickup_status,
-    pickup_created_at,
-    tracking_number,
-    customer_name,
-    total
-  `)
-  .not("pickup_code", "is", null)
-  .order("pickup_created_at", {
-    ascending: false,
-  });
+      .from("orders")
+      .select(`
+        pickup_code,
+        pickup_status,
+        pickup_created_at,
+        tracking_number,
+        customer_name,
+        total
+      `)
+      .not("pickup_code", "is", null)
+      .order("pickup_created_at", {
+        ascending: false,
+      });
 
+    const grouped = Object.values(
+  (pickupsData ?? []).reduce<Record<string, AdminPickup>>((acc, row: PickupRow) => {
+    const pickupCode = row.pickup_code ?? "";
 
-const grouped = Object.values(
-  (pickupsData ?? []).reduce((acc: any, row: any) => {
+    if (!pickupCode) return acc;
 
-    if (!acc[row.pickup_code]) {
+    const current = acc[pickupCode] ?? {
+      code: pickupCode,
+      status: row.pickup_status ?? null,
+      created_at: row.pickup_created_at ?? null,
+      total: 0,
+      orders: [],
+    };
 
-      acc[row.pickup_code] = {
-        code: row.pickup_code,
-        status: row.pickup_status,
-        created_at: row.pickup_created_at,
-        total: 0,
-        orders: [],
-      };
-
-    }
-
-    acc[row.pickup_code].orders.push(row);
-    acc[row.pickup_code].total += row.total;
+    current.orders.push({
+      pickup_code: pickupCode,
+      pickup_status: row.pickup_status ?? null,
+      pickup_created_at: row.pickup_created_at ?? null,
+      tracking_number: row.tracking_number ?? "",
+      customer_name: row.customer_name ?? "",
+      total: Number(row.total) || 0,
+    });
+    current.total += Number(row.total) || 0;
+    acc[pickupCode] = current;
 
     return acc;
-
   }, {})
 );
 
@@ -172,7 +190,7 @@ setPickups(grouped);
       return;
     }
 
-    const rows = (data as any[]) ?? [];
+    const rows = (data as AdminStatsRow[] | null) ?? [];
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -425,7 +443,7 @@ const handleExportCSV = () => {
     "Date",
   ];
 
-  const rows = displayedOrders.map((o: any) => [
+  const rows = displayedOrders.map((o) => [
     o.display_id,
     o.customer_name,
     o.customer_phone,
@@ -544,7 +562,7 @@ const handleDownloadLabelsZip = async () => {
 
 };
 
-const openDrawer = async (o: any) => {
+const openDrawer = async (o: AdminOrder) => {
 
   setSelectedInvoice(null);
   setSelectedOrder(o);
@@ -572,7 +590,7 @@ const closeDrawer = () => {
   setOrderEvents([]);
 };
 
-const handleCreateReturn = async (order: any) => {
+const handleCreateReturn = async (order: AdminOrder) => {
 
   const reason = window.prompt(
     "Raison du retour (optionnel) :"
@@ -749,7 +767,7 @@ const closeInvoiceDrawer = () => {
   setSelectedInvoice(null);
 };
 
-const updateOrderAdminFields = async (orderId: string, fields: Record<string, any>) => {
+const updateOrderAdminFields = async (orderId: string, fields: Record<string, unknown>) => {
 
   const {
     data: { session },
@@ -777,7 +795,7 @@ const updateOrderAdminFields = async (orderId: string, fields: Record<string, an
     return null;
   }
 
-  return json.order;
+  return (json.order as AdminOrder | null) ?? null;
 };
 
 const handleSaveNotes = async () => {
@@ -793,7 +811,7 @@ const handleSaveNotes = async () => {
     });
 
     if (updated) {
-      setSelectedOrder((prev: any) => ({ ...prev, admin_notes: updated.admin_notes }));
+      setSelectedOrder((prev) => (prev ? { ...prev, admin_notes: updated?.admin_notes ?? prev.admin_notes ?? null } : prev));
       toast.success("Notes enregistrées");
       await loadOrders();
     }
@@ -819,7 +837,7 @@ const handleToggleRefund = async () => {
     });
 
     if (updated) {
-      setSelectedOrder((prev: any) => ({ ...prev, refunded: updated.refunded }));
+      setSelectedOrder((prev) => (prev ? { ...prev, refunded: updated?.refunded ?? prev.refunded ?? false } : prev));
       toast.success(updated.refunded ? "Marquée comme remboursée" : "Marquée comme non remboursée");
       await loadOrders();
     }
@@ -895,7 +913,7 @@ const shipmentsReady = orders.some(
 
 const displayedOrders = useMemo(() => {
 
-  let list = orders as any[];
+  let list: AdminOrder[] = orders;
 
   if (statusFilter !== "all") {
     list = list.filter((o) => getOrderCategory(o) === statusFilter);
@@ -920,9 +938,9 @@ const displayedOrders = useMemo(() => {
     let compare = 0;
 
     if (sortBy === "date") {
-      compare =
-        new Date(a.created_at).getTime() -
-        new Date(b.created_at).getTime();
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      compare = dateA - dateB;
     } else if (sortBy === "amount") {
       compare = Number(a.total) - Number(b.total);
     } else if (sortBy === "city") {
@@ -1122,7 +1140,10 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     <select
       value={sortBy}
-      onChange={(e) => setSortBy(e.target.value as any)}
+      onChange={(e) => {
+        const nextSortBy = e.target.value as "date" | "amount" | "city" | "status";
+        setSortBy(nextSortBy);
+      }}
       className="
         border
         border-border
@@ -1305,7 +1326,7 @@ SENDIT PICKUPS ({pickups.length})
 
 <div className="border border-border divide-y">
 
-{pickups.map((p: any) => {
+{pickups.map((p) => {
 
   const isExpanded = expandedPickups.has(p.code);
 
@@ -1343,12 +1364,12 @@ TRACKING
 </div>
 
 <div className="text-xs font-display">
-{p.orders.map((o:any)=>o.tracking_number).join(", ")}
+{p.orders.map((o) => o.tracking_number).join(", ")}
 </div>
 
 {isExpanded ? (
   <div className="text-xs mt-1.5">
-    {p.orders.map((o:any)=>o.customer_name).join(", ")}
+    {p.orders.map((o) => o.customer_name).join(", ")}
   </div>
 ) : (
   <button
@@ -1462,7 +1483,7 @@ TOTAL
           ) : invoices.length === 0 ? (
             <div className="p-3 text-xs text-muted-foreground">Aucune facture</div>
           ) : (
-            invoices.map((inv: any) => (
+            invoices.map((inv) => (
               <div
                 key={inv.code}
                 onClick={() => openInvoiceDetail(inv.code)}
@@ -1992,9 +2013,10 @@ TOTAL
                       );
                     }
 
-                    const matched = orderEvents.find(
-                      (e) => mapEventToStep(e.event) === step.key
-                    );
+                    const matched = orderEvents.find((e) => {
+                      const eventKey = e.event ?? e.event_type ?? "";
+                      return mapEventToStep(eventKey) === step.key;
+                    });
 
                     return (
                       <div key={step.key} className="flex items-center gap-2 text-xs">
@@ -2081,7 +2103,7 @@ TOTAL
             ) : (
               <div className="space-y-2">
 
-                {(selectedInvoice.items ?? []).map((item: any, i: number) => (
+                {(selectedInvoice.items ?? []).map((item, i) => (
                   <div key={i} className="border border-border p-2 text-xs">
 
                     <div className="flex justify-between items-center">

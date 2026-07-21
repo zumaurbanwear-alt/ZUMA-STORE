@@ -21,7 +21,7 @@ const Auth = () => {
     if (!r.success) { toast.error(r.error.issues[0].message); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await signInAdmin(email, password);
       if (error) throw error;
       nav("/zm-portal-x92");
     } catch (err) {

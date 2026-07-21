@@ -3,10 +3,17 @@ import { Link } from "react-router-dom";
 import { resolveImage, prefetchProductImages, type DbProduct } from "@/hooks/useProducts";
 import { ProductImg } from "@/components/zuma/product/ProductImg";
 import { Skeleton } from "@/components/zuma/common/Skeleton";
-import { preloadProductPage } from "@/pages/Product.preload";
 import { useLang } from "@/context/LanguageContext";
 
 const NEW_THRESHOLD_DAYS = 14;
+let productPagePreloadPromise: Promise<unknown> | null = null;
+
+const preloadProductPageOnce = () => {
+  if (!productPagePreloadPromise) {
+    productPagePreloadPromise = import("@/pages/Product.preload").then((m) => m.preloadProductPage());
+  }
+  return productPagePreloadPromise;
+};
 
 const useBadgeFor = () => {
   const { t } = useLang();
@@ -33,7 +40,7 @@ export const ProductCard = ({ p, priority = false }: { p: DbProduct; priority?: 
   const soldOut = p.stock === 0;
   const queryClient = useQueryClient();
   const warm = () => {
-    preloadProductPage();
+    void preloadProductPageOnce();
     prefetchProductImages(queryClient, p.id);
   };
   return (
