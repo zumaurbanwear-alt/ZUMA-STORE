@@ -4,7 +4,6 @@ import heroDesktopWebp from "@/assets/fw000/modeled-desktop.webp";
 import heroDesktopJpg from "@/assets/fw000/modeled-desktop.jpg";
 import heroMobileWebp from "@/assets/fw000/modeled-mobile.webp";
 import heroMobileJpg from "@/assets/fw000/modeled-mobile.jpg";
-import { Loader } from "@/components/zuma/common/Loader";
 import { Countdown } from "@/components/zuma/marketing/Countdown";
 import { TextureBand } from "@/components/zuma/layout/TextureBand";
 import { ProductGrid } from "@/components/zuma/product/ProductGrid";
@@ -34,8 +33,6 @@ const Index = () => {
 
   return (
     <SiteLayout>
-      <Loader />
-
       <header id="hero" className="relative h-screen overflow-hidden flex flex-col justify-end px-6 md:px-10 pb-14 border-b border-border">
         <picture>
           {/* Phones get the small crop; anything wider gets the full-size one.

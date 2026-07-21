@@ -45,6 +45,7 @@ const AdminDepenses = () => {
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({ nom: "", produits: "", prix: "", date: todayIso() });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -85,11 +86,38 @@ const AdminDepenses = () => {
 
   const total = useMemo(() => filtered.reduce((sum, e) => sum + (Number.isFinite(e.prix) ? e.prix : 0), 0), [filtered]);
 
-  const addExpense = async () => {
+  const saveExpense = async () => {
     const prixNum = parseFloat(form.prix.replace(",", "."));
     if (!form.nom.trim() || !form.date || !Number.isFinite(prixNum)) return;
 
     setSaving(true);
+
+    if (editingId) {
+      const { data, error } = await supabase
+        .from("depenses")
+        .update({
+          nom: form.nom.trim(),
+          produits: form.produits.trim() || null,
+          prix: prixNum,
+          date: form.date,
+        })
+        .eq("id", editingId)
+        .select("id, nom, produits, prix, date")
+        .single();
+      setSaving(false);
+
+      if (error) {
+        setFetchError(error.message);
+        return;
+      }
+
+      setExpenses((prev) => prev.map((e) => (e.id === editingId ? (data as Expense) : e)));
+      setSelectedMonth(monthKey(form.date));
+      setEditingId(null);
+      setForm({ nom: "", produits: "", prix: "", date: form.date });
+      return;
+    }
+
     const { data, error } = await supabase
       .from("depenses")
       .insert({
@@ -112,6 +140,16 @@ const AdminDepenses = () => {
     setForm({ nom: "", produits: "", prix: "", date: form.date });
   };
 
+  const startEdit = (e: Expense) => {
+    setEditingId(e.id);
+    setForm({ nom: e.nom, produits: e.produits ?? "", prix: String(e.prix), date: e.date });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm({ nom: "", produits: "", prix: "", date: todayIso() });
+  };
+
   const deleteExpense = async (id: string) => {
     if (!window.confirm("Supprimer cette dépense ?")) return;
     const { error } = await supabase.from("depenses").delete().eq("id", id);
@@ -120,6 +158,7 @@ const AdminDepenses = () => {
       return;
     }
     setExpenses((prev) => prev.filter((e) => e.id !== id));
+    if (editingId === id) cancelEdit();
   };
 
   const exportPdf = async () => {
@@ -189,10 +228,12 @@ const AdminDepenses = () => {
         </div>
       )}
 
-      {/* Add form */}
+      {/* Add / edit form */}
       <section className="mb-8 border border-border p-4">
-        <h2 className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground mb-3">Ajouter une dépense</h2>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <h2 className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground mb-3">
+          {editingId ? "Modifier la dépense" : "Ajouter une dépense"}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
           <input
             type="text"
             placeholder="Nom"
@@ -223,12 +264,22 @@ const AdminDepenses = () => {
           />
           <button
             type="button"
-            onClick={addExpense}
+            onClick={saveExpense}
             disabled={saving}
             className="border border-primary text-primary text-[10px] tracking-[0.2em] uppercase px-3 py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
           >
-            {saving ? "..." : "Ajouter"}
+            {saving ? "..." : editingId ? "Enregistrer" : "Ajouter"}
           </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={cancelEdit}
+              disabled={saving}
+              className="border border-border text-muted-foreground text-[10px] tracking-[0.2em] uppercase px-3 py-2 hover:text-primary-hi disabled:opacity-50"
+            >
+              Annuler
+            </button>
+          )}
         </div>
       </section>
 
@@ -284,12 +335,19 @@ const AdminDepenses = () => {
               </tr>
             )}
             {!fetching && filtered.map((e) => (
-              <tr key={e.id} className="hover:bg-muted/20">
+              <tr key={e.id} className={`hover:bg-muted/20 ${editingId === e.id ? "bg-muted/30" : ""}`}>
                 <td className="px-3 py-2">{e.nom}</td>
                 <td className="px-3 py-2 text-muted-foreground">{e.produits || "—"}</td>
                 <td className="px-3 py-2">{e.prix.toFixed(2)}</td>
                 <td className="px-3 py-2 text-muted-foreground">{formatDateFr(e.date)}</td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(e)}
+                    className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground hover:text-primary-hi mr-3"
+                  >
+                    Modifier
+                  </button>
                   <button
                     type="button"
                     onClick={() => deleteExpense(e.id)}
