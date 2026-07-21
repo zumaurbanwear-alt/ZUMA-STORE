@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { signInAdmin } from "@/lib/supabaseAuth";
 
 const schema = z.object({
   email: z.string().trim().email().max(255),
@@ -17,11 +17,13 @@ const Auth = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const r = schema.safeParse({ email, password });
+    const normalizedEmail = email.trim();
+    const normalizedPassword = password.trim();
+    const r = schema.safeParse({ email: normalizedEmail, password: normalizedPassword });
     if (!r.success) { toast.error(r.error.issues[0].message); return; }
     setBusy(true);
     try {
-      const { error } = await signInAdmin(email, password);
+      const { error } = await signInAdmin(normalizedEmail, normalizedPassword);
       if (error) throw error;
       nav("/zm-portal-x92");
     } catch (err) {
