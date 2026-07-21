@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
 import { StatusDot } from "./orders/StatusDot";
 import { SalesChart } from "./orders/SalesChart";
+import { AdminOrdersPickupsSection } from "./components/AdminOrdersPickupsSection";
+import { AdminOrdersInvoicesSection } from "./components/AdminOrdersInvoicesSection";
+import { AdminOrderDetailDrawer } from "./components/AdminOrderDetailDrawer";
 import type { AdminInvoice, AdminOrder, AdminOrderEvent, AdminPickup } from "./orders/types";
 import {
   getOrderCategory,
@@ -14,15 +17,7 @@ import {
   mapEventToStep,
   escapeCsvField,
 } from "./orders/orderStatus";
-
-type PickupRow = {
-  pickup_code?: string | null;
-  pickup_status?: string | null;
-  pickup_created_at?: string | null;
-  tracking_number?: string | null;
-  customer_name?: string | null;
-  total?: number | string | null;
-};
+import { buildOrdersCsvRows, buildPickupGroups } from "./orders/adminOrdersUtils";
 
 type AdminStatsRow = Partial<AdminOrder> & {
   created_at?: string | null;
@@ -128,36 +123,14 @@ export const AdminOrdersPanel = () => {
         ascending: false,
       });
 
-    const grouped = Object.values(
-  (pickupsData ?? []).reduce<Record<string, AdminPickup>>((acc, row: PickupRow) => {
-    const pickupCode = row.pickup_code ?? "";
-
-    if (!pickupCode) return acc;
-
-    const current = acc[pickupCode] ?? {
-      code: pickupCode,
-      status: row.pickup_status ?? null,
-      created_at: row.pickup_created_at ?? null,
-      total: 0,
-      orders: [],
-    };
-
-    current.orders.push({
-      pickup_code: pickupCode,
-      pickup_status: row.pickup_status ?? null,
-      pickup_created_at: row.pickup_created_at ?? null,
-      tracking_number: row.tracking_number ?? "",
-      customer_name: row.customer_name ?? "",
-      total: Number(row.total) || 0,
-    });
-    current.total += Number(row.total) || 0;
-    acc[pickupCode] = current;
-
-    return acc;
-  }, {})
-);
-
-setPickups(grouped);
+    setPickups(buildPickupGroups(pickupsData as Array<{
+      pickup_code?: string | null;
+      pickup_status?: string | null;
+      pickup_created_at?: string | null;
+      tracking_number?: string | null;
+      customer_name?: string | null;
+      total?: number | string | null;
+    }> | null));
   };
 
   const loadStats = async () => {
@@ -443,17 +416,7 @@ const handleExportCSV = () => {
     "Date",
   ];
 
-  const rows = displayedOrders.map((o) => [
-    o.display_id,
-    o.customer_name,
-    o.customer_phone,
-    o.customer_city,
-    o.tracking_number ?? "",
-    o.pickup_code ?? "",
-    o.shipping_status ?? o.status,
-    o.total,
-    o.created_at ? new Date(o.created_at).toLocaleDateString() : "",
-  ]);
+  const rows = buildOrdersCsvRows(displayedOrders);
 
   const csv = [headers, ...rows]
     .map((row) => row.map(escapeCsvField).join(","))
@@ -1317,229 +1280,42 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
       </section>
 
-<section className="mb-12">
-
-<h2 className="font-display text-base tracking-[0.2em] mb-3">
-SENDIT PICKUPS ({pickups.length})
-</h2>
-
-
-<div className="border border-border divide-y">
-
-{pickups.map((p) => {
-
-  const isExpanded = expandedPickups.has(p.code);
-
-  const toggleExpanded = () => {
+<AdminOrdersPickupsSection
+  pickups={pickups}
+  expandedPickups={expandedPickups}
+  onTogglePickup={(code) => {
     setExpandedPickups((prev) => {
       const next = new Set(prev);
-      if (next.has(p.code)) {
-        next.delete(p.code);
+      if (next.has(code)) {
+        next.delete(code);
       } else {
-        next.add(p.code);
+        next.add(code);
       }
       return next;
     });
-  };
+  }}
+/>
 
-  return (
-
-<div
-key={p.code}
-className="p-3 flex justify-between"
->
-
-<div>
-
-<div className="text-[8px] uppercase text-muted-foreground">
-PICKUP
-</div>
-
-<div className="text-xs font-display tracking-[0.1em]">
-{p.code}
-</div>
-
-<div className="text-[8px] uppercase text-muted-foreground mt-1.5">
-TRACKING
-</div>
-
-<div className="text-xs font-display">
-{p.orders.map((o) => o.tracking_number).join(", ")}
-</div>
-
-{isExpanded ? (
-  <div className="text-xs mt-1.5">
-    {p.orders.map((o) => o.customer_name).join(", ")}
-  </div>
-) : (
-  <button
-    onClick={toggleExpanded}
-    className="text-[9px] text-muted-foreground underline mt-1.5"
-  >
-    + détails
-  </button>
-)}
-
-</div>
-
-
-<div className="text-right">
-
-<div className="text-[8px] uppercase text-muted-foreground">
-STATUS
-</div>
-
-<div className="text-xs uppercase flex items-center justify-end gap-1.5">
-{translateStatus(p.status)}<StatusDot status={p.status} />
-</div>
-
-<div className="text-[8px] uppercase text-muted-foreground mt-1.5">
-COLIS
-</div>
-
-<div className="text-xs">
-{p.orders.length}
-</div>
-
-<div className="text-[8px] uppercase text-muted-foreground mt-1.5">
-TOTAL
-</div>
-
-<div className="text-xs">
-{p.total} MAD
-</div>
-
-<div className="text-[10px] mt-1.5">
-{new Date(p.created_at).toLocaleDateString()}
-</div>
-
-{isExpanded && (
-  <button
-    onClick={toggleExpanded}
-    className="text-[9px] text-muted-foreground underline mt-1.5 block ml-auto"
-  >
-    réduire
-  </button>
-)}
-
-
-</div>
-
-</div>
-
-  );
-})}
-
-</div>
-
-</section>
-
-      <section className="mb-12">
-
-        <h2 className="font-display text-base tracking-[0.2em] mb-3">
-          FACTURES SENDIT ({invoicesTotal})
-        </h2>
-
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-
-          <input
-            type="date"
-            value={invoiceStartDate}
-            onChange={(e) => setInvoiceStartDate(e.target.value)}
-            className="border border-border px-2 py-1.5 text-xs bg-transparent"
-          />
-
-          <input
-            type="date"
-            value={invoiceEndDate}
-            onChange={(e) => setInvoiceEndDate(e.target.value)}
-            className="border border-border px-2 py-1.5 text-xs bg-transparent"
-          />
-
-          <input
-            type="text"
-            value={invoiceSearch}
-            onChange={(e) => setInvoiceSearch(e.target.value)}
-            placeholder="Code / commentaire..."
-            className="border border-border px-3 py-1.5 text-xs flex-1 min-w-[160px] bg-transparent"
-          />
-
-          <button
-            onClick={() => {
-              setInvoicesPage(1);
-              loadInvoices(1);
-            }}
-            className="border border-primary px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground"
-          >
-            Filtrer
-          </button>
-
-        </div>
-
-        <div className="border border-border divide-y divide-border">
-
-          {loadingInvoices ? (
-            <div className="p-3 text-xs text-muted-foreground">Chargement...</div>
-          ) : invoices.length === 0 ? (
-            <div className="p-3 text-xs text-muted-foreground">Aucune facture</div>
-          ) : (
-            invoices.map((inv) => (
-              <div
-                key={inv.code}
-                onClick={() => openInvoiceDetail(inv.code)}
-                className="p-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/10"
-              >
-
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-xs font-display tracking-[0.1em] shrink-0">
-                    {inv.code}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground shrink-0">
-                    {inv.date}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[9px] uppercase flex items-center gap-1.5">
-                    <StatusDot status={inv.status} />
-                    {translateStatus(inv.status)}
-                  </span>
-                  <span className="text-xs font-display text-primary-hi w-20 text-right">
-                    {inv.amount} MAD
-                  </span>
-                </div>
-
-              </div>
-            ))
-          )}
-
-        </div>
-
-        <div className="flex items-center justify-between mt-3 text-[10px] uppercase tracking-[0.15em]">
-
-          <button
-            onClick={() => setInvoicesPage((p) => Math.max(1, p - 1))}
-            disabled={invoicesPage <= 1}
-            className="border border-border px-3 py-1 disabled:opacity-40"
-          >
-            ←
-          </button>
-
-          <span className="text-muted-foreground normal-case tracking-normal">
-            Page {invoicesPage} / {invoicesLastPage} ({invoicesTotal} factures)
-          </span>
-
-          <button
-            onClick={() => setInvoicesPage((p) => Math.min(invoicesLastPage, p + 1))}
-            disabled={invoicesPage >= invoicesLastPage}
-            className="border border-border px-3 py-1 disabled:opacity-40"
-          >
-            →
-          </button>
-
-        </div>
-
-      </section>
+<AdminOrdersInvoicesSection
+  invoices={invoices}
+  loadingInvoices={loadingInvoices}
+  invoicesPage={invoicesPage}
+  invoicesLastPage={invoicesLastPage}
+  invoicesTotal={invoicesTotal}
+  invoiceSearch={invoiceSearch}
+  invoiceStartDate={invoiceStartDate}
+  invoiceEndDate={invoiceEndDate}
+  onInvoiceSearchChange={setInvoiceSearch}
+  onInvoiceStartDateChange={setInvoiceStartDate}
+  onInvoiceEndDateChange={setInvoiceEndDate}
+  onFilterInvoices={() => {
+    setInvoicesPage(1);
+    loadInvoices(1);
+  }}
+  onPrevInvoicePage={() => setInvoicesPage((p) => Math.max(1, p - 1))}
+  onNextInvoicePage={() => setInvoicesPage((p) => Math.min(invoicesLastPage, p + 1))}
+  onOpenInvoiceDetail={openInvoiceDetail}
+/>
 
       <section className="mb-12">
 
@@ -1660,391 +1436,24 @@ TOTAL
 
       </section>
 
-      {selectedOrder && (
-
-        <>
-
-          <div
-            onClick={closeDrawer}
-            className="fixed inset-0 bg-black/40 z-40"
-          />
-
-          <div className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-background border-l border-border z-50 overflow-y-auto p-4">
-
-            <div className="flex items-center justify-between mb-4">
-
-              <div className="text-sm font-display tracking-[0.15em] text-primary-hi">
-                #{selectedOrder.display_id}
-              </div>
-
-              <button
-                onClick={closeDrawer}
-                className="border border-border px-2 py-1 text-[9px] uppercase tracking-[0.1em]"
-              >
-                Fermer
-              </button>
-
-            </div>
-
-            <div className="text-[9px] uppercase tracking-[0.15em] flex items-center gap-1.5 mb-4">
-              <StatusDot status={selectedOrder.status?.trim().toLowerCase()} />
-              {translateStatus(selectedOrder.status)}
-            </div>
-
-            {selectedOrder.shipping_label_url && (
-              <a
-                href={selectedOrder.shipping_label_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="
-                  block
-                  border
-                  border-primary
-                  px-2
-                  py-1.5
-                  text-[9px]
-                  text-center
-                  uppercase
-                  tracking-[0.1em]
-                  mb-4
-                  hover:bg-primary
-                  hover:text-primary-foreground
-                "
-              >
-                Bordereau
-              </a>
-            )}
-
-            <div className="space-y-3 mb-4">
-
-              {/* CLIENT */}
-              <div className="border border-border p-3">
-
-                <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
-                  CLIENT
-                </div>
-
-                <div className="space-y-1.5">
-
-                  <div>
-                    <div className="text-[8px] uppercase text-muted-foreground">Nom</div>
-                    <div className="mt-0.5 text-xs">{selectedOrder.customer_name}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-[8px] uppercase text-muted-foreground">Téléphone</div>
-                    <div className="mt-0.5 text-xs">{selectedOrder.customer_phone}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-[8px] uppercase text-muted-foreground">Email</div>
-                    <div className="mt-0.5 text-xs break-all">{selectedOrder.customer_email}</div>
-                  </div>
-
-                </div>
-
-              </div>
-
-              {/* LIVRAISON */}
-              <div className="border border-border p-3">
-
-                <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
-                  LIVRAISON
-                </div>
-
-                <div className="space-y-1.5">
-
-                  <div>
-                    <div className="text-[8px] uppercase text-muted-foreground">Ville</div>
-                    <div className="mt-0.5 text-xs">{selectedOrder.customer_city}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-[8px] uppercase text-muted-foreground">District</div>
-                    <div className="mt-0.5 text-xs">{selectedOrder.customer_district ?? "—"}</div>
-                  </div>
-
-                  <div>
-                    <div className="text-[8px] uppercase text-muted-foreground">Adresse</div>
-                    <div className="mt-0.5 text-xs leading-relaxed">{selectedOrder.customer_address}</div>
-                  </div>
-
-                </div>
-
-              </div>
-
-              {/* SENDIT */}
-              {selectedOrder.tracking_number && (
-                <div className="border border-border p-3">
-
-                  <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
-                    SENDIT
-                  </div>
-
-                  <div className="space-y-1.5">
-
-                    <div>
-                      <div className="text-[8px] uppercase text-muted-foreground">Tracking</div>
-                      <div className="mt-0.5 text-xs font-display tracking-[0.1em]">
-                        {selectedOrder.tracking_number}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[8px] uppercase text-muted-foreground">Status</div>
-                      <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
-                        <StatusDot status={selectedOrder.shipping_status} />
-                        {translateStatus(selectedOrder.shipping_status)}
-                      </div>
-                    </div>
-
-                    {selectedOrder.pickup_code && (
-                      <>
-                        <div className="pt-1.5 border-t border-border mt-1.5">
-                          <div className="text-[8px] uppercase text-muted-foreground">Pickup</div>
-                          <div className="mt-0.5 text-xs font-display tracking-[0.1em]">
-                            {selectedOrder.pickup_code}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-[8px] uppercase text-muted-foreground">Pickup status</div>
-                          <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
-                            <StatusDot status={selectedOrder.pickup_status} />
-                            {translateStatus(selectedOrder.pickup_status)}
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                  </div>
-
-                </div>
-              )}
-
-            </div>
-
-            {selectedOrder.status?.trim().toLowerCase() === "pending" && !selectedOrder.tracking_number && (
-              <button
-                onClick={() => handleConfirmOrder(selectedOrder)}
-                disabled={confirmingOrderFor === selectedOrder.id}
-                className="w-full border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 mb-4"
-              >
-                {confirmingOrderFor === selectedOrder.id ? "VALIDATION..." : "VALIDER LA COMMANDE"}
-              </button>
-            )}
-
-            {selectedOrder.status?.trim().toLowerCase() === "confirmed" && !selectedOrder.tracking_number && (
-              <button
-                onClick={() => handleCreateShipment(selectedOrder)}
-                disabled={creatingShipmentFor === selectedOrder.id}
-                className="w-full border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 mb-4"
-              >
-                {creatingShipmentFor === selectedOrder.id ? "CREATION..." : "CREER LE COLIS"}
-              </button>
-            )}
-
-            {(selectedOrder.return_code || selectedOrder.shipping_status_return) && (
-              <div className="border border-red-600 p-3 mb-4">
-
-                <div className="text-[9px] text-red-600 uppercase tracking-[0.15em] mb-2">
-                  ⚠ Retour
-                </div>
-
-                <div className="space-y-1.5 text-xs">
-
-                  {selectedOrder.return_code && (
-                    <div>
-                      <span className="text-[8px] uppercase text-muted-foreground block">Code retour</span>
-                      {selectedOrder.return_code}
-                    </div>
-                  )}
-
-                  {selectedOrder.return_status && (
-                    <div>
-                      <span className="text-[8px] uppercase text-muted-foreground block">Status</span>
-                      <span className="flex items-center gap-1.5">
-                        <StatusDot status={selectedOrder.return_status} />
-                        {selectedOrder.return_status}
-                      </span>
-                    </div>
-                  )}
-
-                  {selectedOrder.shipping_status_return && (
-                    <div>
-                      <span className="text-[8px] uppercase text-muted-foreground block">Status Sendit</span>
-                      {selectedOrder.shipping_status_return}
-                    </div>
-                  )}
-
-                  {selectedOrder.return_reason && (
-                    <div>
-                      <span className="text-[8px] uppercase text-muted-foreground block">Raison</span>
-                      {selectedOrder.return_reason}
-                    </div>
-                  )}
-
-                  {selectedOrder.return_created_at && (
-                    <div>
-                      <span className="text-[8px] uppercase text-muted-foreground block">Demandé le</span>
-                      {new Date(selectedOrder.return_created_at).toLocaleString()}
-                    </div>
-                  )}
-
-                </div>
-
-              </div>
-            )}
-
-            {selectedOrder.tracking_number &&
-              !selectedOrder.return_code &&
-              RETURN_ELIGIBLE_STATUSES.includes(selectedOrder.shipping_status) && (
-              <button
-                onClick={() => handleCreateReturn(selectedOrder)}
-                disabled={creatingReturnFor === selectedOrder.id}
-                className="w-full border border-red-600 text-red-600 py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-red-600 hover:text-white disabled:opacity-50 mb-4"
-              >
-                {creatingReturnFor === selectedOrder.id ? "DEMANDE..." : "DEMANDER UN RETOUR"}
-              </button>
-            )}
-
-            <div className="border-t border-border pt-3 mb-4 flex justify-between items-end">
-
-              <div>
-                <div className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
-                  PRODUITS
-                </div>
-                <div className="text-xs">
-                  {(selectedOrder.order_items ?? [])
-                    .map((item: OrderItem) => `${item.product_name} ×${item.quantity}`)
-                    .join(", ")}
-                </div>
-              </div>
-
-              <div className="text-right">
-                <div className="text-base font-display text-primary-hi">
-                  {selectedOrder.total} MAD
-                </div>
-                <div className="text-[8px] uppercase text-muted-foreground">
-                  {selectedOrder.subtotal} + {selectedOrder.shipping_fee} livraison
-                </div>
-              </div>
-
-            </div>
-
-            <div className="flex items-center justify-between border border-border p-3 mb-4">
-
-              <div>
-                <div className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
-                  Remboursement
-                </div>
-                <div className="text-xs">
-                  {selectedOrder.refunded ? "Remboursée" : "Non remboursée"}
-                </div>
-              </div>
-
-              <button
-                onClick={handleToggleRefund}
-                disabled={savingRefund}
-                className={`
-                  border px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] disabled:opacity-50
-                  ${selectedOrder.refunded
-                    ? "border-border hover:bg-muted"
-                    : "border-primary hover:bg-primary hover:text-primary-foreground"}
-                `}
-              >
-                {savingRefund
-                  ? "..."
-                  : selectedOrder.refunded
-                  ? "MARQUER NON REMBOURSÉE"
-                  : "MARQUER REMBOURSÉE"}
-              </button>
-
-            </div>
-
-            <div className="mb-4">
-
-              <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
-                Notes admin
-              </div>
-
-              <textarea
-                value={notesDraft}
-                onChange={(e) => setNotesDraft(e.target.value)}
-                rows={3}
-                placeholder="Note interne, visible uniquement par toi..."
-                className="w-full border border-border p-2 text-xs bg-transparent resize-none"
-              />
-
-              <button
-                onClick={handleSaveNotes}
-                disabled={savingNotes || notesDraft === (selectedOrder.admin_notes ?? "")}
-                className="mt-2 border border-primary px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
-              >
-                {savingNotes ? "ENREGISTREMENT..." : "ENREGISTRER LA NOTE"}
-              </button>
-
-            </div>
-
-            <div>
-
-              <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">
-                HISTORIQUE
-              </div>
-
-              {loadingEvents ? (
-                <div className="text-xs text-muted-foreground">Chargement...</div>
-              ) : (
-                <div className="space-y-2">
-
-                  {TIMELINE_STEPS.map((step) => {
-
-                    if (step.key === "created") {
-                      return (
-                        <div key={step.key} className="flex items-center gap-2 text-xs">
-                          <span className="w-2 h-2 rounded-full shrink-0 bg-black" />
-                          <span>{step.label}</span>
-                          <span className="text-[9px] text-muted-foreground ml-auto">
-                            {selectedOrder.created_at
-                              ? new Date(selectedOrder.created_at).toLocaleString()
-                              : ""}
-                          </span>
-                        </div>
-                      );
-                    }
-
-                    const matched = orderEvents.find((e) => {
-                      const eventKey = e.event ?? e.event_type ?? "";
-                      return mapEventToStep(eventKey) === step.key;
-                    });
-
-                    return (
-                      <div key={step.key} className="flex items-center gap-2 text-xs">
-                        <span
-                          className={`w-2 h-2 rounded-full shrink-0 ${matched ? "bg-black" : "bg-gray-300"}`}
-                        />
-                        <span className={matched ? "" : "text-muted-foreground"}>
-                          {step.label}
-                        </span>
-                        {matched && (
-                          <span className="text-[9px] text-muted-foreground ml-auto">
-                            {new Date(matched.created_at).toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                </div>
-              )}
-
-            </div>
-
-          </div>
-
-        </>
-
-      )}
+      <AdminOrderDetailDrawer
+        selectedOrder={selectedOrder}
+        loadingEvents={loadingEvents}
+        orderEvents={orderEvents}
+        confirmingOrderFor={confirmingOrderFor}
+        creatingShipmentFor={creatingShipmentFor}
+        creatingReturnFor={creatingReturnFor}
+        savingRefund={savingRefund}
+        savingNotes={savingNotes}
+        notesDraft={notesDraft}
+        onClose={closeDrawer}
+        onConfirmOrder={handleConfirmOrder}
+        onCreateShipment={handleCreateShipment}
+        onCreateReturn={handleCreateReturn}
+        onToggleRefund={handleToggleRefund}
+        onSaveNotes={handleSaveNotes}
+        onNotesChange={setNotesDraft}
+      />
 
       {selectedInvoice && (
 
