@@ -31,7 +31,9 @@ const diffKeys = (row: AuditRow) => {
 
 export const AdminAuditPanel = () => {
   const [rows, setRows] = useState<AuditRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [limit, setLimit] = useState(50);
 
@@ -44,20 +46,31 @@ export const AdminAuditPanel = () => {
       .limit(limit);
     if (!error && data) setRows(data as AuditRow[]);
     setLoading(false);
+    setLoaded(true);
   };
 
-  useEffect(() => { load(); }, [limit]);
+  // Loaded lazily the first time the section is expanded, so a collapsed
+  // panel doesn't cost a query on every admin page load.
+  useEffect(() => { if (expanded) load(); }, [expanded, limit]);
 
   return (
     <section className="mb-12">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="font-display text-lg tracking-[0.25em]">AUDIT LOG ({rows.length})</h2>
-        <button onClick={load} className="px-4 py-2 border border-border text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi">
-          Refresh
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          className="flex items-center gap-2 font-display text-lg tracking-[0.25em] hover:text-primary-hi"
+        >
+          {expanded ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
+          AUDIT LOG {loaded ? `(${rows.length})` : ""}
         </button>
+        {expanded && (
+          <button onClick={load} className="px-4 py-2 border border-border text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi">
+            Refresh
+          </button>
+        )}
       </div>
 
-      {loading ? (
+      {!expanded ? null : loading && !loaded ? (
         <p className="text-xs text-muted-foreground">Loading...</p>
       ) : rows.length === 0 ? (
         <p className="text-xs text-muted-foreground">No changes recorded yet.</p>
@@ -114,7 +127,7 @@ export const AdminAuditPanel = () => {
         </div>
       )}
 
-      {rows.length >= limit && (
+      {expanded && rows.length >= limit && (
         <button onClick={() => setLimit((l) => l + 50)} className="mt-3 text-[10px] tracking-[0.18em] uppercase text-muted-foreground hover:text-primary-hi">
           Load more
         </button>
