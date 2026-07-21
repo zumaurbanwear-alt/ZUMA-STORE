@@ -91,6 +91,10 @@ export const useProducts = (opts: { adminMode?: boolean } = {}) => {
       .channel(`products-live-${adminMode ? "admin" : "public"}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
         queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: ["product-images"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "product_images" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["product-images"] });
       })
       .subscribe();
     return () => {
