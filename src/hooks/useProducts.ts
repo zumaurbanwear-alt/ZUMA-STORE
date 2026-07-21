@@ -50,8 +50,12 @@ const WSRV_ENDPOINT = "https://wsrv.nl/";
 
 export const transformImage = (url: string, width: number, quality = 75): string => {
   if (!url || !/^https?:\/\//.test(url)) return url;
+
+  const requestUrl = new URL(url);
+  requestUrl.searchParams.set("_", String(Date.now()));
+
   const params = new URLSearchParams({
-    url,
+    url: requestUrl.toString(),
     w: String(width),
     q: String(quality),
     output: "webp",
