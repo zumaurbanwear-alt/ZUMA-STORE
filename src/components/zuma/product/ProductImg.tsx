@@ -1,10 +1,7 @@
 import { OptimizedImage } from "@/components/zuma/common/OptimizedImage";
 
-// Requests a size-appropriate version of a Supabase-hosted product image
-// instead of always downloading the full original. If image transforms
-// aren't enabled on the Supabase project, the transformed URL 404s and
-// this silently falls back to the original file — images never break,
-// they just aren't right-sized until transforms are turned on.
+// Renders a Supabase-hosted product image at its original, full-quality
+// URL (no resizing/re-compression proxy in front of it).
 export const ProductImg = ({
   src,
   width,
