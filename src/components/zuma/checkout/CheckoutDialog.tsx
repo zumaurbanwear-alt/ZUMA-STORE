@@ -40,58 +40,59 @@ export const CheckoutDialog = ({
   onSuccess: () => void;
 }) => {
   const { t } = useLang();
-const [form, setForm] = useState({
-  name: "",
-  email: "",
-  phone: "",
-  address: "",
-  city: "",
-  district: "",
-  senditDistrictId: null as number | null,
-});
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    district: "",
+    senditDistrictId: null as number | null,
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [districts, setDistricts] = useState<SenditDistrict[]>([]);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
-  // Honeypot: a field real users never see or fill, but naive bots that
-  // auto-fill every input on the page do. Also record when the form
-  // opened — a submission arriving in under 2s almost certainly wasn't
-  // typed by a human. Both cases fail silently (fake success) rather than
-  // showing an error, so scripted submitters don't learn what tripped it.
+  
   const [hp, setHp] = useState("");
   const openedAtRef = useRef(0);
+
   useEffect(() => {
     if (open) openedAtRef.current = Date.now();
   }, [open]);
+
   useEffect(() => {
-  async function loadDistricts() {
-    if (!form.city) {
-      setDistricts([]);
-      return;
+    async function loadDistricts() {
+      if (!form.city || form.city.trim() === "") {
+        setDistricts([]);
+        return;
+      }
+
+      const cleanCity = form.city.trim();
+
+      const { data, error } = await import("@/integrations/supabase/client").then((mod) =>
+        mod.supabase
+          .from("sendit_districts")
+          .select("district_id, name, ville, price")
+          .ilike("ville", cleanCity)
+          .order("name")
+      );
+
+      if (error) {
+        console.error("Error loading districts:", error);
+        setDistricts([]);
+        return;
+      }
+
+      setDistricts(data ?? []);
     }
 
-    const { data, error } = await import("@/integrations/supabase/client").then((mod) =>
-      mod.supabase.from("sendit_districts").select("district_id, name, ville, price").eq("ville", form.city).order("name")
-    );
-
-    if (error) {
-      setDistricts([]);
-      return;
-    }
-
-    setDistricts(data ?? []);
-  }
-
-  loadDistricts();
-}, [form.city]);
+    loadDistricts();
+  }, [form.city]);
 
   if (!open) return null;
   const subtotal = cart.reduce((s, i) => s + i.qty * Number(i.price), 0);
 
-  // Le prix réel Sendit varie par district (pas seulement par ville) —
-  // s'il y a un district sélectionné, on utilise SON prix (synchronisé
-  // depuis Sendit via /api/import-sendit-districts), pas la table
-  // statique par ville qui ne connaît qu'un tarif générique par ville.
   const selectedDistrict = districts.find(
     (d) => d.district_id === form.senditDistrictId
   );
@@ -107,7 +108,6 @@ const [form, setForm] = useState({
     e.preventDefault();
 
     if (hp.trim() !== "" || Date.now() - openedAtRef.current < 2000) {
-      // Looks like a bot — pretend it worked and stop, no request sent.
       setDone(true);
       return;
     }
@@ -182,8 +182,6 @@ const [form, setForm] = useState({
           </div>
         ) : (
           <form onSubmit={submit} className="p-6 md:p-10 flex flex-col gap-5">
-            {/* Honeypot — invisible to real users, left for bots that
-                auto-fill every field. Never becomes visible/focusable. */}
             <input
               type="text"
               name="website"
@@ -204,30 +202,31 @@ const [form, setForm] = useState({
               <Field label={t("phoneWhatsApp")} v={form.phone} set={v => setForm({ ...form, phone: v })} err={errors.phone} placeholder="+212 6 ..." />
               <Field label={t("email")} type="email" v={form.email} set={v => setForm({ ...form, email: v })} err={errors.email} className="sm:col-span-2" />
               <Field label={t("address")} v={form.address} set={v => setForm({ ...form, address: v })} err={errors.address} className="sm:col-span-2" />
+              
               <CitySelect
-  label={t("city")}
-  v={form.city}
-  set={v => setForm({ ...form, city: v })}
-  err={errors.city}
-  placeholder={t("selectCity")}
-  className="sm:col-span-2"
-/>
+                label={t("city")}
+                v={form.city}
+                set={v => setForm({ ...form, city: v })}
+                err={errors.city}
+                placeholder={t("selectCity")}
+                className="sm:col-span-2"
+              />
 
-<DistrictSelect
-  label="District"
-  v={form.senditDistrictId}
-  districts={districts}
-  set={(id, name) => {
-    setForm({
-      ...form,
-      senditDistrictId: id,
-      district: name,
-    });
-  }}
-  err={errors.senditDistrictId}
-  placeholder="Select district"
-  className="sm:col-span-2"
-/>
+              <DistrictSelect
+                label="District"
+                v={form.senditDistrictId}
+                districts={districts}
+                set={(id, name) => {
+                  setForm({
+                    ...form,
+                    senditDistrictId: id,
+                    district: name,
+                  });
+                }}
+                err={errors.senditDistrictId}
+                placeholder="Select district"
+                className="sm:col-span-2"
+              />
             </div>
 
             <div className="border border-border p-4 bg-background/50">
