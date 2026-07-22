@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductImg } from "@/components/zuma/product/ProductImg";
 import { useLang } from "@/context/LanguageContext";
 
-const STORAGE_KEY = "zuma_email_gate_passed";
 const GATE_BG = "https://drkeggribqajjuktxhrj.supabase.co/storage/v1/object/public/product-images/email-gate-bg.webp";
 
 export const EmailGate = ({ onPass }: { onPass: () => void }) => {
@@ -17,7 +16,6 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
       return;
     }
     setError("");
-    localStorage.setItem(STORAGE_KEY, "1");
     onPass();
     // Fire-and-forget: the site is already revealed, no need to make the
     // visitor wait on this round-trip. Errors are non-critical here.
