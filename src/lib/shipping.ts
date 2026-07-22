@@ -1,4 +1,14 @@
-import { SHIPPING_RATES, DEFAULT_SHIPPING_FEE } from "@/data/shippingRates";
+/**
+ * Delivery-fee lookup for Moroccan cities.
+ *
+ * The actual rate table (~450 entries) lives in @/data/shippingRates and is
+ * loaded lazily via dynamic import so it doesn't bloat the main JS bundle
+ * for every visitor — only pages that actually open the checkout dialog
+ * pay for downloading it.
+ */
+
+// Small, cheap constant — safe to import statically everywhere.
+export const DEFAULT_SHIPPING_FEE = 45;
 
 /**
  * Normalizes a city string for comparison:
@@ -22,46 +32,57 @@ const baseName = (raw: string): string => {
   return n.split(/\bregion\b/)[0].split(" - ").join(" ").split("-")[0].trim();
 };
 
-// Full-label lookup (exact normalized match, e.g. "mohammedia al massira")
-const exactMap = new Map<string, number>();
-// Base-name lookup (e.g. "azrou" -> first matching fee)
-const baseMap = new Map<string, number>();
+export type ShippingLookup = {
+  getShippingFee: (cityInput: string) => number;
+  isKnownCity: (cityInput: string) => boolean;
+  citySuggestions: string[];
+};
 
-for (const { city, fee } of SHIPPING_RATES) {
-  const full = normalize(city);
-  if (!exactMap.has(full)) exactMap.set(full, fee);
+const buildLookup = (rates: { city: string; fee: number }[]): ShippingLookup => {
+  const exactMap = new Map<string, number>();
+  const baseMap = new Map<string, number>();
 
-  const base = baseName(city);
-  if (!baseMap.has(base)) baseMap.set(base, fee);
-}
+  for (const { city, fee } of rates) {
+    const full = normalize(city);
+    if (!exactMap.has(full)) exactMap.set(full, fee);
+
+    const base = baseName(city);
+    if (!baseMap.has(base)) baseMap.set(base, fee);
+  }
+
+  const getShippingFee = (cityInput: string): number => {
+    if (!cityInput || !cityInput.trim()) return DEFAULT_SHIPPING_FEE;
+    const full = normalize(cityInput);
+    if (exactMap.has(full)) return exactMap.get(full)!;
+    const base = baseName(cityInput);
+    if (baseMap.has(base)) return baseMap.get(base)!;
+    return DEFAULT_SHIPPING_FEE;
+  };
+
+  const isKnownCity = (cityInput: string): boolean => {
+    if (!cityInput || !cityInput.trim()) return false;
+    const full = normalize(cityInput);
+    if (exactMap.has(full)) return true;
+    return baseMap.has(baseName(cityInput));
+  };
+
+  const citySuggestions = Array.from(new Set(rates.map(r => r.city))).sort((a, b) =>
+    a.localeCompare(b)
+  );
+
+  return { getShippingFee, isKnownCity, citySuggestions };
+};
+
+let cached: Promise<ShippingLookup> | null = null;
 
 /**
- * Returns the delivery fee (MAD) for a given city string typed by the customer.
- * Falls back to DEFAULT_SHIPPING_FEE when no match is found.
+ * Loads (once, memoized) and returns the shipping lookup helpers.
+ * The underlying rate table is fetched via dynamic import on first call,
+ * so it's only downloaded when someone actually needs it (checkout open).
  */
-export const getShippingFee = (cityInput: string): number => {
-  if (!cityInput || !cityInput.trim()) return DEFAULT_SHIPPING_FEE;
-
-  const full = normalize(cityInput);
-  if (exactMap.has(full)) return exactMap.get(full)!;
-
-  const base = baseName(cityInput);
-  if (baseMap.has(base)) return baseMap.get(base)!;
-
-  return DEFAULT_SHIPPING_FEE;
+export const loadShippingLookup = (): Promise<ShippingLookup> => {
+  if (!cached) {
+    cached = import("@/data/shippingRates").then(mod => buildLookup(mod.SHIPPING_RATES));
+  }
+  return cached;
 };
-
-/** True when the typed city was found in the rate sheet (vs. using the fallback fee). */
-export const isKnownCity = (cityInput: string): boolean => {
-  if (!cityInput || !cityInput.trim()) return false;
-  const full = normalize(cityInput);
-  if (exactMap.has(full)) return true;
-  return baseMap.has(baseName(cityInput));
-};
-
-/** Sorted, de-duplicated list of city labels — handy for an autocomplete/datalist. */
-export const CITY_SUGGESTIONS: string[] = Array.from(
-  new Set(SHIPPING_RATES.map(r => r.city))
-).sort((a, b) => a.localeCompare(b));
-
-export { DEFAULT_SHIPPING_FEE };
