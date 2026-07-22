@@ -4,7 +4,7 @@ import { X, Check } from "lucide-react";
 import type { CartItem } from "@/context/CartContext";
 import { toast } from "sonner";
 import { useLang } from "@/context/LanguageContext";
-import { getShippingFee } from "@/lib/shipping";
+import { loadShippingLookup, DEFAULT_SHIPPING_FEE, type ShippingLookup } from "@/lib/shipping";
 import { buildOrderSubmission } from "@/lib/orders";
 import { createOrderItems, createOrderRecord, getOrderDisplayId } from "@/lib/supabaseAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,11 +56,20 @@ export const CheckoutDialog = ({
   const [busy, setBusy] = useState(false);
   
   const [hp, setHp] = useState("");
+  const [shippingLookup, setShippingLookup] = useState<ShippingLookup | null>(null);
   const openedAtRef = useRef(0);
 
   useEffect(() => {
     if (open) openedAtRef.current = Date.now();
   }, [open]);
+
+  useEffect(() => {
+    // Rate table (~450 cities) is only downloaded once the checkout is actually opened,
+    // not bundled into the main app JS for every visitor.
+    if (open && !shippingLookup) {
+      loadShippingLookup().then(setShippingLookup);
+    }
+  }, [open, shippingLookup]);
 
   useEffect(() => {
     async function loadDistricts() {
@@ -104,7 +113,7 @@ export const CheckoutDialog = ({
   const shippingFee =
     selectedDistrict?.price != null
       ? Number(selectedDistrict.price)
-      : getShippingFee(form.city);
+      : shippingLookup?.getShippingFee(form.city) ?? DEFAULT_SHIPPING_FEE;
 
   const total = subtotal + shippingFee;
 
@@ -213,6 +222,7 @@ export const CheckoutDialog = ({
                 set={v => setForm({ ...form, city: v })}
                 err={errors.city}
                 placeholder={t("selectCity")}
+                suggestions={shippingLookup?.citySuggestions ?? []}
                 className="sm:col-span-2"
               />
 

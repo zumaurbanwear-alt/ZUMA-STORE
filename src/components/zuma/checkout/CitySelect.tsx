@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
-import { CITY_SUGGESTIONS } from "@/lib/shipping";
 
 const normalizeForSearch = (s: string): string =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 export const CitySelect = ({
-  label, v, set, err, placeholder, className = "",
+  label, v, set, err, placeholder, className = "", suggestions,
 }: {
   label: string; v: string; set: (v: string) => void; err?: string; placeholder?: string; className?: string;
+  /** City list, lazy-loaded by the parent (CheckoutDialog) so it isn't in the main bundle. */
+  suggestions: string[];
 }) => {
   const { t } = useLang();
   const [query, setQuery] = useState(v);
@@ -18,8 +19,8 @@ export const CitySelect = ({
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const filtered = query.trim() === ""
-    ? CITY_SUGGESTIONS
-    : CITY_SUGGESTIONS.filter(c => normalizeForSearch(c).startsWith(normalizeForSearch(query)));
+    ? suggestions
+    : suggestions.filter(c => normalizeForSearch(c).startsWith(normalizeForSearch(query)));
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
