@@ -4,7 +4,7 @@ import { ProductImg } from "@/components/zuma/product/ProductImg";
 import { useLang } from "@/context/LanguageContext";
 
 const STORAGE_KEY = "zuma_email_gate_passed";
-const GATE_BG = "https://drkeggribqajjuktxhrj.supabase.co/storage/v1/object/public/product-images/email-gate-bg.png.jpg";
+const GATE_BG = "https://drkeggribqajjuktxhrj.supabase.co/storage/v1/object/public/product-images/email-gate-bg.webp";
 
 export const EmailGate = ({ onPass }: { onPass: () => void }) => {
   const { t } = useLang();
