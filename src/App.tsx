@@ -4,17 +4,11 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
-import { AudioProvider } from "@/context/AudioContext";
 import { Loader } from "@/components/zuma/common/Loader";
 import { ErrorBoundary } from "@/components/zuma/common/ErrorBoundary";
 import { ScrollToHash } from "./components/zuma/common/ScrollToHash";
 import Index from "./pages/Index";
 
-// Index is the landing page most visitors hit first, so it ships in the
-// main bundle instead of being code-split — that way its hero image is
-// discoverable by the browser's preload scanner immediately, instead of
-// waiting on a route-chunk fetch before the image request can even start.
-// Every other route is still code-split so first load stays lean.
 const Shop = lazy(() => import("./pages/Shop"));
 const Product = lazy(() => import("./pages/Product.preload").then((m) => m.preloadProductPage()));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -43,7 +37,6 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
        <LanguageProvider>
-        <AudioProvider>
         <CartProvider>
           <ScrollToHash />
           <Suspense fallback={<Loader />}>
@@ -65,7 +58,6 @@ const App = () => (
             </Routes>
           </Suspense>
         </CartProvider>
-        </AudioProvider>
        </LanguageProvider>
       </BrowserRouter>
     </QueryClientProvider>
