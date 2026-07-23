@@ -7,6 +7,7 @@ import { SalesChart } from "./orders/SalesChart";
 import { AdminOrdersPickupsSection } from "./components/AdminOrdersPickupsSection";
 import { AdminOrdersInvoicesSection } from "./components/AdminOrdersInvoicesSection";
 import { AdminOrderDetailDrawer } from "./components/AdminOrderDetailDrawer";
+import { AdminManualOrderModal } from "./components/AdminManualOrderModal";
 import type { AdminInvoice, AdminOrder, AdminOrderEvent, AdminPickup } from "./orders/types";
 import {
   getOrderCategory,
@@ -74,6 +75,9 @@ export const AdminOrdersPanel = () => {
   const [savingRefund, setSavingRefund] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [downloadingLabels, setDownloadingLabels] = useState(false);
+  const [markingReadyFor, setMarkingReadyFor] = useState<string | null>(null);
+  const [markingDeliveredFor, setMarkingDeliveredFor] = useState<string | null>(null);
+  const [showManualOrderModal, setShowManualOrderModal] = useState(false);
 
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
@@ -262,6 +266,56 @@ export const AdminOrdersPanel = () => {
     }
   };
 
+
+  const handleMarkReady = async (order: Order) => {
+    setMarkingReadyFor(order.id);
+
+    try {
+      const { error } = await supabase.rpc("mark_order_ready", {
+        order_uuid: order.id,
+      });
+
+      if (error) {
+        console.error(error);
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success(`Commande #${order.display_id} marquée "colis prêt"`);
+      await loadOrders();
+      await loadStats();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur");
+    } finally {
+      setMarkingReadyFor(null);
+    }
+  };
+
+  const handleMarkDelivered = async (order: Order) => {
+    setMarkingDeliveredFor(order.id);
+
+    try {
+      const { error } = await supabase.rpc("mark_order_delivered", {
+        order_uuid: order.id,
+      });
+
+      if (error) {
+        console.error(error);
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success(`Commande #${order.display_id} marquée livrée`);
+      await loadOrders();
+      await loadStats();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur");
+    } finally {
+      setMarkingDeliveredFor(null);
+    }
+  };
 
   const handleCreateShipment = async (order: Order) => {
 
@@ -1013,6 +1067,23 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
     <div className="flex gap-2">
 
     <button
+      onClick={() => setShowManualOrderModal(true)}
+      className="
+        border
+        border-primary
+        px-3
+        py-1.5
+        text-[9px]
+        uppercase
+        tracking-[0.15em]
+        hover:bg-primary
+        hover:text-primary-foreground
+      "
+    >
+      + COMMANDE MANUELLE
+    </button>
+
+    <button
   onClick={handleSyncSendit}
   disabled={syncingSendit}
       className="
@@ -1446,14 +1517,28 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         savingRefund={savingRefund}
         savingNotes={savingNotes}
         notesDraft={notesDraft}
+        markingReadyFor={markingReadyFor}
+        markingDeliveredFor={markingDeliveredFor}
         onClose={closeDrawer}
         onConfirmOrder={handleConfirmOrder}
         onCreateShipment={handleCreateShipment}
         onCreateReturn={handleCreateReturn}
+        onMarkReady={handleMarkReady}
+        onMarkDelivered={handleMarkDelivered}
         onToggleRefund={handleToggleRefund}
         onSaveNotes={handleSaveNotes}
         onNotesChange={setNotesDraft}
       />
+
+      {showManualOrderModal && (
+        <AdminManualOrderModal
+          onClose={() => setShowManualOrderModal(false)}
+          onCreated={() => {
+            loadOrders();
+            loadStats();
+          }}
+        />
+      )}
 
       {selectedInvoice && (
 
