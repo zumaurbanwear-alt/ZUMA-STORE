@@ -10,6 +10,8 @@ type AdminOrderDetailDrawerProps = {
   confirmingOrderFor: string | null;
   creatingShipmentFor: string | null;
   creatingReturnFor: string | null;
+  markingReadyFor: string | null;
+  markingDeliveredFor: string | null;
   savingRefund: boolean;
   savingNotes: boolean;
   notesDraft: string;
@@ -17,6 +19,8 @@ type AdminOrderDetailDrawerProps = {
   onConfirmOrder: (order: AdminOrder) => void;
   onCreateShipment: (order: AdminOrder) => void;
   onCreateReturn: (order: AdminOrder) => void;
+  onMarkReady: (order: AdminOrder) => void;
+  onMarkDelivered: (order: AdminOrder) => void;
   onToggleRefund: () => void;
   onSaveNotes: () => void;
   onNotesChange: (value: string) => void;
@@ -29,6 +33,8 @@ export const AdminOrderDetailDrawer = ({
   confirmingOrderFor,
   creatingShipmentFor,
   creatingReturnFor,
+  markingReadyFor,
+  markingDeliveredFor,
   savingRefund,
   savingNotes,
   notesDraft,
@@ -36,6 +42,8 @@ export const AdminOrderDetailDrawer = ({
   onConfirmOrder,
   onCreateShipment,
   onCreateReturn,
+  onMarkReady,
+  onMarkDelivered,
   onToggleRefund,
   onSaveNotes,
   onNotesChange,
@@ -126,6 +134,21 @@ export const AdminOrderDetailDrawer = ({
             </div>
           </div>
 
+          {selectedOrder.shipping_provider === "manual" && (
+            <div className="border border-border p-3">
+              <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">LIVRAISON MANUELLE</div>
+              <div className="space-y-1.5">
+                <div>
+                  <div className="text-[8px] uppercase text-muted-foreground">Status</div>
+                  <div className="mt-0.5 text-xs uppercase flex items-center gap-1.5">
+                    <StatusDot status={selectedOrder.shipping_status} />
+                    {selectedOrder.shipping_status ? translateStatus(selectedOrder.shipping_status) : "À préparer"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {selectedOrder.tracking_number && (
             <div className="border border-border p-3">
               <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-2">SENDIT</div>
@@ -177,13 +200,38 @@ export const AdminOrderDetailDrawer = ({
           </button>
         )}
 
-        {selectedOrder.status?.trim().toLowerCase() === "confirmed" && !selectedOrder.tracking_number && (
+        {selectedOrder.status?.trim().toLowerCase() === "confirmed" &&
+          !selectedOrder.tracking_number &&
+          selectedOrder.shipping_provider !== "manual" && (
+            <button
+              onClick={() => onCreateShipment(selectedOrder)}
+              disabled={creatingShipmentFor === selectedOrder.id}
+              className="w-full border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 mb-4"
+            >
+              {creatingShipmentFor === selectedOrder.id ? "CREATION..." : "CREER LE COLIS"}
+            </button>
+          )}
+
+        {selectedOrder.status?.trim().toLowerCase() === "confirmed" &&
+          selectedOrder.shipping_provider === "manual" &&
+          selectedOrder.shipping_status !== "READY" &&
+          selectedOrder.shipping_status !== "DELIVERED" && (
+            <button
+              onClick={() => onMarkReady(selectedOrder)}
+              disabled={markingReadyFor === selectedOrder.id}
+              className="w-full border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 mb-4"
+            >
+              {markingReadyFor === selectedOrder.id ? "..." : "MARQUER COLIS PRÊT"}
+            </button>
+          )}
+
+        {selectedOrder.shipping_provider === "manual" && selectedOrder.shipping_status === "READY" && (
           <button
-            onClick={() => onCreateShipment(selectedOrder)}
-            disabled={creatingShipmentFor === selectedOrder.id}
+            onClick={() => onMarkDelivered(selectedOrder)}
+            disabled={markingDeliveredFor === selectedOrder.id}
             className="w-full border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 mb-4"
           >
-            {creatingShipmentFor === selectedOrder.id ? "CREATION..." : "CREER LE COLIS"}
+            {markingDeliveredFor === selectedOrder.id ? "..." : "MARQUER LIVRÉ"}
           </button>
         )}
 
