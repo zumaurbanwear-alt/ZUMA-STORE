@@ -82,7 +82,6 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
           status: "pending",
           subtotal,
           shipping_fee: shippingFee,
-          total,
         })
         .select("id, display_id")
         .single();
