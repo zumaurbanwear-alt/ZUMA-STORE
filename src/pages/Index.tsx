@@ -34,25 +34,25 @@ const Index = () => {
     <SiteLayout>
       <header id="hero" className="relative h-screen overflow-hidden flex flex-col justify-end px-6 md:px-10 pb-14 border-b border-border">
         <picture>
-          {/* Phones get the small crop; anything wider gets the full-size one.
-              WebP first (smaller, and what most browsers use today), JPEG
-              as the fallback for the rare browser without WebP support. */}
-          <source media="(max-width: 767px)" srcSet={heroMobileWebp} type="image/webp" />
-          <source srcSet={heroDesktopWebp} type="image/webp" />
-          <OptimizedImage
-            src={heroDesktopJpg}
-            srcSet={`${heroMobileJpg} 750w, ${heroDesktopJpg} 1400w`}
-            alt=""
-            width={1400}
-            className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
-            style={{ objectPosition: "center 15%" }}
-            loading="eager"
-            fetchPriority="high"
-            priority
-            sizes="100vw"
-            fallbackSrc={heroDesktopJpg}
-          />
-        </picture>
+  <source
+    media="(max-width: 767px)"
+    srcSet={heroMobile}
+  />
+
+  <OptimizedImage
+    src={heroDesktop}
+    srcSet={`${heroMobile} 1080w, ${heroDesktop} 1920w`}
+    alt=""
+    width={1920}
+    className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
+    style={{ objectPosition: "center 15%" }}
+    loading="eager"
+    fetchPriority="high"
+    priority
+    sizes="100vw"
+    fallbackSrc={heroDesktop}
+  />
+</picture>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="relative z-10 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
           <div>
