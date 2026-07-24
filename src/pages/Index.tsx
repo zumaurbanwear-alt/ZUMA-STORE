@@ -45,7 +45,7 @@ const Index = () => {
     alt=""
     width={1920}
     className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
-    style={{ objectPosition: "center 15%" }}
+    style={{ objectPosition: "55% 15%" }}
     loading="eager"
     fetchPriority="high"
     priority
