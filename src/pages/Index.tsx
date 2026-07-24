@@ -1,9 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import heroDesktopWebp from "@/assets/fw000/modeled-desktop.webp";
-import heroDesktopJpg from "@/assets/fw000/modeled-desktop.jpg";
 import heroMobileWebp from "@/assets/fw000/modeled-mobile.webp";
-import heroMobileJpg from "@/assets/fw000/modeled-mobile.jpg";
 import { Countdown } from "@/components/zuma/marketing/Countdown";
 import { TextureBand } from "@/components/zuma/layout/TextureBand";
 import { ProductGrid } from "@/components/zuma/product/ProductGrid";
