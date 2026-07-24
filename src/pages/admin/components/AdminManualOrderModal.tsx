@@ -69,12 +69,15 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
     setSaving(true);
 
     try {
+      const trimmedEmail = email.trim();
+      const emailValue = trimmedEmail.length >= 5 ? trimmedEmail : "livraison-manuelle@zuma.local";
+
       // 1) Insert respectant la policy publique (mêmes contraintes que le checkout).
       const { data: inserted, error: orderError } = await supabase
         .from("orders")
         .insert({
           customer_name: name.trim(),
-          customer_email: email.trim() || "livraison-manuelle@zuma.local",
+          customer_email: emailValue,
           customer_phone: phone.trim(),
           customer_city: city.trim(),
           customer_address: address.trim(),
