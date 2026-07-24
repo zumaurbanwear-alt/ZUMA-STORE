@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getOrderDisplayId } from "@/lib/supabaseAdmin";
 
 type ManualItem = {
   product_name: string;
@@ -71,32 +72,33 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
     try {
       const trimmedEmail = email.trim();
       const emailValue = trimmedEmail.length >= 5 ? trimmedEmail : "livraison-manuelle@zuma.local";
+      const orderId = crypto.randomUUID();
 
       // 1) Insert respectant la policy publique (mêmes contraintes que le checkout).
-      const { data: inserted, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          customer_name: name.trim(),
-          customer_email: emailValue,
-          customer_phone: phone.trim(),
-          customer_city: city.trim(),
-          customer_address: address.trim(),
-          payment_method: "cash_on_delivery",
-          status: "pending",
-          subtotal,
-          shipping_fee: shippingFee,
-        })
-        .select("id, display_id")
-        .single();
+      //    Pas de .select() ici — id généré côté client (comme dans le checkout),
+      //    ce qui évite la relecture immédiate de la ligne (soumise à une policy
+      //    différente) et les faux-positifs RLS qui en découlaient.
+      const { error: orderError } = await supabase.from("orders").insert({
+        id: orderId,
+        customer_name: name.trim(),
+        customer_email: emailValue,
+        customer_phone: phone.trim(),
+        customer_city: city.trim(),
+        customer_address: address.trim(),
+        payment_method: "cash_on_delivery",
+        status: "pending",
+        subtotal,
+        shipping_fee: shippingFee,
+      });
 
-      if (orderError || !inserted) {
-        toast.error(orderError?.message ?? "Erreur création commande");
+      if (orderError) {
+        toast.error(orderError.message);
         return;
       }
 
       const { error: itemsError } = await supabase.from("order_items").insert(
         items.map((it) => ({
-          order_id: inserted.id,
+          order_id: orderId,
           product_name: it.product_name.trim(),
           size: it.size.trim(),
           color: it.color.trim(),
@@ -118,7 +120,7 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
           shipping_provider: "manual",
           admin_notes: notes.trim() || null,
         })
-        .eq("id", inserted.id);
+        .eq("id", orderId);
 
       if (updateError) {
         toast.error(updateError.message);
@@ -126,12 +128,13 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
       }
 
       await supabase.from("order_events").insert({
-        order_id: inserted.id,
+        order_id: orderId,
         event: "confirmed",
         message: "Commande créée manuellement (livraison hors Sendit)",
       });
 
-      toast.success(`Commande #${inserted.display_id} créée`);
+      const { data: displayIdData } = await getOrderDisplayId(orderId);
+      toast.success(`Commande #${displayIdData ?? ""} créée`);
       onCreated();
       onClose();
     } catch (error) {
