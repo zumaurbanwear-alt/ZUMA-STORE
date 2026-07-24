@@ -1,22 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrderDisplayId } from "@/lib/supabaseAdmin";
 
+type CatalogProduct = {
+  id: string;
+  name: string;
+  price: number;
+};
+
 type ManualItem = {
-  product_name: string;
+  product_id: string;
   size: string;
   color: string;
   quantity: number;
-  unit_price: number;
 };
 
 const emptyItem = (): ManualItem => ({
-  product_name: "",
+  product_id: "",
   size: "",
   color: "",
   quantity: 1,
-  unit_price: 0,
 });
 
 type Props = {
@@ -38,6 +42,12 @@ type Props = {
 //     règles que le checkout public).
 //  2) UPDATE juste après vers status "confirmed" + shipping_provider
 //     "manual" — satisfait "admin_update_orders" (réservée aux admins).
+//
+// Les articles doivent référencer un vrai produit du catalogue : un
+// trigger anti-fraude côté DB (mis en place pour le checkout) rejette
+// tout order_item dont le product_id ou le prix ne correspond pas
+// exactement à la table `products`. D'où le select ci-dessous plutôt
+// qu'un champ texte libre — le prix est verrouillé sur celui du produit.
 export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -48,8 +58,27 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<ManualItem[]>([emptyItem()]);
   const [saving, setSaving] = useState(false);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
-  const subtotal = items.reduce((s, it) => s + it.quantity * it.unit_price, 0);
+  useEffect(() => {
+    supabase
+      .from("products")
+      .select("id, name, price")
+      .order("name")
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(error);
+          toast.error("Erreur chargement produits");
+        }
+        setProducts(data ?? []);
+        setLoadingProducts(false);
+      });
+  }, []);
+
+  const priceOf = (productId: string) => products.find((p) => p.id === productId)?.price ?? 0;
+
+  const subtotal = items.reduce((s, it) => s + it.quantity * priceOf(it.product_id), 0);
   const total = subtotal + shippingFee;
 
   const updateItem = (i: number, patch: Partial<ManualItem>) =>
@@ -61,9 +90,7 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
     city.trim().length >= 2 &&
     address.trim().length >= 5 &&
     items.length > 0 &&
-    items.every(
-      (it) => it.product_name.trim() && it.size.trim() && it.color.trim() && it.quantity > 0 && it.unit_price >= 0
-    );
+    items.every((it) => it.product_id && it.size.trim() && it.color.trim() && it.quantity > 0);
 
   const handleSubmit = async () => {
     if (!canSubmit || saving) return;
@@ -96,14 +123,18 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
         return;
       }
 
+      // unit_price est fourni pour respecter la contrainte NOT NULL, mais le
+      // trigger set_order_item_unit_price() l'écrase de toute façon avec le
+      // prix réel du produit — donc toujours cohérent, jamais falsifiable.
       const { error: itemsError } = await supabase.from("order_items").insert(
         items.map((it) => ({
           order_id: orderId,
-          product_name: it.product_name.trim(),
+          product_id: it.product_id,
+          product_name: products.find((p) => p.id === it.product_id)?.name ?? "",
           size: it.size.trim(),
           color: it.color.trim(),
           quantity: it.quantity,
-          unit_price: it.unit_price,
+          unit_price: priceOf(it.product_id),
         }))
       );
 
@@ -214,15 +245,25 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
             </button>
           </div>
 
+          {loadingProducts && (
+            <div className="text-[9px] text-muted-foreground">Chargement des produits...</div>
+          )}
+
           {items.map((it, i) => (
             <div key={i} className="space-y-1.5 pb-2 border-b border-border last:border-0 last:pb-0">
               <div className="flex gap-1.5">
-                <input
-                  value={it.product_name}
-                  onChange={(e) => updateItem(i, { product_name: e.target.value })}
-                  placeholder="Produit"
+                <select
+                  value={it.product_id}
+                  onChange={(e) => updateItem(i, { product_id: e.target.value })}
                   className="flex-1 border border-border p-1.5 text-xs bg-transparent"
-                />
+                >
+                  <option value="">Sélectionner un produit...</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — {p.price} MAD
+                    </option>
+                  ))}
+                </select>
                 {items.length > 1 && (
                   <button
                     onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}
@@ -237,13 +278,13 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
                   value={it.size}
                   onChange={(e) => updateItem(i, { size: e.target.value })}
                   placeholder="Taille"
-                  className="w-1/4 border border-border p-1.5 text-xs bg-transparent"
+                  className="w-1/3 border border-border p-1.5 text-xs bg-transparent"
                 />
                 <input
                   value={it.color}
                   onChange={(e) => updateItem(i, { color: e.target.value })}
                   placeholder="Couleur"
-                  className="w-1/4 border border-border p-1.5 text-xs bg-transparent"
+                  className="w-1/3 border border-border p-1.5 text-xs bg-transparent"
                 />
                 <input
                   type="number"
@@ -251,15 +292,7 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
                   value={it.quantity}
                   onChange={(e) => updateItem(i, { quantity: Number(e.target.value) || 1 })}
                   placeholder="Qté"
-                  className="w-1/4 border border-border p-1.5 text-xs bg-transparent"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  value={it.unit_price}
-                  onChange={(e) => updateItem(i, { unit_price: Number(e.target.value) || 0 })}
-                  placeholder="Prix"
-                  className="w-1/4 border border-border p-1.5 text-xs bg-transparent"
+                  className="w-1/3 border border-border p-1.5 text-xs bg-transparent"
                 />
               </div>
             </div>
