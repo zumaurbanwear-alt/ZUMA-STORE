@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/daily-summary",
+      "path": "/api/notifications?type=daily-summary",
       "schedule": "0 8 * * *"
     }
   ],
