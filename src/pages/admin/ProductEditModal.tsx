@@ -26,16 +26,6 @@ export const ProductEditModal = ({
             />
           </label>
         ))}
-        <label className="flex flex-col gap-1">
-          <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Stock (auto)</span>
-          <input
-            type="number"
-            value={editing.stock ?? 0}
-            disabled
-            title="Calculé automatiquement à partir des variantes couleur/taille ci-dessous"
-            className="bg-background border border-border px-3 py-2 text-sm text-muted-foreground opacity-60"
-          />
-        </label>
         <label className="col-span-2 flex flex-col gap-1">
           <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Description</span>
           <textarea value={editing.description ?? ""} onChange={e => setEditing({ ...editing, description: e.target.value })} className="bg-background border border-border px-3 py-2 text-sm h-20 focus:border-primary outline-none" />
