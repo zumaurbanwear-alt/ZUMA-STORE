@@ -67,10 +67,16 @@ export const buildOrderSubmission = ({
     `Phone: ${form.phone}`,
     `Email: ${form.email}`,
     `City: ${form.city}`,
+    `District: ${form.district}`,
     `Address: ${form.address}`,
     "",
     "*Items:*",
-    ...cart.map((item) => `• ${item.name} × ${item.qty} — ${Number(item.price) * item.qty} MAD`),
+    ...cart.map((item) => {
+      const details = [item.size ? `Size: ${item.size}` : null, item.color ? `Color: ${item.color}` : null]
+        .filter(Boolean)
+        .join(", ");
+      return `• ${item.name}${details ? ` (${details})` : ""} × ${item.qty} — ${Number(item.price) * item.qty} MAD`;
+    }),
     "",
     `Subtotal: ${subtotal} MAD`,
     `Delivery Fee: ${shippingFee} MAD`,
