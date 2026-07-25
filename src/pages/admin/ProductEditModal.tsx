@@ -1,4 +1,5 @@
 import type { DbProduct } from "@/hooks/useProducts";
+import { AdminProductVariants } from "./components/AdminProductVariants";
 
 export const ProductEditModal = ({
   editing, setEditing, onSave,
@@ -13,18 +14,28 @@ export const ProductEditModal = ({
       <div className="grid grid-cols-2 gap-4">
         {([
           ["slug", "Slug"], ["name", "Name"], ["category", "Category"], ["price", "Price (MAD)"],
-          ["stock", "Stock"], ["sort_order", "Sort Order"], ["image_url", "Image URL (https://...)"],
+          ["sort_order", "Sort Order"], ["image_url", "Image URL (https://...)"],
         ] as const).map(([k, l]) => (
           <label key={k} className={`flex flex-col gap-1 ${k === "image_url" ? "col-span-2" : ""}`}>
             <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{l}</span>
             <input
-              type={["price","stock","sort_order"].includes(k) ? "number" : "text"}
+              type={["price","sort_order"].includes(k) ? "number" : "text"}
               value={editing[k as keyof DbProduct] ?? ""}
               onChange={e => setEditing({ ...editing, [k]: e.target.value })}
               className="bg-background border border-border px-3 py-2 text-sm focus:border-primary outline-none"
             />
           </label>
         ))}
+        <label className="flex flex-col gap-1">
+          <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Stock (auto)</span>
+          <input
+            type="number"
+            value={editing.stock ?? 0}
+            disabled
+            title="Calculé automatiquement à partir des variantes couleur/taille ci-dessous"
+            className="bg-background border border-border px-3 py-2 text-sm text-muted-foreground opacity-60"
+          />
+        </label>
         <label className="col-span-2 flex flex-col gap-1">
           <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Description</span>
           <textarea value={editing.description ?? ""} onChange={e => setEditing({ ...editing, description: e.target.value })} className="bg-background border border-border px-3 py-2 text-sm h-20 focus:border-primary outline-none" />
@@ -33,6 +44,13 @@ export const ProductEditModal = ({
           <input type="checkbox" checked={editing.is_visible ?? true} onChange={e => setEditing({ ...editing, is_visible: e.target.checked })} />
           <span className="tracking-[0.18em] uppercase text-muted-foreground">Visible on shop</span>
         </label>
+
+        {editing.id && <AdminProductVariants productId={editing.id} />}
+        {!editing.id && (
+          <div className="col-span-2 text-[10px] text-muted-foreground border border-border p-3">
+            Enregistre d'abord le produit pour pouvoir gérer son stock par couleur/taille.
+          </div>
+        )}
       </div>
       <div className="flex gap-3 mt-6">
         <button onClick={onSave} className="flex-1 py-3 bg-primary text-primary-foreground text-[10px] tracking-[0.3em] uppercase hover:bg-primary-hi">Save</button>

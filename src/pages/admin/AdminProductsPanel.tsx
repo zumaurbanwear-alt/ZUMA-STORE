@@ -17,7 +17,8 @@ export const AdminProductsPanel = () => {
 
   const save = async () => {
     if (!editing) return;
-    const payload = { ...editing, price: Number(editing.price), stock: Number(editing.stock), sort_order: Number(editing.sort_order ?? 0) };
+    const { stock: _stock, ...rest } = editing;
+    const payload = { ...rest, price: Number(editing.price), sort_order: Number(editing.sort_order ?? 0) };
     if (!payload.slug || !payload.name) { toast.error("Slug and name required"); return; }
     const { error } = editing.id
       ? await supabase.from("products").update(payload as Partial<DbProduct>).eq("id", editing.id)
