@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/daily-summary",
+      "schedule": "0 8 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/product/:slug",
