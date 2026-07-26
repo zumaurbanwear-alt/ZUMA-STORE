@@ -48,6 +48,8 @@ export const buildOrdersCsvRows = (orders: AdminOrder[]) =>
     o.customer_name,
     o.customer_phone,
     o.customer_city,
+    o.customer_district ?? "",
+    o.customer_address ?? "",
     o.tracking_number ?? "",
     o.pickup_code ?? "",
     o.shipping_status ?? o.status,
