@@ -215,7 +215,7 @@ const AdminDepenses = () => {
         <div>
           <h1 className="font-display text-2xl md:text-3xl tracking-[0.3em]">DÉPENSES</h1>
           <p className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground mt-1">
-            Suivi personnel — synchronisé sur ta base
+            Suivi personnel 
           </p>
         </div>
         <button onClick={() => nav("/zm-portal-x92")} className="px-4 py-2 border border-border text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi">
