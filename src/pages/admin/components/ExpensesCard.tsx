@@ -9,7 +9,7 @@ export const ExpensesCard = () => {
         <div>
           <h2 className="font-display text-lg tracking-[0.25em]">DÉPENSES</h2>
           <p className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground mt-1">
-            Suivi personnel — hors système de la boutique
+            Suivi personnel
           </p>
         </div>
         <button
