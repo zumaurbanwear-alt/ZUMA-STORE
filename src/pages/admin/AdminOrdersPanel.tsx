@@ -459,16 +459,18 @@ export const AdminOrdersPanel = () => {
 const handleExportCSV = () => {
 
   const headers = [
-    "Commande",
-    "Client",
-    "Téléphone",
-    "Ville",
-    "Tracking",
-    "Pickup",
-    "Status",
-    "Montant",
-    "Date",
-  ];
+  "Commande",
+  "Client",
+  "Téléphone",
+  "Ville",
+  "District",
+  "Adresse",
+  "Tracking",
+  "Pickup",
+  "Status",
+  "Montant",
+  "Date",
+];
 
   const rows = buildOrdersCsvRows(displayedOrders);
 
