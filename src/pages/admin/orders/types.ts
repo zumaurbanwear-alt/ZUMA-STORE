@@ -10,6 +10,7 @@ export type AdminOrder = {
   customer_address?: string;
   customer_district?: string | null;
   sendit_district_id?: number | null;
+  order_source?: string | null;
   subtotal?: number;
   shipping_fee?: number;
   total?: number;
