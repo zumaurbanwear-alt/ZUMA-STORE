@@ -8,6 +8,7 @@ import { AdminOrdersPickupsSection } from "./components/AdminOrdersPickupsSectio
 import { AdminOrdersInvoicesSection } from "./components/AdminOrdersInvoicesSection";
 import { AdminOrderDetailDrawer } from "./components/AdminOrderDetailDrawer";
 import { AdminManualOrderModal } from "./components/AdminManualOrderModal";
+import { AdminEditOrderModal } from "./components/AdminEditOrderModal";
 import type { AdminInvoice, AdminOrder, AdminOrderEvent, AdminPickup } from "./orders/types";
 import {
   getOrderCategory,
@@ -78,6 +79,7 @@ export const AdminOrdersPanel = () => {
   const [markingReadyFor, setMarkingReadyFor] = useState<string | null>(null);
   const [markingDeliveredFor, setMarkingDeliveredFor] = useState<string | null>(null);
   const [showManualOrderModal, setShowManualOrderModal] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<AdminOrder | null>(null);
 
   const loadOrders = async () => {
     const from = (page - 1) * pageSize;
@@ -1522,6 +1524,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         markingReadyFor={markingReadyFor}
         markingDeliveredFor={markingDeliveredFor}
         onClose={closeDrawer}
+        onEditOrder={setEditingOrder}
         onConfirmOrder={handleConfirmOrder}
         onCreateShipment={handleCreateShipment}
         onCreateReturn={handleCreateReturn}
@@ -1531,6 +1534,17 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         onSaveNotes={handleSaveNotes}
         onNotesChange={setNotesDraft}
       />
+
+      {editingOrder && (
+        <AdminEditOrderModal
+          order={editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSaved={(fields) => {
+            setSelectedOrder((prev) => (prev && prev.id === editingOrder.id ? { ...prev, ...fields } : prev));
+            loadOrders();
+          }}
+        />
+      )}
 
       {showManualOrderModal && (
         <AdminManualOrderModal
