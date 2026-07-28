@@ -7,6 +7,7 @@ import { SalesChart } from "./orders/SalesChart";
 import { AdminOrdersPickupsSection } from "./components/AdminOrdersPickupsSection";
 import { AdminOrdersInvoicesSection } from "./components/AdminOrdersInvoicesSection";
 import { AdminOrderDetailDrawer } from "./components/AdminOrderDetailDrawer";
+import { AdminProfitSection } from "./components/AdminProfitSection";
 import { AdminManualOrderModal } from "./components/AdminManualOrderModal";
 import { AdminEditOrderModal } from "./components/AdminEditOrderModal";
 import type { AdminInvoice, AdminOrder, AdminOrderEvent, AdminPickup } from "./orders/types";
@@ -1059,6 +1060,8 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         </div>
 
       </section>
+
+      <AdminProfitSection />
 
       <section className="mb-12">
 
