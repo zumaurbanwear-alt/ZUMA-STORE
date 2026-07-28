@@ -53,7 +53,7 @@ export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
     supabase
       .from("sendit_districts")
       .select("district_id, name, ville, price")
-      .ilike("ville", cleanCity)
+      .ilike("ville", `%${cleanCity}%`)
       .order("name")
       .then(({ data, error }) => {
         if (error) {
