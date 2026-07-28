@@ -84,7 +84,7 @@ export const CheckoutDialog = ({
         const { data, error } = await supabase
           .from("sendit_districts")
           .select("district_id, name, ville, price")
-          .ilike("ville", cleanCity)
+          .ilike("ville", `%${cleanCity}%`)
           .order("name");
 
         if (error) {
