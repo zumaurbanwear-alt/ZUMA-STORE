@@ -169,6 +169,7 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
         customer_address: address.trim(),
         customer_district: districtName || null,
         sendit_district_id: districtId,
+        order_source: "admin_manual",
         payment_method: "cash_on_delivery",
         status: "pending",
         subtotal,

@@ -33,6 +33,18 @@ export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Prix promo : normalement réservé aux commandes créées via la modale
+  // "commande manuelle" (order_source "admin_manual"), mais assoupli
+  // temporairement pour couvrir aussi les commandes manuelles créées
+  // avant l'ajout de ce marqueur (shipping_provider "manual"). À resserrer
+  // sur order_source seul quand demandé.
+  const canEditPricing =
+    (order.order_source === "admin_manual" || order.shipping_provider === "manual") &&
+    !order.tracking_number;
+  const [itemPrices, setItemPrices] = useState<Record<string, number>>(() =>
+    Object.fromEntries((order.order_items ?? []).map((it) => [it.id ?? "", it.unit_price ?? 0]))
+  );
+
   useEffect(() => {
     const cleanCity = city.trim();
     if (cleanCity.length < 2) {
@@ -101,6 +113,31 @@ export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
       if (!res.ok) {
         toast.error(json.error ?? "Erreur mise à jour");
         return;
+      }
+
+      if (canEditPricing) {
+        const overrides = (order.order_items ?? [])
+          .filter((it) => it.id)
+          .map((it) => ({ id: it.id as string, unit_price: itemPrices[it.id as string] ?? it.unit_price ?? 0 }));
+
+        if (overrides.length > 0) {
+          const priceRes = await fetch("/api/order-admin-actions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ action: "override-item-pricing", orderId: order.id, items: overrides }),
+          });
+
+          if (!priceRes.ok) {
+            const priceJson = await priceRes.json();
+            toast.error(`Infos mises à jour, mais prix non appliqués : ${priceJson.error ?? "erreur"}`);
+            onSaved(fields);
+            onClose();
+            return;
+          }
+        }
       }
 
       toast.success("Informations mises à jour");
@@ -199,6 +236,36 @@ export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
             className="w-full border border-border p-2 text-xs bg-transparent resize-none"
           />
         </div>
+
+        {canEditPricing && (order.order_items?.length ?? 0) > 0 && (
+          <div className="border border-border p-3 mb-3 space-y-2">
+            <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-1">
+              PRIX DES ARTICLES (PROMOTION)
+            </div>
+            <div className="text-[9px] text-muted-foreground mb-1 leading-relaxed">
+              Commande créée manuellement, colis pas encore créé — les prix restent modifiables.
+            </div>
+
+            {(order.order_items ?? []).map((it) => (
+              <div key={it.id} className="flex items-center gap-1.5">
+                <span className="flex-1 text-xs">
+                  {it.product_name} {it.size ? `(${it.size}${it.color ? `, ${it.color}` : ""})` : ""} ×{it.quantity}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={itemPrices[it.id ?? ""] ?? it.unit_price ?? 0}
+                  onChange={(e) =>
+                    setItemPrices((prev) => ({ ...prev, [it.id ?? ""]: Number(e.target.value) || 0 }))
+                  }
+                  className="w-20 border border-primary p-1.5 text-xs bg-transparent text-right"
+                />
+                <span className="text-[9px] text-muted-foreground">MAD</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         <button
           onClick={handleSubmit}
