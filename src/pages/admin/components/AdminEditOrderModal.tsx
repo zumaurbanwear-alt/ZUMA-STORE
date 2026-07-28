@@ -33,14 +33,11 @@ export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Prix promo : normalement réservé aux commandes créées via la modale
-  // "commande manuelle" (order_source "admin_manual"), mais assoupli
-  // temporairement pour couvrir aussi les commandes manuelles créées
-  // avant l'ajout de ce marqueur (shipping_provider "manual"). À resserrer
-  // sur order_source seul quand demandé.
-  const canEditPricing =
-    (order.order_source === "admin_manual" || order.shipping_provider === "manual") &&
-    !order.tracking_number;
+  // Prix promo : réservé aux commandes créées via la modale "commande
+  // manuelle" (order_source "admin_manual") et tant qu'aucun colis n'a
+  // été créé — après ça, le prix a déjà été envoyé à Sendit et ne doit
+  // plus bouger silencieusement.
+  const canEditPricing = order.order_source === "admin_manual" && !order.tracking_number;
   const [itemPrices, setItemPrices] = useState<Record<string, number>>(() =>
     Object.fromEntries((order.order_items ?? []).map((it) => [it.id ?? "", it.unit_price ?? 0]))
   );
