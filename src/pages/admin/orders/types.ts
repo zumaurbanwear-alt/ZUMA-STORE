@@ -9,6 +9,7 @@ export type AdminOrder = {
   customer_city?: string;
   customer_address?: string;
   customer_district?: string | null;
+  sendit_district_id?: number | null;
   subtotal?: number;
   shipping_fee?: number;
   total?: number;
