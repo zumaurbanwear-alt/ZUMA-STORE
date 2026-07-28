@@ -137,7 +137,7 @@ async function handleUpdateFields(req, res, supabase) {
     });
   }
 
-  const updates: Record<string, any> = {};
+  const updates = {};
 
   for (const key of Object.keys(fields)) {
     if (ALLOWED_FIELDS.includes(key)) {
