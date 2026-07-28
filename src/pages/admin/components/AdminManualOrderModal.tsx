@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrderDisplayId } from "@/lib/supabaseAdmin";
+import { DistrictSelect } from "@/components/zuma/checkout/DistrictSelect";
 
 type CatalogProduct = {
   id: string;
@@ -10,17 +11,28 @@ type CatalogProduct = {
 };
 
 type ManualItem = {
+  id: string;
   product_id: string;
   size: string;
   color: string;
   quantity: number;
+  customPrice: number | null;
+};
+
+type SenditDistrict = {
+  district_id: number;
+  name: string;
+  ville: string;
+  price?: number;
 };
 
 const emptyItem = (): ManualItem => ({
+  id: crypto.randomUUID(),
   product_id: "",
   size: "",
   color: "",
   quantity: 1,
+  customPrice: null,
 });
 
 type Props = {
@@ -28,11 +40,13 @@ type Props = {
   onCreated: () => void;
 };
 
-// Crée une commande "livraison manuelle" (amis/famille, remise en main
-// propre — pas de colis Sendit). Elle rejoint la même table `orders` que
-// les commandes du checkout, donc elle prend un display_id (#0000N) dans
-// la même séquence — rien à faire de spécial pour ça, c'est juste la
-// table qui s'en charge.
+// Crée une commande admin en dehors du checkout public — soit une
+// "livraison manuelle" (amis/famille, remise en main propre, pas de
+// colis Sendit), soit une commande normale à qui on crée directement le
+// colis Sendit (ex: commande prise par téléphone). Elle rejoint la même
+// table `orders` que les commandes du checkout, donc elle prend un
+// display_id (#0000N) dans la même séquence — rien à faire de spécial
+// pour ça, c'est juste la table qui s'en charge.
 //
 // Écriture en 2 temps pour rester dans les clous des policies RLS
 // existantes (qui n'ont jamais été pensées pour une insertion admin
@@ -40,8 +54,9 @@ type Props = {
 //  1) INSERT avec status "pending" / cash_on_delivery — satisfait la
 //     policy "Visitors create valid orders" (ouverte à tous, mêmes
 //     règles que le checkout public).
-//  2) UPDATE juste après vers status "confirmed" + shipping_provider
-//     "manual" — satisfait "admin_update_orders" (réservée aux admins).
+//  2) UPDATE juste après vers status "confirmed" (+ shipping_provider
+//     "manual" pour le colis manuel) — satisfait "admin_update_orders"
+//     (réservée aux admins).
 //
 // Les articles doivent référencer un vrai produit du catalogue : un
 // trigger anti-fraude côté DB (mis en place pour le checkout) rejette
@@ -54,12 +69,17 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
   const [email, setEmail] = useState("");
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("Remis en main propre");
+  const [districtId, setDistrictId] = useState<number | null>(null);
+  const [districtName, setDistrictName] = useState("");
+  const [districts, setDistricts] = useState<SenditDistrict[]>([]);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [shippingFee, setShippingFee] = useState(0);
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<ManualItem[]>([emptyItem()]);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<"manual" | "sendit" | null>(null);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [promotion, setPromotion] = useState(false);
 
   useEffect(() => {
     supabase
@@ -76,9 +96,39 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
       });
   }, []);
 
+  useEffect(() => {
+    const cleanCity = city.trim();
+    if (cleanCity.length < 2) {
+      setDistricts([]);
+      return;
+    }
+
+    setLoadingDistricts(true);
+    supabase
+      .from("sendit_districts")
+      .select("district_id, name, ville, price")
+      .ilike("ville", cleanCity)
+      .order("name")
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(error);
+          setDistricts([]);
+        } else {
+          setDistricts(data ?? []);
+        }
+        setLoadingDistricts(false);
+      });
+  }, [city]);
+
   const priceOf = (productId: string) => products.find((p) => p.id === productId)?.price ?? 0;
 
-  const subtotal = items.reduce((s, it) => s + it.quantity * priceOf(it.product_id), 0);
+  // Prix réellement facturé pour la ligne : le prix catalogue normalement,
+  // ou le prix promo saisi à la main si la coche PROMOTION est active et
+  // qu'un prix a été renseigné pour cette ligne.
+  const effectivePriceOf = (it: ManualItem) =>
+    promotion && it.customPrice !== null ? it.customPrice : priceOf(it.product_id);
+
+  const subtotal = items.reduce((s, it) => s + it.quantity * effectivePriceOf(it), 0);
   const total = subtotal + shippingFee;
 
   const updateItem = (i: number, patch: Partial<ManualItem>) =>
@@ -92,9 +142,14 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
     items.length > 0 &&
     items.every((it) => it.product_id && it.size.trim() && it.color.trim() && it.quantity > 0);
 
-  const handleSubmit = async () => {
-    if (!canSubmit || saving) return;
-    setSaving(true);
+  const canSubmitSendit = canSubmit && districtId !== null;
+
+  const handleSubmit = async (mode: "manual" | "sendit") => {
+    if (saving) return;
+    if (mode === "manual" && !canSubmit) return;
+    if (mode === "sendit" && !canSubmitSendit) return;
+
+    setSaving(mode);
 
     try {
       const trimmedEmail = email.trim();
@@ -112,6 +167,8 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
         customer_phone: phone.trim(),
         customer_city: city.trim(),
         customer_address: address.trim(),
+        customer_district: districtName || null,
+        sendit_district_id: districtId,
         payment_method: "cash_on_delivery",
         status: "pending",
         subtotal,
@@ -128,6 +185,7 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
       // prix réel du produit — donc toujours cohérent, jamais falsifiable.
       const { error: itemsError } = await supabase.from("order_items").insert(
         items.map((it) => ({
+          id: it.id,
           order_id: orderId,
           product_id: it.product_id,
           product_name: products.find((p) => p.id === it.product_id)?.name ?? "",
@@ -143,12 +201,50 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
         return;
       }
 
-      // 2) Bascule immédiate en "confirmed" + provider "manual" — réservé aux admins.
+      // Prix promo : le trigger anti-fraude vient de forcer unit_price au
+      // prix catalogue à l'insertion — on corrige juste après via l'action
+      // admin dédiée (RLS + endpoint réservés aux admins).
+      if (promotion) {
+        const overrides = items
+          .filter((it) => it.customPrice !== null)
+          .map((it) => ({ id: it.id, unit_price: it.customPrice as number }));
+
+        if (overrides.length > 0) {
+          const {
+            data: { session: promoSession },
+          } = await supabase.auth.getSession();
+
+          if (promoSession) {
+            const promoRes = await fetch("/api/order-admin-actions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${promoSession.access_token}`,
+              },
+              body: JSON.stringify({
+                action: "override-item-pricing",
+                orderId,
+                items: overrides,
+              }),
+            });
+
+            if (!promoRes.ok) {
+              const promoResult = await promoRes.json();
+              toast.error(`Commande créée, mais prix promo non appliqués : ${promoResult.error ?? "erreur"}`);
+            }
+          }
+        }
+      }
+
+      // 2) Bascule immédiate en "confirmed" — réservé aux admins.
+      //    "manual" pose le provider "manual" (pas de colis Sendit).
+      //    "sendit" laisse shipping_provider vide, comme une commande
+      //    normale du checkout, avant de déclencher la création du colis.
       const { error: updateError } = await supabase
         .from("orders")
         .update({
           status: "confirmed",
-          shipping_provider: "manual",
+          shipping_provider: mode === "manual" ? "manual" : null,
           admin_notes: notes.trim() || null,
         })
         .eq("id", orderId);
@@ -161,10 +257,52 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
       await supabase.from("order_events").insert({
         order_id: orderId,
         event: "confirmed",
-        message: "Commande créée manuellement (livraison hors Sendit)",
+        message:
+          mode === "manual"
+            ? "Commande créée manuellement (livraison hors Sendit)"
+            : "Commande créée manuellement (colis Sendit)",
       });
 
       const { data: displayIdData } = await getOrderDisplayId(orderId);
+
+      if (mode === "sendit") {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          toast.error("Session expirée — commande créée, mais colis non créé. Ouvre la commande pour réessayer.");
+          onCreated();
+          onClose();
+          return;
+        }
+
+        const res = await fetch("/api/create-sendit-shipment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ orderId }),
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          toast.error(
+            `Commande #${displayIdData ?? ""} créée, mais colis Sendit refusé : ${result.error ?? "erreur"}`
+          );
+          onCreated();
+          onClose();
+          return;
+        }
+
+        toast.success(`Commande #${displayIdData ?? ""} créée — colis Sendit ${result.tracking_number ?? ""}`);
+        onCreated();
+        onClose();
+        return;
+      }
+
       toast.success(`Commande #${displayIdData ?? ""} créée`);
       onCreated();
       onClose();
@@ -172,7 +310,7 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
       console.error(error);
       toast.error("Erreur serveur");
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   };
 
@@ -194,8 +332,9 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
         </div>
 
         <div className="text-[9px] text-muted-foreground mb-4 leading-relaxed">
-          Pour une livraison que tu fais toi-même (amis, famille...), sans passer par Sendit.
-          Elle apparaîtra dans la même liste, avec un numéro de commande à la suite des autres.
+          Pour une commande prise en dehors du checkout (téléphone, en personne...). Elle
+          apparaîtra dans la même liste, avec un numéro de commande à la suite des autres. Choisis
+          en bas si c'est toi qui livres ("colis manuel") ou si Sendit doit livrer ("colis Sendit").
         </div>
 
         <div className="border border-border p-3 mb-3 space-y-2">
@@ -221,10 +360,32 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
           />
           <input
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={(e) => {
+              setCity(e.target.value);
+              setDistrictId(null);
+              setDistrictName("");
+            }}
             placeholder="Ville"
             className="w-full border border-border p-2 text-xs bg-transparent"
           />
+
+          <DistrictSelect
+            label="District Sendit (requis pour colis Sendit)"
+            v={districtId}
+            set={(id, dName) => {
+              setDistrictId(id);
+              setDistrictName(dName);
+            }}
+            districts={districts}
+            placeholder={
+              loadingDistricts
+                ? "Chargement..."
+                : districts.length === 0
+                ? "Aucun district pour cette ville"
+                : "Choisir un district"
+            }
+          />
+
           <textarea
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -245,12 +406,22 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
             </button>
           </div>
 
+          <label className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.1em] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={promotion}
+              onChange={(e) => setPromotion(e.target.checked)}
+              className="accent-primary"
+            />
+            Promotion (prix modifiable par article)
+          </label>
+
           {loadingProducts && (
             <div className="text-[9px] text-muted-foreground">Chargement des produits...</div>
           )}
 
           {items.map((it, i) => (
-            <div key={i} className="space-y-1.5 pb-2 border-b border-border last:border-0 last:pb-0">
+            <div key={it.id} className="space-y-1.5 pb-2 border-b border-border last:border-0 last:pb-0">
               <div className="flex gap-1.5">
                 <select
                   value={it.product_id}
@@ -295,6 +466,26 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
                   className="w-1/3 border border-border p-1.5 text-xs bg-transparent"
                 />
               </div>
+
+              {promotion && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[8px] uppercase text-muted-foreground whitespace-nowrap">
+                    Prix promo
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={it.customPrice ?? priceOf(it.product_id)}
+                    onChange={(e) =>
+                      updateItem(i, { customPrice: e.target.value === "" ? null : Number(e.target.value) })
+                    }
+                    placeholder={`${priceOf(it.product_id)} MAD (catalogue)`}
+                    className="flex-1 border border-primary p-1.5 text-xs bg-transparent"
+                  />
+                  <span className="text-[9px] text-muted-foreground whitespace-nowrap">MAD</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -325,16 +516,32 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
           placeholder="Note interne (optionnel)"
-          className="w-full border border-border p-2 text-xs bg-transparent resize-none mb-4"
+          className="w-full border border-border p-2 text-xs bg-transparent resize-none mb-2"
         />
 
-        <button
-          onClick={handleSubmit}
-          disabled={!canSubmit || saving}
-          className="w-full border border-primary py-2 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
-        >
-          {saving ? "CRÉATION..." : "CRÉER LA COMMANDE"}
-        </button>
+        <div className="flex gap-2 mb-1.5">
+          <button
+            onClick={() => handleSubmit("manual")}
+            disabled={!canSubmit || saving !== null}
+            className="flex-1 border border-primary py-2 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
+          >
+            {saving === "manual" ? "CRÉATION..." : "CRÉER COLIS MANUEL"}
+          </button>
+
+          <button
+            onClick={() => handleSubmit("sendit")}
+            disabled={!canSubmitSendit || saving !== null}
+            className="flex-1 border border-primary py-2 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
+          >
+            {saving === "sendit" ? "CRÉATION..." : "CRÉER COLIS SENDIT"}
+          </button>
+        </div>
+
+        {!canSubmitSendit && canSubmit && (
+          <div className="text-[9px] text-red-600 leading-relaxed">
+            Choisis un district Sendit ci-dessus pour pouvoir créer un colis Sendit.
+          </div>
+        )}
       </div>
     </>
   );

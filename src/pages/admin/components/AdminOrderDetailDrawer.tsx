@@ -16,6 +16,7 @@ type AdminOrderDetailDrawerProps = {
   savingNotes: boolean;
   notesDraft: string;
   onClose: () => void;
+  onEditOrder: (order: AdminOrder) => void;
   onConfirmOrder: (order: AdminOrder) => void;
   onCreateShipment: (order: AdminOrder) => void;
   onCreateReturn: (order: AdminOrder) => void;
@@ -39,6 +40,7 @@ export const AdminOrderDetailDrawer = ({
   savingNotes,
   notesDraft,
   onClose,
+  onEditOrder,
   onConfirmOrder,
   onCreateShipment,
   onCreateReturn,
@@ -49,6 +51,19 @@ export const AdminOrderDetailDrawer = ({
   onNotesChange,
 }: AdminOrderDetailDrawerProps) => {
   if (!selectedOrder) return null;
+
+  // Champs sans lesquels Sendit refuse (ou mal traite) la création du
+  // colis. Les commandes du checkout public les ont toujours (formulaire
+  // obligatoire + sélecteur de district), mais une commande manuelle peut
+  // très bien ne pas avoir de district Sendit renseigné.
+  const missingSenditFields: string[] = [];
+  if (!selectedOrder.customer_name?.trim()) missingSenditFields.push("nom");
+  if (!selectedOrder.customer_phone?.trim()) missingSenditFields.push("téléphone");
+  if (!selectedOrder.customer_address?.trim()) missingSenditFields.push("adresse");
+  if (!selectedOrder.customer_city?.trim()) missingSenditFields.push("ville");
+  if (!selectedOrder.sendit_district_id) missingSenditFields.push("district Sendit");
+
+  const canCreateShipment = missingSenditFields.length === 0;
 
   return (
     <>
@@ -201,15 +216,35 @@ export const AdminOrderDetailDrawer = ({
         )}
 
         {selectedOrder.status?.trim().toLowerCase() === "confirmed" &&
-          !selectedOrder.tracking_number &&
-          selectedOrder.shipping_provider !== "manual" && (
-            <button
-              onClick={() => onCreateShipment(selectedOrder)}
-              disabled={creatingShipmentFor === selectedOrder.id}
-              className="w-full border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 mb-4"
-            >
-              {creatingShipmentFor === selectedOrder.id ? "CREATION..." : "CREER LE COLIS"}
-            </button>
+          !selectedOrder.tracking_number && (
+            <div className="mb-4">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => canCreateShipment && onCreateShipment(selectedOrder)}
+                  disabled={creatingShipmentFor === selectedOrder.id || !canCreateShipment}
+                  className="flex-1 border border-primary py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-foreground"
+                >
+                  {creatingShipmentFor === selectedOrder.id
+                    ? "CREATION..."
+                    : selectedOrder.shipping_provider === "manual"
+                    ? "CREER LE COLIS SENDIT"
+                    : "CREER LE COLIS"}
+                </button>
+
+                <button
+                  onClick={() => onEditOrder(selectedOrder)}
+                  className="border border-border px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] hover:border-primary"
+                >
+                  Modifier
+                </button>
+              </div>
+
+              {!canCreateShipment && (
+                <div className="mt-1.5 text-[9px] text-red-600 leading-relaxed">
+                  Champs manquants pour Sendit : {missingSenditFields.join(", ")}.
+                </div>
+              )}
+            </div>
           )}
 
         {selectedOrder.status?.trim().toLowerCase() === "confirmed" &&
