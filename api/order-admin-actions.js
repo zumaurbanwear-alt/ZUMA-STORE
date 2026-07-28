@@ -3,7 +3,17 @@ import { createClient } from "@supabase/supabase-js";
 // Seuls ces champs peuvent être modifiés via action "update-fields" —
 // whitelist stricte pour ne jamais exposer une écriture arbitraire sur
 // la table orders depuis le client.
-const ALLOWED_FIELDS = ["admin_notes", "refunded"];
+const ALLOWED_FIELDS = [
+  "admin_notes",
+  "refunded",
+  "customer_name",
+  "customer_phone",
+  "customer_email",
+  "customer_city",
+  "customer_address",
+  "customer_district",
+  "sendit_district_id",
+];
 
 // --- ZIP writer minimal, méthode STORE (pas de compression) ---
 // Volontairement sans dépendance npm (jszip/archiver) : une dépendance
@@ -144,6 +154,72 @@ async function handleUpdateFields(req, res, supabase) {
   const { data, error } = await supabase
     .from("orders")
     .update(updates)
+    .eq("id", orderId)
+    .select();
+
+  if (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    order: data?.[0] ?? null,
+  });
+}
+
+async function handleOverrideItemPricing(req, res, supabase) {
+
+  const { orderId, items } = req.body;
+
+  if (!orderId || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({
+      error: "orderId and items required",
+    });
+  }
+
+  for (const it of items) {
+    if (!it.id || typeof it.unit_price !== "number" || it.unit_price < 0) {
+      return res.status(400).json({
+        error: "Each item needs a valid id and a non-negative unit_price",
+      });
+    }
+
+    const { error: itemError } = await supabase
+      .from("order_items")
+      .update({ unit_price: it.unit_price })
+      .eq("id", it.id)
+      .eq("order_id", orderId);
+
+    if (itemError) {
+      return res.status(500).json({
+        error: itemError.message,
+      });
+    }
+  }
+
+  // Le trigger recompute_order_subtotal() ne se déclenche qu'à l'INSERT,
+  // donc on recalcule le sous-total à la main après ces UPDATE.
+  const { data: allItems, error: itemsError } = await supabase
+    .from("order_items")
+    .select("quantity, unit_price")
+    .eq("order_id", orderId);
+
+  if (itemsError) {
+    return res.status(500).json({
+      error: itemsError.message,
+    });
+  }
+
+  const subtotal = (allItems ?? []).reduce(
+    (sum, it) => sum + Number(it.quantity) * Number(it.unit_price),
+    0
+  );
+
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ subtotal })
     .eq("id", orderId)
     .select();
 
@@ -314,6 +390,10 @@ export default async function handler(req, res) {
 
     if (action === "update-fields") {
       return await handleUpdateFields(req, res, supabase);
+    }
+
+    if (action === "override-item-pricing") {
+      return await handleOverrideItemPricing(req, res, supabase);
     }
 
     return res.status(400).json({
