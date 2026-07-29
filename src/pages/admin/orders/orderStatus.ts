@@ -108,6 +108,18 @@ export const translateStatus = (status: string | null | undefined): string => {
   return STATUS_LABELS_FR[key] ?? status;
 };
 
+// Statut simplifié pour le ledger (2 états) : la colonne orders.status
+// reste bloquée sur "confirmed" à vie, la vraie livraison est suivie via
+// shipping_status (Sendit) / delivered_at. On ignore donc status ici.
+type LedgerStatusLike = {
+  shipping_status?: string | null;
+};
+
+export const getLedgerStatusLabel = (o: LedgerStatusLike): string => {
+  if (o.shipping_status === "DELIVERED") return "Livrée";
+  return "Confirmée";
+};
+
 // Un retour n'a de sens que si Sendit a déjà tenté/terminé la livraison.
 // En dehors de ces statuts, l'API Sendit refuse la demande (comme on
 // vient de le voir : "colis invalide" tant qu'il est encore en transit).
