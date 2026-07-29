@@ -1456,7 +1456,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
                   </td>
 
                   <td className="px-2 py-1.5 uppercase">
-                    {r.status}
+                    {getLedgerStatusLabel(r)}
                   </td>
 
                   <td className="px-2 py-1.5">
