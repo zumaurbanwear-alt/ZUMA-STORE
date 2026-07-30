@@ -15,11 +15,11 @@ import {
   getOrderCategory,
   STATUS_FILTERS,
   translateStatus,
+  getLedgerStatusLabel,
   RETURN_ELIGIBLE_STATUSES,
   TIMELINE_STEPS,
   mapEventToStep,
   escapeCsvField,
-  getLedgerStatusLabel,
 } from "./orders/orderStatus";
 import { buildOrdersCsvRows, buildPickupGroups } from "./orders/adminOrdersUtils";
 
@@ -124,7 +124,8 @@ export const AdminOrdersPanel = () => {
         pickup_created_at,
         tracking_number,
         customer_name,
-        total
+        total,
+        shipping_status
       `)
       .not("pickup_code", "is", null)
       .order("pickup_created_at", {
@@ -138,6 +139,7 @@ export const AdminOrdersPanel = () => {
       tracking_number?: string | null;
       customer_name?: string | null;
       total?: number | string | null;
+      shipping_status?: string | null;
     }> | null));
   };
 
@@ -1455,7 +1457,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
 
-                  <td className="px-2 py-1.5 uppercase">
+                  <td className="px-2 py-1.5">
                     {getLedgerStatusLabel(r)}
                   </td>
 
