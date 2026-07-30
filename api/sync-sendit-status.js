@@ -93,7 +93,8 @@ export default async function handler(req, res) {
         tracking_number,
         pickup_code,
         shipping_status,
-        pickup_status
+        pickup_status,
+        customer_phone
       `)
       .eq("shipping_provider", "sendit")
       .not("tracking_number", "is", null)
@@ -220,8 +221,66 @@ export default async function handler(req, res) {
           updates.pickup_status = pickupData.pickup_status;
         }
 
-        const deliveryInPickup =
+        let deliveryInPickup =
           pickupData.deliveries[order.tracking_number];
+
+        let newTrackingNumber = null;
+
+        // Le ramasseur donne parfois un nouveau tracking à Sendit sans que
+        // ça remonte ici — l'ancien code disparaît du pickup. On retrouve
+        // le colis en comparant le téléphone du destinataire (le seul champ
+        // fiable à 100% — nom/adresse/montant peuvent se ressembler entre
+        // commandes différentes) à celui des colis du pickup qui ne
+        // correspondent à aucune commande déjà connue.
+        if (!deliveryInPickup && order.customer_phone) {
+          const knownTrackings = new Set(
+            orders.map((o) => o.tracking_number).filter(Boolean)
+          );
+
+          const orphanCodes = Object.keys(
+            pickupData.deliveries ?? {}
+          ).filter((code) => !knownTrackings.has(code));
+
+          for (const code of orphanCodes) {
+            try {
+              const detailResponse = await fetch(
+                `${process.env.SENDIT_API_URL}/deliveries/${code}`,
+                {
+                  method: "GET",
+                  headers: { Authorization: `Bearer ${senditToken}` },
+                }
+              );
+
+              const detailJson = await detailResponse.json();
+
+              console.log(
+                "SYNC ORPHAN DELIVERY DETAIL",
+                code,
+                JSON.stringify(detailJson).slice(0, 1500)
+              );
+
+              if (!detailResponse.ok) continue;
+
+              const detailData = detailJson.data ?? detailJson;
+
+              const senditPhone = (
+                detailData.receiver_phone ??
+                detailData.phone ??
+                ""
+              ).replace(/\D/g, "");
+
+              const orderPhone = order.customer_phone.replace(/\D/g, "");
+
+              if (senditPhone && orderPhone && senditPhone.endsWith(orderPhone.slice(-9))) {
+                newTrackingNumber = code;
+                deliveryInPickup = pickupData.deliveries[code];
+                break;
+              }
+            } catch (err) {
+              console.error("SYNC ORPHAN DETAIL ERROR:", code, err);
+            }
+          }
+        }
 
         console.log(
           "SYNC DEBUG order",
@@ -233,41 +292,17 @@ export default async function handler(req, res) {
           "delivery_keys_available",
           Object.keys(pickupData.deliveries ?? {}),
           "matched_delivery",
-          JSON.stringify(deliveryInPickup)
+          JSON.stringify(deliveryInPickup),
+          "reconciled_new_tracking",
+          newTrackingNumber
         );
 
-        let deliveryStatus = deliveryInPickup?.status ?? null;
-        let deliveryLastActionAt = deliveryInPickup?.last_action_at ?? null;
-
-        // Colis absent du pickup (ex: retiré du batch côté Sendit) — on
-        // interroge directement son suivi individuel avant d'abandonner.
-        if (!deliveryInPickup) {
-          try {
-            const fallbackResponse = await fetch(
-              `${process.env.SENDIT_API_URL}/deliveries/${order.tracking_number}`,
-              {
-                method: "GET",
-                headers: { Authorization: `Bearer ${senditToken}` },
-              }
-            );
-
-            const fallbackJson = await fallbackResponse.json();
-
-            console.log(
-              "SYNC FALLBACK DELIVERY",
-              order.tracking_number,
-              JSON.stringify(fallbackJson).slice(0, 1000)
-            );
-
-            if (fallbackResponse.ok) {
-              const parsed = parseDeliveryStatus(fallbackJson);
-              deliveryStatus = parsed.shipping_status;
-              deliveryLastActionAt = parsed.shipping_last_action_at;
-            }
-          } catch (err) {
-            console.error("SYNC FALLBACK ERROR:", order.tracking_number, err);
-          }
+        if (newTrackingNumber) {
+          updates.tracking_number = newTrackingNumber;
         }
+
+        const deliveryStatus = deliveryInPickup?.status ?? null;
+        const deliveryLastActionAt = deliveryInPickup?.last_action_at ?? null;
 
         if (deliveryStatus && deliveryStatus !== order.shipping_status) {
           updates.shipping_status = deliveryStatus;
