@@ -33,7 +33,7 @@ export const AdminProfitSection = () => {
       const [ordersRes, depensesRes] = await Promise.all([
         supabase
           .from("orders")
-          .select("total, created_at, refunded, shipping_status, shipping_status_return, return_code, pickup_code, status")
+          .select("total, created_at, refunded, shipping_status, shipping_status_return, return_code, pickup_code, status, shipping_provider, shipping_fee")
           .gte("created_at", startIso)
           .limit(10000),
         supabase.from("depenses").select("prix, date").gte("date", startDateStr).limit(10000),
@@ -51,11 +51,26 @@ export const AdminProfitSection = () => {
       // Le CA du bénéfice brut exclut les commandes annulées/retournées
       // (getOrderCategory === "returned") et celles déjà remboursées —
       // contrairement à "CA / MOIS" plus haut dans le dashboard, qui les
-      // compte encore.
-      const totalRevenue = (ordersRes.data ?? [])
-        .filter((o) => getOrderCategory(o) !== "returned" && !o.refunded)
-        .reduce((s, o) => s + (Number(o.total) || 0), 0);
-      const totalExpenses = (depensesRes.data ?? []).reduce((s, d) => s + (Number(d.prix) || 0), 0);
+      // compte encore. On déduit aussi les frais Sendit (livraison, etc.)
+      // que Sendit retient directement sur leur facture — mais seulement
+      // pour les commandes réellement expédiées via Sendit ; les commandes
+      // remises en main propre n'ont pas de facture Sendit à déduire.
+      const validOrders = (ordersRes.data ?? []).filter(
+        (o) => getOrderCategory(o) !== "returned" && !o.refunded
+      );
+
+      const totalRevenue = validOrders.reduce(
+        (s, o) => s + (Number(o.total) || 0),
+        0
+      );
+
+      const totalSenditFees = validOrders
+        .filter((o) => o.shipping_provider === "sendit")
+        .reduce((s, o) => s + (Number(o.shipping_fee) || 0), 0);
+
+      const totalExpenses =
+        (depensesRes.data ?? []).reduce((s, d) => s + (Number(d.prix) || 0), 0) +
+        totalSenditFees;
 
       setRevenue(totalRevenue);
       setExpenses(totalExpenses);
@@ -82,7 +97,7 @@ export const AdminProfitSection = () => {
         </div>
         {!loading && (
           <div className="text-[8px] text-muted-foreground mt-1">
-            {revenue.toFixed(2)} MAD CA (hors annulées/remboursées) − {expenses.toFixed(2)} MAD dépenses
+            {revenue.toFixed(2)} MAD CA (hors annulées/remboursées) − {expenses.toFixed(2)} MAD dépenses (dont frais Sendit)
           </div>
         )}
       </div>
