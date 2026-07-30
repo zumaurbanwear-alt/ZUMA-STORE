@@ -34,8 +34,30 @@ export const AdminOrdersPickupsSection = ({
               </div>
 
               {isExpanded ? (
-                <div className="text-xs mt-1.5">
-                  {p.orders.map((o) => o.customer_name).join(", ")}
+                <div className="mt-1.5 space-y-1.5">
+                  {p.orders.map((o) => (
+                    <div
+                      key={o.tracking_number}
+                      className="flex items-center justify-between gap-2 border-t border-border/60 pt-1.5 first:border-t-0 first:pt-0"
+                    >
+                      <div>
+                        <div className="text-xs">{o.customer_name}</div>
+                        <div className="text-[9px] text-muted-foreground font-display">
+                          {o.tracking_number}
+                        </div>
+                      </div>
+                      <div className="text-[10px] uppercase flex items-center gap-1 shrink-0">
+                        {translateStatus(o.shipping_status ?? "pending")}
+                        <StatusDot status={o.shipping_status ?? "pending"} />
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => onTogglePickup(p.code)}
+                    className="text-[9px] text-muted-foreground underline mt-1.5"
+                  >
+                    réduire
+                  </button>
                 </div>
               ) : (
                 <button
@@ -48,7 +70,7 @@ export const AdminOrdersPickupsSection = ({
             </div>
 
             <div className="text-right">
-              <div className="text-[8px] uppercase text-muted-foreground">STATUS</div>
+              <div className="text-[8px] uppercase text-muted-foreground">RAMASSAGE</div>
               <div className="text-xs uppercase flex items-center justify-end gap-1.5">
                 {translateStatus(p.status)}
                 <StatusDot status={p.status} />
@@ -63,15 +85,6 @@ export const AdminOrdersPickupsSection = ({
               <div className="text-[10px] mt-1.5">
                 {new Date(p.created_at).toLocaleDateString()}
               </div>
-
-              {isExpanded && (
-                <button
-                  onClick={() => onTogglePickup(p.code)}
-                  className="text-[9px] text-muted-foreground underline mt-1.5 block ml-auto"
-                >
-                  réduire
-                </button>
-              )}
             </div>
           </div>
         );
