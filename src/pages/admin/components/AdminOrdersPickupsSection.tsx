@@ -22,6 +22,39 @@ export const AdminOrdersPickupsSection = ({
       {pickups.map((p) => {
         const isExpanded = expandedPickups.has(p.code);
 
+        const allDelivered =
+          p.orders.length > 0 &&
+          p.orders.every((o) => o.shipping_status === "DELIVERED");
+
+        if (allDelivered && !isExpanded) {
+          return (
+            <div
+              key={p.code}
+              className="p-3 flex items-center justify-between cursor-pointer"
+              onClick={() => onTogglePickup(p.code)}
+            >
+              <div className="text-xs font-display tracking-[0.1em]">
+                {p.code}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-red-600 text-white tracking-[0.05em]">
+                  Tous les colis livrés
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTogglePickup(p.code);
+                  }}
+                  className="text-[9px] text-muted-foreground underline"
+                >
+                  + détails
+                </button>
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div key={p.code} className="p-3 flex justify-between">
             <div>
@@ -35,6 +68,11 @@ export const AdminOrdersPickupsSection = ({
 
               {isExpanded ? (
                 <div className="mt-1.5 space-y-1.5">
+                  {allDelivered && (
+                    <span className="inline-block text-[10px] uppercase px-2 py-0.5 rounded-full bg-red-600 text-white tracking-[0.05em] mb-1">
+                      Tous les colis livrés
+                    </span>
+                  )}
                   {p.orders.map((o) => (
                     <div
                       key={o.tracking_number}
