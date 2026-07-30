@@ -186,6 +186,12 @@ export default async function handler(req, res) {
 
         pickupDataByCode[pickupCode] = parsePickupPayload(pickupJson);
 
+        console.log(
+          "SYNC RAW PICKUP JSON",
+          pickupCode,
+          JSON.stringify(pickupJson).slice(0, 2000)
+        );
+
       } catch (err) {
         console.error("SYNC PICKUP FETCH ERROR:", pickupCode, err);
         errors.push({ pickup_code: pickupCode, error: err.message });
