@@ -7,6 +7,7 @@ export type AdminOrdersPickupRow = {
   tracking_number?: string | null;
   customer_name?: string | null;
   total?: number | string | null;
+  shipping_status?: string | null;
 };
 
 export const buildPickupGroups = (rows: AdminOrdersPickupRow[] | null | undefined): AdminPickup[] => {
@@ -31,6 +32,7 @@ export const buildPickupGroups = (rows: AdminOrdersPickupRow[] | null | undefine
         tracking_number: row.tracking_number ?? "",
         customer_name: row.customer_name ?? "",
         total: Number(row.total) || 0,
+        shipping_status: row.shipping_status ?? null,
       });
       current.total += Number(row.total) || 0;
       acc[pickupCode] = current;

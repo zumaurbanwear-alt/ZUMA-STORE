@@ -53,6 +53,7 @@ export type AdminPickup = {
     tracking_number: string;
     customer_name: string;
     total: number;
+    shipping_status: string | null;
   }>;
 };
 
