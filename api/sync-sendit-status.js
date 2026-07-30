@@ -11,10 +11,15 @@ function parseDeliveryStatus(json) {
 }
 
 function parsePickupPayload(json) {
-  // GET /pickups/{code} is NOT wrapped in { success, data } — fields are at the root.
+  // GET /pickups/{code} IS wrapped in { success, message, data } — confirmed
+  // via debug logging on 2026-07-30. The earlier comment claiming root-level
+  // fields was wrong and silently broke every sync (status/deliveries were
+  // always undefined/empty).
+  const data = json.data ?? json;
+
   return {
-    pickup_status: json.status ?? null,
-    deliveries: json.deliveries ?? {},
+    pickup_status: data.status ?? null,
+    deliveries: data.deliveries ?? {},
   };
 }
 
@@ -231,19 +236,48 @@ export default async function handler(req, res) {
           JSON.stringify(deliveryInPickup)
         );
 
-        if (
-          deliveryInPickup?.status &&
-          deliveryInPickup.status !== order.shipping_status
-        ) {
-          updates.shipping_status = deliveryInPickup.status;
+        let deliveryStatus = deliveryInPickup?.status ?? null;
+        let deliveryLastActionAt = deliveryInPickup?.last_action_at ?? null;
+
+        // Colis absent du pickup (ex: retiré du batch côté Sendit) — on
+        // interroge directement son suivi individuel avant d'abandonner.
+        if (!deliveryInPickup) {
+          try {
+            const fallbackResponse = await fetch(
+              `${process.env.SENDIT_API_URL}/deliveries/${order.tracking_number}`,
+              {
+                method: "GET",
+                headers: { Authorization: `Bearer ${senditToken}` },
+              }
+            );
+
+            const fallbackJson = await fallbackResponse.json();
+
+            console.log(
+              "SYNC FALLBACK DELIVERY",
+              order.tracking_number,
+              JSON.stringify(fallbackJson).slice(0, 1000)
+            );
+
+            if (fallbackResponse.ok) {
+              const parsed = parseDeliveryStatus(fallbackJson);
+              deliveryStatus = parsed.shipping_status;
+              deliveryLastActionAt = parsed.shipping_last_action_at;
+            }
+          } catch (err) {
+            console.error("SYNC FALLBACK ERROR:", order.tracking_number, err);
+          }
         }
 
-        if (deliveryInPickup?.last_action_at) {
-          updates.shipping_last_action_at =
-            deliveryInPickup.last_action_at;
+        if (deliveryStatus && deliveryStatus !== order.shipping_status) {
+          updates.shipping_status = deliveryStatus;
+        }
 
-          if (deliveryInPickup.status === "DELIVERED") {
-            updates.delivered_at = deliveryInPickup.last_action_at;
+        if (deliveryLastActionAt) {
+          updates.shipping_last_action_at = deliveryLastActionAt;
+
+          if (deliveryStatus === "DELIVERED") {
+            updates.delivered_at = deliveryLastActionAt;
           }
         }
 
