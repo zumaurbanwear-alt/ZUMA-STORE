@@ -162,8 +162,6 @@ export default async function handler(req, res) {
 
         const pickupUrl = `${process.env.SENDIT_API_URL}/pickups/${pickupCode}`;
 
-        console.log("SYNC PICKUP URL:", pickupUrl);
-
         const pickupResponse = await fetch(
           pickupUrl,
           {
@@ -191,12 +189,6 @@ export default async function handler(req, res) {
         }
 
         pickupDataByCode[pickupCode] = parsePickupPayload(pickupJson);
-
-        console.log(
-          "SYNC RAW PICKUP JSON",
-          pickupCode,
-          JSON.stringify(pickupJson).slice(0, 2000)
-        );
 
       } catch (err) {
         console.error("SYNC PICKUP FETCH ERROR:", pickupCode, err);
@@ -253,12 +245,6 @@ export default async function handler(req, res) {
 
               const detailJson = await detailResponse.json();
 
-              console.log(
-                "SYNC ORPHAN DELIVERY DETAIL",
-                code,
-                JSON.stringify(detailJson).slice(0, 1500)
-              );
-
               if (!detailResponse.ok) continue;
 
               const detailData = detailJson.data ?? detailJson;
@@ -281,21 +267,6 @@ export default async function handler(req, res) {
             }
           }
         }
-
-        console.log(
-          "SYNC DEBUG order",
-          order.id,
-          "tracking",
-          order.tracking_number,
-          "pickup_status_from_sendit",
-          pickupData.pickup_status,
-          "delivery_keys_available",
-          Object.keys(pickupData.deliveries ?? {}),
-          "matched_delivery",
-          JSON.stringify(deliveryInPickup),
-          "reconciled_new_tracking",
-          newTrackingNumber
-        );
 
         if (newTrackingNumber) {
           updates.tracking_number = newTrackingNumber;
