@@ -212,6 +212,19 @@ export default async function handler(req, res) {
         const deliveryInPickup =
           pickupData.deliveries[order.tracking_number];
 
+        console.log(
+          "SYNC DEBUG order",
+          order.id,
+          "tracking",
+          order.tracking_number,
+          "pickup_status_from_sendit",
+          pickupData.pickup_status,
+          "delivery_keys_available",
+          Object.keys(pickupData.deliveries ?? {}),
+          "matched_delivery",
+          JSON.stringify(deliveryInPickup)
+        );
+
         if (
           deliveryInPickup?.status &&
           deliveryInPickup.status !== order.shipping_status
