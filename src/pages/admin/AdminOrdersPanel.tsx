@@ -1034,15 +1034,6 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
           <div className="border border-border p-3">
             <div className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
-              LIVRÉES
-            </div>
-            <div className="text-lg font-display text-primary-hi">
-              {stats.deliveredCount}
-            </div>
-          </div>
-
-          <div className="border border-border p-3">
-            <div className="text-[8px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
               RETOURS
             </div>
             <div className="text-lg font-display text-primary-hi">
