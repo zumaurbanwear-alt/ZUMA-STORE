@@ -22,6 +22,7 @@ type AdminOrderDetailDrawerProps = {
   onCreateReturn: (order: AdminOrder) => void;
   onMarkReady: (order: AdminOrder) => void;
   onMarkDelivered: (order: AdminOrder) => void;
+  onDeleteOrder: (order: AdminOrder) => void;
   onToggleRefund: () => void;
   onSaveNotes: () => void;
   onNotesChange: (value: string) => void;
@@ -46,6 +47,7 @@ export const AdminOrderDetailDrawer = ({
   onCreateReturn,
   onMarkReady,
   onMarkDelivered,
+  onDeleteOrder,
   onToggleRefund,
   onSaveNotes,
   onNotesChange,
@@ -423,6 +425,21 @@ export const AdminOrderDetailDrawer = ({
               })}
             </div>
           )}
+
+          <button
+            onClick={() => {
+              if (
+                window.confirm(
+                  `Supprimer définitivement la commande #${selectedOrder.display_id} ? Cette action est irréversible.`
+                )
+              ) {
+                onDeleteOrder(selectedOrder);
+              }
+            }}
+            className="w-full border border-red-600 text-red-600 py-1.5 text-[9px] uppercase tracking-[0.15em] hover:bg-red-600 hover:text-white mt-6"
+          >
+            Supprimer la commande
+          </button>
         </div>
       </div>
     </>
