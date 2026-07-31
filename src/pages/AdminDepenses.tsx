@@ -18,6 +18,14 @@ type Expense = {
   date: string; // ISO yyyy-mm-dd
 };
 
+type CashMovement = {
+  id: string;
+  type: "cash" | "bancaire";
+  montant: number;
+  note: string | null;
+  date: string;
+};
+
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 const monthKey = (isoDate: string) => isoDate.slice(0, 7); // yyyy-mm
@@ -48,6 +56,14 @@ const AdminDepenses = () => {
   const [form, setForm] = useState({ nom: "", produits: "", prix: "", date: todayIso() });
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [cashMovements, setCashMovements] = useState<CashMovement[]>([]);
+  const [showAddMoney, setShowAddMoney] = useState(false);
+  const [addMoneyForm, setAddMoneyForm] = useState({
+    type: "cash" as "cash" | "bancaire",
+    montant: "",
+  });
+  const [savingMoney, setSavingMoney] = useState(false);
+
   useEffect(() => {
     if (loading) return;
     if (!user) nav("/zm-portal-x92-login");
@@ -69,10 +85,68 @@ const AdminDepenses = () => {
     setFetching(false);
   };
 
+  const loadCashMovements = async () => {
+    const { data, error } = await supabase
+      .from("cash_movements")
+      .select("id, type, montant, note, date")
+      .order("date", { ascending: false });
+
+    if (error) {
+      setFetchError(error.message);
+      return;
+    }
+    setCashMovements((data as CashMovement[]) ?? []);
+  };
+
   useEffect(() => {
-    if (!loading && user && isAdmin) loadExpenses();
+    if (!loading && user && isAdmin) {
+      loadExpenses();
+      loadCashMovements();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user, isAdmin]);
+
+  const cashBalance = useMemo(
+    () =>
+      cashMovements
+        .filter((m) => m.type === "cash")
+        .reduce((s, m) => s + (Number(m.montant) || 0), 0),
+    [cashMovements]
+  );
+
+  const bancaireBalance = useMemo(
+    () =>
+      cashMovements
+        .filter((m) => m.type === "bancaire")
+        .reduce((s, m) => s + (Number(m.montant) || 0), 0),
+    [cashMovements]
+  );
+
+  const addMoney = async () => {
+    const montantNum = parseFloat(addMoneyForm.montant.replace(",", "."));
+    if (!Number.isFinite(montantNum) || montantNum === 0) return;
+
+    setSavingMoney(true);
+    const { data, error } = await supabase
+      .from("cash_movements")
+      .insert({
+        type: addMoneyForm.type,
+        montant: montantNum,
+        date: todayIso(),
+      })
+      .select("id, type, montant, note, date")
+      .single();
+    setSavingMoney(false);
+
+    if (error) {
+      setFetchError(error.message);
+      return;
+    }
+
+    setCashMovements((prev) => [data as CashMovement, ...prev]);
+    setAddMoneyForm({ type: "cash", montant: "" });
+    setShowAddMoney(false);
+  };
 
   const availableMonths = useMemo(() => {
     const keys = new Set(expenses.map((e) => monthKey(e.date)));
@@ -228,6 +302,79 @@ const AdminDepenses = () => {
           {fetchError}
         </div>
       )}
+
+      {/* Cash / bancaire tracker */}
+      <section className="mb-8 border border-border p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground">
+            Solde
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowAddMoney((s) => !s)}
+            className="border border-primary text-primary text-[10px] tracking-[0.2em] uppercase px-3 py-2 hover:bg-primary hover:text-primary-foreground"
+          >
+            Ajouter argent
+          </button>
+        </div>
+
+        <div className="border border-border">
+          <table className="w-full text-xs">
+            <thead className="bg-muted/30 text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left">Bancaire</th>
+                <th className="px-3 py-2 text-left">Cash</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="px-3 py-2 text-primary-hi text-sm">
+                  {bancaireBalance.toFixed(2)} MAD
+                </td>
+                <td className="px-3 py-2 text-primary-hi text-sm">
+                  {cashBalance.toFixed(2)} MAD
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {showAddMoney && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
+            <select
+              value={addMoneyForm.type}
+              onChange={(e) =>
+                setAddMoneyForm((f) => ({
+                  ...f,
+                  type: e.target.value as "cash" | "bancaire",
+                }))
+              }
+              className="bg-transparent border border-border px-3 py-2 text-xs"
+            >
+              <option value="cash">Cash</option>
+              <option value="bancaire">Bancaire</option>
+            </select>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="Montant (MAD)"
+              value={addMoneyForm.montant}
+              onChange={(e) =>
+                setAddMoneyForm((f) => ({ ...f, montant: e.target.value }))
+              }
+              className="bg-transparent border border-border px-3 py-2 text-xs"
+            />
+            <button
+              type="button"
+              onClick={addMoney}
+              disabled={savingMoney}
+              className="border border-primary text-primary text-[10px] tracking-[0.2em] uppercase px-3 py-2 hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
+            >
+              {savingMoney ? "..." : "Confirmer"}
+            </button>
+          </div>
+        )}
+      </section>
 
       {/* Add / edit form */}
       <section className="mb-8 border border-border p-4">
