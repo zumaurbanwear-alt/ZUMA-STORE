@@ -1,5 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
+// Fusion de sendit-invoices.js (liste) + sendit-invoice-detail.js (détail)
+// pour rester sous la limite de 12 fonctions serverless du plan Vercel
+// Hobby. Comportement inchangé : GET /api/sendit-invoices → liste,
+// GET /api/sendit-invoices?code=XXX → détail d'une facture.
 export default async function handler(req, res) {
 
   if (req.method !== "GET") {
@@ -60,7 +64,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const { page, startDate, endDate, querystring } = req.query;
+    const { page, startDate, endDate, querystring, code } = req.query;
 
     const loginResponse = await fetch(
       `${process.env.SENDIT_API_URL}/login`,
@@ -89,6 +93,38 @@ export default async function handler(req, res) {
 
     const senditToken = loginJson.data.token;
 
+    // Détail d'une facture précise
+    if (code) {
+      const detailResponse = await fetch(
+        `${process.env.SENDIT_API_URL}/invoices/${encodeURIComponent(code)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${senditToken}`,
+          },
+        }
+      );
+
+      const detailText = await detailResponse.text();
+
+      let detailJson;
+
+      try {
+        detailJson = JSON.parse(detailText);
+      } catch {
+        detailJson = { raw: detailText };
+      }
+
+      if (!detailResponse.ok) {
+        console.error("SENDIT INVOICE DETAIL ERROR:", detailJson);
+
+        return res.status(detailResponse.status).json(detailJson);
+      }
+
+      return res.status(200).json(detailJson);
+    }
+
+    // Liste des factures
     const params = new URLSearchParams();
 
     if (page) params.set("page", String(page));
@@ -99,8 +135,6 @@ export default async function handler(req, res) {
     const invoicesUrl = `${process.env.SENDIT_API_URL}/invoices${
       params.toString() ? `?${params.toString()}` : ""
     }`;
-
-    console.log("SENDIT INVOICES URL:", invoicesUrl);
 
     const invoicesResponse = await fetch(invoicesUrl, {
       method: "GET",
