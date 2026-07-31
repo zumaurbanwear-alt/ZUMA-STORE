@@ -450,13 +450,14 @@ export const AdminOrdersPanel = () => {
     }
 
    const res = await fetch(
-  "/api/request-sendit-pickup",
+  "/api/sendit-return-pickup",
   {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${session.access_token}`,
     },
+    body: JSON.stringify({ action: "pickup" }),
   }
 );
 
@@ -665,7 +666,7 @@ const handleCreateReturn = async (order: AdminOrder) => {
     }
 
     const res = await fetch(
-      "/api/create-sendit-return",
+      "/api/sendit-return-pickup",
       {
         method: "POST",
         headers: {
@@ -673,6 +674,7 @@ const handleCreateReturn = async (order: AdminOrder) => {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
+          action: "return",
           orderId: order.id,
           reason: reason || undefined,
         }),
@@ -784,7 +786,7 @@ const openInvoiceDetail = async (code: string) => {
     }
 
     const res = await fetch(
-      `/api/sendit-invoice-detail?code=${encodeURIComponent(code)}`,
+      `/api/sendit-invoices?code=${encodeURIComponent(code)}`,
       {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
