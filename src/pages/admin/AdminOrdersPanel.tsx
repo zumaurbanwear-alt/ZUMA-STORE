@@ -80,6 +80,7 @@ export const AdminOrdersPanel = () => {
   const [downloadingLabels, setDownloadingLabels] = useState(false);
   const [markingReadyFor, setMarkingReadyFor] = useState<string | null>(null);
   const [markingDeliveredFor, setMarkingDeliveredFor] = useState<string | null>(null);
+  const [deletingOrderFor, setDeletingOrderFor] = useState<string | null>(null);
   const [showManualOrderModal, setShowManualOrderModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<AdminOrder | null>(null);
 
@@ -320,6 +321,32 @@ export const AdminOrdersPanel = () => {
       toast.error("Erreur");
     } finally {
       setMarkingDeliveredFor(null);
+    }
+  };
+
+  const handleDeleteOrder = async (order: Order) => {
+    setDeletingOrderFor(order.id);
+
+    try {
+      const { error } = await supabase.rpc("admin_delete_order", {
+        order_uuid: order.id,
+      });
+
+      if (error) {
+        console.error(error);
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success(`Commande #${order.display_id} supprimée`);
+      setSelectedOrder(null);
+      await loadOrders();
+      await loadStats();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur");
+    } finally {
+      setDeletingOrderFor(null);
     }
   };
 
@@ -1527,6 +1554,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         onCreateReturn={handleCreateReturn}
         onMarkReady={handleMarkReady}
         onMarkDelivered={handleMarkDelivered}
+        onDeleteOrder={handleDeleteOrder}
         onToggleRefund={handleToggleRefund}
         onSaveNotes={handleSaveNotes}
         onNotesChange={setNotesDraft}
