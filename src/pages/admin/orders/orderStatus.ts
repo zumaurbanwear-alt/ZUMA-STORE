@@ -74,7 +74,6 @@ export const STATUS_FILTERS: { key: string; label: string }[] = [
   { key: "confirmed", label: "Confirmée" },
   { key: "pickup", label: "Ramassage" },
   { key: "transit", label: "En transit" },
-  { key: "delivered", label: "Livrée" },
   { key: "returned", label: "Retour" },
 ];
 
