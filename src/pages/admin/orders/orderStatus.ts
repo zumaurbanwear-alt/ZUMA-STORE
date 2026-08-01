@@ -1,24 +1,19 @@
-// Constantes et fonctions pures liées au statut des commandes / Sendit.
-// Extrait de AdminOrdersPanel.tsx — aucune de ces valeurs ne dépend de
-// l'état du composant, donc rien ne change fonctionnellement en les
-// déplaçant ici.
-
-// Couleur par statut — modifie les valeurs hex ici pour ajuster.
-// pending = gris, confirmed = rouge, delivered = rouge (tel que demandé).
 export const STATUS_COLORS: Record<string, string> = {
   pending: "#9CA3AF",
   to_prepare: "#9CA3AF",
   new_destination: "#9CA3AF",
   confirmed: "#DC2626",
-  to_pickup: "#F59E0B",
-  pickedup: "#F59E0B",
-  warehouse: "#3B82F6",
-  transit: "#3B82F6",
-  distributed: "#3B82F6",
-  delivering: "#3B82F6",
-  unreachable: "#F59E0B",
-  postponed: "#F59E0B",
-  delivered: "#DC2626",
+  to_pickup: "#DC2626",
+  pickedup: "#DC2626",
+  warehouse: "#DC2626",
+  transit: "#DC2626",
+  distributed: "#DC2626",
+  delivering: "#DC2626",
+  unreachable: "#DC2626",
+  postponed: "#DC2626",
+  delivered: "#16A34A",
+  paid: "#16A34A",
+  unpaid: "#DC2626",
   canceled: "#DC2626",
   cancelled: "#DC2626",
   rejected: "#DC2626",
@@ -34,8 +29,6 @@ type OrderStatusLike = {
   status?: string | null;
 };
 
-// Regroupe le statut interne (pending/confirmed) et le statut Sendit
-// (shipping_status) en une seule catégorie, pour les filtres et les stats.
 export const getOrderCategory = (o: OrderStatusLike): string => {
   if (o.shipping_status === "DELIVERED") return "delivered";
 
@@ -77,11 +70,6 @@ export const STATUS_FILTERS: { key: string; label: string }[] = [
   { key: "returned", label: "Retour" },
 ];
 
-// Libellés français pour tous les statuts affichés (interne + Sendit brut).
-// Les valeurs Sendit viennent de GET /all-status-deliveries. Fallback :
-// affiche la valeur brute telle quelle si elle n'est pas dans la liste
-// (utile pour les statuts de retour, dont on ne connaît pas encore
-// toutes les valeurs possibles).
 export const STATUS_LABELS_FR: Record<string, string> = {
   pending: "En attente",
   to_prepare: "À préparer",
@@ -107,9 +95,6 @@ export const translateStatus = (status: string | null | undefined): string => {
   return STATUS_LABELS_FR[key] ?? status;
 };
 
-// Statut simplifié pour le ledger (2 états) : la colonne orders.status
-// reste bloquée sur "confirmed" à vie, la vraie livraison est suivie via
-// shipping_status (Sendit) / delivered_at. On ignore donc status ici.
 type LedgerStatusLike = {
   shipping_status?: string | null;
 };
@@ -119,9 +104,6 @@ export const getLedgerStatusLabel = (o: LedgerStatusLike): string => {
   return "Confirmée";
 };
 
-// Un retour n'a de sens que si Sendit a déjà tenté/terminé la livraison.
-// En dehors de ces statuts, l'API Sendit refuse la demande (comme on
-// vient de le voir : "colis invalide" tant qu'il est encore en transit).
 export const RETURN_ELIGIBLE_STATUSES = [
   "DELIVERED",
   "REJECTED",
@@ -130,9 +112,6 @@ export const RETURN_ELIGIBLE_STATUSES = [
   "CANCELED",
 ];
 
-// Étapes fixes de la timeline affichée dans le drawer. "created" n'a pas
-// d'event loggé (la commande naît au checkout, hors admin) — on utilise
-// directement created_at pour cette étape-là.
 export const TIMELINE_STEPS: { key: string; label: string }[] = [
   { key: "created", label: "Commande créée" },
   { key: "confirmed", label: "Confirmée" },
@@ -153,9 +132,6 @@ export const TRANSIT_RAW_STATUSES = [
   "postponed",
 ];
 
-// Les events loggés par sync/webhook portent le statut Sendit brut en
-// minuscule (ex: "transit", "delivered") ; ceux loggés par les actions
-// admin portent une clé fixe ("confirmed", "shipment_created", ...).
 export const mapEventToStep = (eventKey: string): string | null => {
   const k = (eventKey ?? "").toLowerCase();
 
@@ -168,7 +144,6 @@ export const mapEventToStep = (eventKey: string): string | null => {
   return null;
 };
 
-// Échappe une valeur pour l'export CSV (guillemets, virgules, retours ligne).
 export const escapeCsvField = (value: unknown) => {
   const str = String(value ?? "");
 
