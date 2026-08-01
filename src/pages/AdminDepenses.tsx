@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { signOutAdmin } from "@/lib/supabaseAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -391,19 +391,22 @@ const AdminDepenses = () => {
 
         {showAddMoney && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
-            <select
-              value={addMoneyForm.type}
-              onChange={(e) =>
-                setAddMoneyForm((f) => ({
-                  ...f,
-                  type: e.target.value as "cash" | "bancaire",
-                }))
-              }
-              className="bg-transparent border border-border px-3 py-2 text-xs"
-            >
-              <option value="cash">Cash</option>
-              <option value="bancaire">Bancaire</option>
-            </select>
+            <div className="relative">
+              <select
+                value={addMoneyForm.type}
+                onChange={(e) =>
+                  setAddMoneyForm((f) => ({
+                    ...f,
+                    type: e.target.value as "cash" | "bancaire",
+                  }))
+                }
+                className="w-full appearance-none bg-transparent border border-border pl-3 pr-8 py-2 text-xs"
+              >
+                <option value="cash">Cash</option>
+                <option value="bancaire">Bancaire</option>
+              </select>
+              <ChevronDown className="w-3 h-3 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            </div>
             <input
               type="text"
               inputMode="decimal"
@@ -460,20 +463,23 @@ const AdminDepenses = () => {
             onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
             className="bg-transparent border border-border px-3 py-2 text-xs"
           />
-          <select
-            value={form.mode_paiement}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                mode_paiement: e.target.value as "cash" | "bancaire" | "",
-              }))
-            }
-            className="bg-transparent border border-border px-3 py-2 text-xs"
-          >
-            <option value="cash">Cash</option>
-            <option value="bancaire">Bancaire</option>
-            <option value="">Non renseigné</option>
-          </select>
+          <div className="relative">
+            <select
+              value={form.mode_paiement}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  mode_paiement: e.target.value as "cash" | "bancaire" | "",
+                }))
+              }
+              className="w-full appearance-none bg-transparent border border-border pl-3 pr-8 py-2 text-xs"
+            >
+              <option value="cash">Cash</option>
+              <option value="bancaire">Bancaire</option>
+              <option value="">Non renseigné</option>
+            </select>
+            <ChevronDown className="w-3 h-3 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          </div>
           <button
             type="button"
             onClick={saveExpense}
@@ -499,17 +505,20 @@ const AdminDepenses = () => {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
           <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Mois :</label>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-transparent border border-border px-3 py-2 text-xs capitalize"
-          >
-            {availableMonths.map((m) => (
-              <option key={m} value={m} className="capitalize">
-                {monthLabelFr(m)}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="appearance-none bg-transparent border border-border pl-3 pr-8 py-2 text-xs capitalize"
+            >
+              {availableMonths.map((m) => (
+                <option key={m} value={m} className="capitalize">
+                  {monthLabelFr(m)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3 h-3 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          </div>
         </div>
         <button
           type="button"
