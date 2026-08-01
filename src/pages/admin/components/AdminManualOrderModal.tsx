@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrderDisplayId } from "@/lib/supabaseAdmin";
@@ -378,18 +379,21 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
           {items.map((it, i) => (
             <div key={it.id} className="space-y-1.5 pb-2 border-b border-border last:border-0 last:pb-0">
               <div className="flex gap-1.5">
-                <select
-                  value={it.product_id}
-                  onChange={(e) => updateItem(i, { product_id: e.target.value })}
-                  className="flex-1 border border-border p-1.5 text-xs bg-transparent"
-                >
-                  <option value="">Sélectionner un produit...</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} — {p.price} MAD
-                    </option>
-                  ))}
-                </select>
+                <div className="relative flex-1">
+                  <select
+                    value={it.product_id}
+                    onChange={(e) => updateItem(i, { product_id: e.target.value })}
+                    className="w-full appearance-none border border-border p-1.5 pr-8 text-xs bg-transparent"
+                  >
+                    <option value="">Sélectionner un produit...</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {p.price} MAD
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3 h-3 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                </div>
                 {items.length > 1 && (
                   <button
                     onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}
