@@ -17,10 +17,6 @@ type Props = {
   onSaved: (updated: Partial<AdminOrder>) => void;
 };
 
-// Formulaire pour corriger/compléter les infos client d'une commande —
-// utile en particulier pour une commande manuelle à qui on veut
-// finalement créer un colis Sendit : il faut alors un district Sendit
-// valide, que le formulaire de création manuelle ne demande pas.
 export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
   const [name, setName] = useState(order.customer_name ?? "");
   const [phone, setPhone] = useState(order.customer_phone ?? "");
@@ -33,10 +29,6 @@ export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Prix promo : réservé aux commandes créées via la modale "commande
-  // manuelle" (order_source "admin_manual") et tant qu'aucun colis n'a
-  // été créé — après ça, le prix a déjà été envoyé à Sendit et ne doit
-  // plus bouger silencieusement.
   const canEditPricing = order.order_source === "admin_manual" && !order.tracking_number;
   const [itemPrices, setItemPrices] = useState<Record<string, number>>(() =>
     Object.fromEntries((order.order_items ?? []).map((it) => [it.id ?? "", it.unit_price ?? 0]))
@@ -165,11 +157,6 @@ export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
           </button>
         </div>
 
-        <div className="text-[9px] text-muted-foreground mb-4 leading-relaxed">
-          Corrige les infos client avant de créer le colis — utile si le client a donné une
-          mauvaise adresse, ou si la commande a été créée manuellement sans district Sendit.
-        </div>
-
         <div className="border border-border p-3 mb-3 space-y-2">
           <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-1">CLIENT</div>
 
@@ -200,7 +187,6 @@ export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
             value={city}
             onChange={(e) => {
               setCity(e.target.value);
-              // Changer de ville invalide le district déjà choisi.
               setDistrictId(null);
               setDistrictName("");
             }}
@@ -238,9 +224,6 @@ export const AdminEditOrderModal = ({ order, onClose, onSaved }: Props) => {
           <div className="border border-border p-3 mb-3 space-y-2">
             <div className="text-[8px] uppercase tracking-[0.2em] text-primary-hi mb-1">
               PRIX DES ARTICLES (PROMOTION)
-            </div>
-            <div className="text-[9px] text-muted-foreground mb-1 leading-relaxed">
-              Commande créée manuellement, colis pas encore créé — les prix restent modifiables.
             </div>
 
             {(order.order_items ?? []).map((it) => (

@@ -20,9 +20,6 @@ const sortSizes = (a: string, b: string) => {
   return ia - ib;
 };
 
-// Grille couleur x taille pour gérer le stock détaillé d'un produit.
-// products.stock reste la somme automatique (trigger côté DB) — le site
-// public continue d'afficher un stock global sans distinction, comme voulu.
 export const AdminProductVariants = ({ productId }: { productId: string }) => {
   const [variants, setVariants] = useState<Variant[]>([]);
   const [loading, setLoading] = useState(true);
