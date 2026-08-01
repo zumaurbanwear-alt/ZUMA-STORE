@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { StatusDot } from "../orders/StatusDot";
 import { translateStatus } from "../orders/orderStatus";
 import type { AdminPickup } from "../orders/types";
@@ -12,14 +14,26 @@ export const AdminOrdersPickupsSection = ({
   pickups,
   expandedPickups,
   onTogglePickup,
-}: AdminOrdersPickupsSectionProps) => (
-  <section className="mb-12">
-    <h2 className="font-display text-base tracking-[0.2em] mb-3">
-      SENDIT PICKUPS ({pickups.length})
-    </h2>
+}: AdminOrdersPickupsSectionProps) => {
+  const [sectionExpanded, setSectionExpanded] = useState(false);
 
-    <div className="border border-border divide-y">
-      {pickups.map((p) => {
+  return (
+    <section className="mb-12">
+      <button
+        onClick={() => setSectionExpanded((e) => !e)}
+        className="flex items-center gap-2 font-display text-base tracking-[0.2em] mb-3 hover:text-primary-hi"
+      >
+        {sectionExpanded ? (
+          <ChevronDown className="w-4 h-4 shrink-0" />
+        ) : (
+          <ChevronRight className="w-4 h-4 shrink-0" />
+        )}
+        SENDIT PICKUPS ({pickups.length})
+      </button>
+
+      {sectionExpanded && (
+        <div className="border border-border divide-y">
+          {pickups.map((p) => {
         const isExpanded = expandedPickups.has(p.code);
 
         const allDelivered =
@@ -38,7 +52,7 @@ export const AdminOrdersPickupsSection = ({
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-red-600 text-white tracking-[0.05em]">
+                <span className="text-[10px] uppercase tracking-[0.05em] text-emerald-500 font-medium">
                   Tous les colis livrés
                 </span>
                 <button
@@ -69,7 +83,7 @@ export const AdminOrdersPickupsSection = ({
               {isExpanded ? (
                 <div className="mt-1.5 space-y-1.5">
                   {allDelivered && (
-                    <span className="inline-block text-[10px] uppercase px-2 py-0.5 rounded-full bg-red-600 text-white tracking-[0.05em] mb-1">
+                    <span className="inline-block text-[10px] uppercase tracking-[0.05em] text-emerald-500 font-medium mb-1">
                       Tous les colis livrés
                     </span>
                   )}
@@ -127,6 +141,8 @@ export const AdminOrdersPickupsSection = ({
           </div>
         );
       })}
-    </div>
-  </section>
-);
+        </div>
+      )}
+    </section>
+  );
+};
