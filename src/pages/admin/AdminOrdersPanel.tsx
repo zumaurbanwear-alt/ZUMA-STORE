@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
 import { StatusDot } from "./orders/StatusDot";
@@ -1389,7 +1389,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         disabled={page <= 1}
         className="border border-border px-3 py-1 disabled:opacity-40"
       >
-        ←
+        <ChevronLeft className="w-3 h-3" />
       </button>
 
       <span className="text-muted-foreground normal-case tracking-normal">
@@ -1401,7 +1401,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         disabled={page >= totalPages}
         className="border border-border px-3 py-1 disabled:opacity-40"
       >
-        →
+        <ChevronRight className="w-3 h-3" />
       </button>
 
     </div>
