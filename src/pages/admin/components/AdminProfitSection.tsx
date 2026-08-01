@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getOrderCategory } from "../orders/orderStatus";
 
 type Period = "mois" | "annee";
 
@@ -48,15 +47,17 @@ export const AdminProfitSection = () => {
         console.error(depensesRes.error);
       }
 
-      // Le CA du bénéfice brut exclut les commandes annulées/retournées
-      // (getOrderCategory === "returned") et celles déjà remboursées —
-      // contrairement à "CA / MOIS" plus haut dans le dashboard, qui les
-      // compte encore. On déduit aussi les frais Sendit (livraison, etc.)
-      // que Sendit retient directement sur leur facture — mais seulement
-      // pour les commandes réellement expédiées via Sendit ; les commandes
-      // remises en main propre n'ont pas de facture Sendit à déduire.
+      // Le CA du bénéfice brut ne compte que les commandes réellement
+      // LIVRÉES — une commande juste confirmée reste à risque d'annulation
+      // jusqu'à la livraison, donc pas de CA "en dur" tant que ce n'est
+      // pas encaissé. On garde quand même le check !refunded pour exclure
+      // une commande livrée puis remboursée après coup. On déduit aussi les
+      // frais Sendit (livraison, etc.) que Sendit retient directement sur
+      // sa facture — mais seulement pour les commandes réellement
+      // expédiées via Sendit ; les commandes remises en main propre n'ont
+      // pas de facture Sendit à déduire.
       const validOrders = (ordersRes.data ?? []).filter(
-        (o) => getOrderCategory(o) !== "returned" && !o.refunded
+        (o) => o.shipping_status === "DELIVERED" && !o.refunded
       );
 
       const totalRevenue = validOrders.reduce(
@@ -97,7 +98,7 @@ export const AdminProfitSection = () => {
         </div>
         {!loading && (
           <div className="text-[8px] text-muted-foreground mt-1">
-            {revenue.toFixed(2)} MAD CA (hors annulées/remboursées) − {expenses.toFixed(2)} MAD dépenses (dont frais Sendit)
+            {revenue.toFixed(2)} MAD CA (commandes livrées) − {expenses.toFixed(2)} MAD dépenses (dont frais Sendit)
           </div>
         )}
       </div>
