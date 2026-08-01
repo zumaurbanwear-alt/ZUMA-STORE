@@ -1231,28 +1231,33 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
       "
     />
 
-    <select
-      value={sortBy}
-      onChange={(e) => {
-        const nextSortBy = e.target.value as "date" | "amount" | "city" | "status";
-        setSortBy(nextSortBy);
-      }}
-      className="
-        border
-        border-border
-        px-2
-        py-1.5
-        text-[9px]
-        uppercase
-        tracking-[0.1em]
-        bg-transparent
-      "
-    >
-      <option value="date">Date</option>
-      <option value="amount">Montant</option>
-      <option value="city">Ville</option>
-      <option value="status">Status</option>
-    </select>
+    <div className="relative">
+      <select
+        value={sortBy}
+        onChange={(e) => {
+          const nextSortBy = e.target.value as "date" | "amount" | "city" | "status";
+          setSortBy(nextSortBy);
+        }}
+        className="
+          appearance-none
+          border
+          border-border
+          pl-2
+          pr-7
+          py-1.5
+          text-[9px]
+          uppercase
+          tracking-[0.1em]
+          bg-transparent
+        "
+      >
+        <option value="date">Date</option>
+        <option value="amount">Montant</option>
+        <option value="city">Ville</option>
+        <option value="status">Status</option>
+      </select>
+      <ChevronDown className="w-3 h-3 pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+    </div>
 
     <button
       onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
