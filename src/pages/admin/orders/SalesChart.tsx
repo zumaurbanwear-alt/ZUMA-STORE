@@ -1,5 +1,3 @@
-// Petite courbe de ventes en SVG pur — évite d'ajouter une dépendance
-// (recharts) que Vercel ne peut pas résoudre sans passer par package.json.
 export const SalesChart = ({ data }: { data: { date: string; total: number }[] }) => {
   const width = 600;
   const height = 180;
