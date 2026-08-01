@@ -38,7 +38,7 @@ export const AdminOrdersInvoicesSection = ({
   onOpenInvoiceDetail,
 }: AdminOrdersInvoicesSectionProps) => (
   <section className="mb-12">
-    <h2 className="font-display text-base tracking-[0.2em] mb-3">
+    <h2 className="font-display text-lg tracking-[0.25em] mb-3">
       FACTURES SENDIT ({invoicesTotal})
     </h2>
 

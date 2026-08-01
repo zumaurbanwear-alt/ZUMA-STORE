@@ -19,17 +19,19 @@ export const AdminOrdersPickupsSection = ({
 
   return (
     <section className="mb-12">
-      <button
-        onClick={() => setSectionExpanded((e) => !e)}
-        className="flex items-center gap-2 font-display text-base tracking-[0.2em] mb-3 hover:text-primary-hi"
-      >
-        {sectionExpanded ? (
-          <ChevronDown className="w-4 h-4 shrink-0" />
-        ) : (
-          <ChevronRight className="w-4 h-4 shrink-0" />
-        )}
-        SENDIT PICKUPS ({pickups.length})
-      </button>
+      <div className="flex justify-between items-center mb-4">
+        <button
+          onClick={() => setSectionExpanded((e) => !e)}
+          className="flex items-center gap-2 font-display text-lg tracking-[0.25em] hover:text-primary-hi"
+        >
+          {sectionExpanded ? (
+            <ChevronDown className="w-4 h-4 shrink-0" />
+          ) : (
+            <ChevronRight className="w-4 h-4 shrink-0" />
+          )}
+          SENDIT PICKUPS ({pickups.length})
+        </button>
+      </div>
 
       {sectionExpanded && (
         <div className="border border-border divide-y">
@@ -60,9 +62,10 @@ export const AdminOrdersPickupsSection = ({
                     e.stopPropagation();
                     onTogglePickup(p.code);
                   }}
-                  className="text-[9px] text-muted-foreground underline"
+                  className="flex items-center gap-1 text-[9px] text-muted-foreground hover:text-primary-hi"
                 >
-                  + détails
+                  <ChevronRight className="w-3 h-3 shrink-0" />
+                  détails
                 </button>
               </div>
             </div>
@@ -106,17 +109,19 @@ export const AdminOrdersPickupsSection = ({
                   ))}
                   <button
                     onClick={() => onTogglePickup(p.code)}
-                    className="text-[9px] text-muted-foreground underline mt-1.5"
+                    className="flex items-center gap-1 text-[9px] text-muted-foreground hover:text-primary-hi mt-1.5"
                   >
+                    <ChevronDown className="w-3 h-3 shrink-0" />
                     réduire
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => onTogglePickup(p.code)}
-                  className="text-[9px] text-muted-foreground underline mt-1.5"
+                  className="flex items-center gap-1 text-[9px] text-muted-foreground hover:text-primary-hi mt-1.5"
                 >
-                  + détails
+                  <ChevronRight className="w-3 h-3 shrink-0" />
+                  détails
                 </button>
               )}
             </div>
