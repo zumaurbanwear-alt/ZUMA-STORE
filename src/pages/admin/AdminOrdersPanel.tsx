@@ -1502,7 +1502,9 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
                   </td>
 
                   <td className="px-2 py-1.5">
-                    {r.line_total}
+                    {i > 0 && unified[i - 1].order_id === r.order_id
+                      ? r.line_total
+                      : r.line_total + (Number(r.shipping_fee) || 0)}
                   </td>
 
                   <td className="px-2 py-1.5">
