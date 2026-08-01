@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { StatusDot } from "../orders/StatusDot";
 import { translateStatus } from "../orders/orderStatus";
 import type { AdminInvoice } from "../orders/types";
@@ -114,7 +115,7 @@ export const AdminOrdersInvoicesSection = ({
         disabled={invoicesPage <= 1}
         className="border border-border px-3 py-1 disabled:opacity-40"
       >
-        ←
+        <ChevronLeft className="w-3 h-3" />
       </button>
 
       <span className="text-muted-foreground normal-case tracking-normal">
@@ -126,7 +127,7 @@ export const AdminOrdersInvoicesSection = ({
         disabled={invoicesPage >= invoicesLastPage}
         className="border border-border px-3 py-1 disabled:opacity-40"
       >
-        →
+        <ChevronRight className="w-3 h-3" />
       </button>
     </div>
   </section>
