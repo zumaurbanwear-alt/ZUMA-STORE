@@ -16,7 +16,7 @@ type Expense = {
   produits: string | null;
   prix: number;
   date: string; // ISO yyyy-mm-dd
-  mode_paiement: "cash" | "bancaire";
+  mode_paiement: "cash" | "bancaire" | null;
 };
 
 type CashMovement = {
@@ -54,7 +54,7 @@ const AdminDepenses = () => {
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState({ nom: "", produits: "", prix: "", date: todayIso(), mode_paiement: "cash" as "cash" | "bancaire" });
+  const [form, setForm] = useState({ nom: "", produits: "", prix: "", date: todayIso(), mode_paiement: "cash" as "cash" | "bancaire" | "" });
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [cashMovements, setCashMovements] = useState<CashMovement[]>([]);
@@ -221,7 +221,7 @@ const AdminDepenses = () => {
           produits: form.produits.trim() || null,
           prix: prixNum,
           date: form.date,
-          mode_paiement: form.mode_paiement,
+          mode_paiement: form.mode_paiement || null,
         })
         .eq("id", editingId)
         .select("id, nom, produits, prix, date, mode_paiement")
@@ -247,7 +247,7 @@ const AdminDepenses = () => {
         produits: form.produits.trim() || null,
         prix: prixNum,
         date: form.date,
-        mode_paiement: form.mode_paiement,
+        mode_paiement: form.mode_paiement || null,
       })
       .select("id, nom, produits, prix, date, mode_paiement")
       .single();
@@ -265,7 +265,7 @@ const AdminDepenses = () => {
 
   const startEdit = (e: Expense) => {
     setEditingId(e.id);
-    setForm({ nom: e.nom, produits: e.produits ?? "", prix: String(e.prix), date: e.date, mode_paiement: e.mode_paiement });
+    setForm({ nom: e.nom, produits: e.produits ?? "", prix: String(e.prix), date: e.date, mode_paiement: e.mode_paiement ?? "" });
   };
 
   const cancelEdit = () => {
@@ -300,7 +300,7 @@ const AdminDepenses = () => {
       autoTable(doc, {
         startY: 22,
         head: [["Nom", "Produits", "Prix (MAD)", "Mode", "Date"]],
-        body: filtered.map((e) => [e.nom, e.produits || "—", e.prix.toFixed(2), e.mode_paiement, formatDateFr(e.date)]),
+        body: filtered.map((e) => [e.nom, e.produits || "—", e.prix.toFixed(2), e.mode_paiement ?? "Non renseigné", formatDateFr(e.date)]),
         foot: [["", "", "Total", "", `${total.toFixed(2)} MAD`]],
         styles: { fontSize: 9, cellPadding: 3 },
         headStyles: { fillColor: [20, 20, 20] },
@@ -469,13 +469,14 @@ const AdminDepenses = () => {
             onChange={(e) =>
               setForm((f) => ({
                 ...f,
-                mode_paiement: e.target.value as "cash" | "bancaire",
+                mode_paiement: e.target.value as "cash" | "bancaire" | "",
               }))
             }
             className="bg-transparent border border-border px-3 py-2 text-xs"
           >
             <option value="cash">Cash</option>
             <option value="bancaire">Bancaire</option>
+            <option value="">Non renseigné</option>
           </select>
           <button
             type="button"
@@ -555,7 +556,7 @@ const AdminDepenses = () => {
                 <td className="px-3 py-2">{e.nom}</td>
                 <td className="px-3 py-2 text-muted-foreground">{e.produits || "—"}</td>
                 <td className="px-3 py-2">{e.prix.toFixed(2)}</td>
-                <td className="px-3 py-2 text-muted-foreground capitalize">{e.mode_paiement}</td>
+                <td className="px-3 py-2 text-muted-foreground capitalize">{e.mode_paiement ?? "Non renseigné"}</td>
                 <td className="px-3 py-2 text-muted-foreground">{formatDateFr(e.date)}</td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   <button
