@@ -57,6 +57,8 @@ const AdminDepenses = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [cashMovements, setCashMovements] = useState<CashMovement[]>([]);
+  const [autoCashRevenue, setAutoCashRevenue] = useState(0);
+  const [autoBancaireRevenue, setAutoBancaireRevenue] = useState(0);
   const [showAddMoney, setShowAddMoney] = useState(false);
   const [addMoneyForm, setAddMoneyForm] = useState({
     type: "cash" as "cash" | "bancaire",
@@ -98,28 +100,63 @@ const AdminDepenses = () => {
     setCashMovements((data as CashMovement[]) ?? []);
   };
 
+  // Commandes livrées en main propre (hors Sendit) = payées cash.
+  // Commandes livrées via Sendit = COD reversé sur le compte bancaire.
+  // On ne compte que les commandes réellement livrées (shipping_status
+  // DELIVERED), pas juste confirmées — l'argent n'est encaissé qu'à la
+  // livraison.
+  const loadDeliveredOrdersRevenue = async () => {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("total, shipping_provider, shipping_status")
+      .eq("shipping_status", "DELIVERED");
+
+    if (error) {
+      setFetchError(error.message);
+      return;
+    }
+
+    let cashSum = 0;
+    let bancaireSum = 0;
+
+    for (const o of data ?? []) {
+      const amount = Number(o.total) || 0;
+      if (o.shipping_provider === "sendit") {
+        bancaireSum += amount;
+      } else {
+        cashSum += amount;
+      }
+    }
+
+    setAutoCashRevenue(cashSum);
+    setAutoBancaireRevenue(bancaireSum);
+  };
+
   useEffect(() => {
     if (!loading && user && isAdmin) {
       loadExpenses();
       loadCashMovements();
+      loadDeliveredOrdersRevenue();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user, isAdmin]);
 
   const cashBalance = useMemo(
     () =>
+      autoCashRevenue +
       cashMovements
         .filter((m) => m.type === "cash")
         .reduce((s, m) => s + (Number(m.montant) || 0), 0),
-    [cashMovements]
+    [cashMovements, autoCashRevenue]
   );
 
   const bancaireBalance = useMemo(
     () =>
+      autoBancaireRevenue +
       cashMovements
         .filter((m) => m.type === "bancaire")
         .reduce((s, m) => s + (Number(m.montant) || 0), 0),
-    [cashMovements]
+    [cashMovements, autoBancaireRevenue]
   );
 
   const addMoney = async () => {
@@ -337,6 +374,11 @@ const AdminDepenses = () => {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div className="text-[9px] text-muted-foreground mt-2">
+          Calcul auto : commandes livrées en main propre → cash, commandes livrées via Sendit → bancaire.
+          Les ajustements manuels ci-dessous s'ajoutent à ce calcul.
         </div>
 
         {showAddMoney && (
