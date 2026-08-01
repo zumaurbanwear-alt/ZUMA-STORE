@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, OrderItem, LedgerRow } from "@/types/order";
 import { StatusDot } from "./orders/StatusDot";
@@ -1047,7 +1048,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
       <section className="mb-12">
 
-        <h2 className="font-display text-base tracking-[0.2em] mb-4">
+        <h2 className="font-display text-lg tracking-[0.25em] mb-4">
           DASHBOARD
         </h2>
 
@@ -1118,7 +1119,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   <div className="flex items-center justify-between mb-6">
 
-    <h2 className="font-display text-base tracking-[0.2em]">
+    <h2 className="font-display text-lg tracking-[0.25em]">
       RECENT ORDERS ({displayedOrders.length})
     </h2>
 
@@ -1448,7 +1449,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
       <section className="mb-12">
 
-        <h2 className="font-display text-base tracking-[0.2em] mb-3">
+        <h2 className="font-display text-lg tracking-[0.25em] mb-3">
           ALL-IN-ONE LEDGER ({unified.length})
         </h2>
 
@@ -1510,7 +1511,11 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
                             onClick={() => toggleLedgerOrder(group.order_id)}
                             className="text-muted-foreground hover:text-primary-hi"
                           >
-                            {isExpanded ? "▾" : "▸"}
+                            {isExpanded ? (
+                              <ChevronDown className="w-3 h-3 shrink-0" />
+                            ) : (
+                              <ChevronRight className="w-3 h-3 shrink-0" />
+                            )}
                           </button>
                         )}
                       </td>
