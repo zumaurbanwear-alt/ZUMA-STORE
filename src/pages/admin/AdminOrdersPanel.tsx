@@ -74,9 +74,6 @@ export const AdminOrdersPanel = () => {
     });
   };
 
-  // Regroupe les lignes du ledger (1 ligne par produit) en 1 groupe par
-  // commande, pour n'afficher qu'une seule ligne dans le tableau et
-  // dérouler le détail par produit à la demande.
   const ledgerOrders = useMemo(() => {
     const groups: { order_id: string; items: LedgerRow[]; orderTotal: number }[] = [];
     const byOrderId = new Map<string, number>();
@@ -547,7 +544,6 @@ const handleExportCSV = () => {
     .map((row) => row.map(escapeCsvField).join(","))
     .join("\n");
 
-  // BOM pour qu'Excel reconnaisse l'UTF-8 (accents) correctement.
   const blob = new Blob(["\uFEFF" + csv], {
     type: "text/csv;charset=utf-8;",
   });
@@ -684,7 +680,6 @@ const handleCreateReturn = async (order: AdminOrder) => {
     "Raison du retour (optionnel) :"
   );
 
-  // window.prompt renvoie null si l'admin annule — on n'envoie rien.
   if (reason === null) return;
 
   setCreatingReturnFor(order.id);
@@ -729,8 +724,6 @@ const handleCreateReturn = async (order: AdminOrder) => {
     await loadOrders();
     await loadStats();
 
-    // Le drawer affiche selectedOrder — on le referme pour forcer un
-    // réaffichage propre avec les données à jour au prochain clic.
     closeDrawer();
 
   } catch (err) {
