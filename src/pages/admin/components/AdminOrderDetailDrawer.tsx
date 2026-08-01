@@ -54,10 +54,6 @@ export const AdminOrderDetailDrawer = ({
 }: AdminOrderDetailDrawerProps) => {
   if (!selectedOrder) return null;
 
-  // Champs sans lesquels Sendit refuse (ou mal traite) la création du
-  // colis. Les commandes du checkout public les ont toujours (formulaire
-  // obligatoire + sélecteur de district), mais une commande manuelle peut
-  // très bien ne pas avoir de district Sendit renseigné.
   const missingSenditFields: string[] = [];
   if (!selectedOrder.customer_name?.trim()) missingSenditFields.push("nom");
   if (!selectedOrder.customer_phone?.trim()) missingSenditFields.push("téléphone");

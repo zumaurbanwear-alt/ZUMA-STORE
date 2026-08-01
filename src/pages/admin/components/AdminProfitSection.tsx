@@ -3,11 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Period = "mois" | "annee";
 
-// CA - dépenses, sur le mois ou l'année en cours (bascule via le petit
-// sélecteur). Séparé du reste du dashboard car les stats du dashboard ne
-// regardent que les 30 derniers jours (limite volontaire côté requête) —
-// le calcul "année" a besoin de sa propre requête sur une période plus
-// large, donc son propre state/fetch plutôt que de réutiliser `stats`.
 export const AdminProfitSection = () => {
   const [period, setPeriod] = useState<Period>("mois");
   const [revenue, setRevenue] = useState(0);
