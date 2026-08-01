@@ -16,6 +16,7 @@ type Expense = {
   produits: string | null;
   prix: number;
   date: string; // ISO yyyy-mm-dd
+  mode_paiement: "cash" | "bancaire";
 };
 
 type CashMovement = {
@@ -53,7 +54,7 @@ const AdminDepenses = () => {
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState({ nom: "", produits: "", prix: "", date: todayIso() });
+  const [form, setForm] = useState({ nom: "", produits: "", prix: "", date: todayIso(), mode_paiement: "cash" as "cash" | "bancaire" });
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [cashMovements, setCashMovements] = useState<CashMovement[]>([]);
@@ -76,7 +77,7 @@ const AdminDepenses = () => {
     setFetchError(null);
     const { data, error } = await supabase
       .from("depenses")
-      .select("id, nom, produits, prix, date")
+      .select("id, nom, produits, prix, date, mode_paiement")
       .order("date", { ascending: false });
 
     if (error) {
@@ -108,7 +109,7 @@ const AdminDepenses = () => {
   const loadDeliveredOrdersRevenue = async () => {
     const { data, error } = await supabase
       .from("orders")
-      .select("total, shipping_provider, shipping_status")
+      .select("total, subtotal, shipping_provider, shipping_status")
       .eq("shipping_status", "DELIVERED");
 
     if (error) {
@@ -120,11 +121,13 @@ const AdminDepenses = () => {
     let bancaireSum = 0;
 
     for (const o of data ?? []) {
-      const amount = Number(o.total) || 0;
       if (o.shipping_provider === "sendit") {
-        bancaireSum += amount;
+        // Sendit retient les frais de livraison sur sa facture — seul le
+        // prix du produit (subtotal) arrive vraiment sur le compte.
+        bancaireSum += Number(o.subtotal) || 0;
       } else {
-        cashSum += amount;
+        // Main propre : le client paie tout en cash, livraison incluse.
+        cashSum += Number(o.total) || 0;
       }
     }
 
@@ -146,8 +149,11 @@ const AdminDepenses = () => {
       autoCashRevenue +
       cashMovements
         .filter((m) => m.type === "cash")
-        .reduce((s, m) => s + (Number(m.montant) || 0), 0),
-    [cashMovements, autoCashRevenue]
+        .reduce((s, m) => s + (Number(m.montant) || 0), 0) -
+      expenses
+        .filter((e) => e.mode_paiement === "cash")
+        .reduce((s, e) => s + (Number(e.prix) || 0), 0),
+    [cashMovements, autoCashRevenue, expenses]
   );
 
   const bancaireBalance = useMemo(
@@ -155,8 +161,11 @@ const AdminDepenses = () => {
       autoBancaireRevenue +
       cashMovements
         .filter((m) => m.type === "bancaire")
-        .reduce((s, m) => s + (Number(m.montant) || 0), 0),
-    [cashMovements, autoBancaireRevenue]
+        .reduce((s, m) => s + (Number(m.montant) || 0), 0) -
+      expenses
+        .filter((e) => e.mode_paiement === "bancaire")
+        .reduce((s, e) => s + (Number(e.prix) || 0), 0),
+    [cashMovements, autoBancaireRevenue, expenses]
   );
 
   const addMoney = async () => {
@@ -212,9 +221,10 @@ const AdminDepenses = () => {
           produits: form.produits.trim() || null,
           prix: prixNum,
           date: form.date,
+          mode_paiement: form.mode_paiement,
         })
         .eq("id", editingId)
-        .select("id, nom, produits, prix, date")
+        .select("id, nom, produits, prix, date, mode_paiement")
         .single();
       setSaving(false);
 
@@ -226,7 +236,7 @@ const AdminDepenses = () => {
       setExpenses((prev) => prev.map((e) => (e.id === editingId ? (data as Expense) : e)));
       setSelectedMonth(monthKey(form.date));
       setEditingId(null);
-      setForm({ nom: "", produits: "", prix: "", date: form.date });
+      setForm({ nom: "", produits: "", prix: "", date: form.date, mode_paiement: "cash" });
       return;
     }
 
@@ -237,8 +247,9 @@ const AdminDepenses = () => {
         produits: form.produits.trim() || null,
         prix: prixNum,
         date: form.date,
+        mode_paiement: form.mode_paiement,
       })
-      .select("id, nom, produits, prix, date")
+      .select("id, nom, produits, prix, date, mode_paiement")
       .single();
     setSaving(false);
 
@@ -249,17 +260,17 @@ const AdminDepenses = () => {
 
     setExpenses((prev) => [data as Expense, ...prev]);
     setSelectedMonth(monthKey(form.date));
-    setForm({ nom: "", produits: "", prix: "", date: form.date });
+    setForm({ nom: "", produits: "", prix: "", date: form.date, mode_paiement: "cash" });
   };
 
   const startEdit = (e: Expense) => {
     setEditingId(e.id);
-    setForm({ nom: e.nom, produits: e.produits ?? "", prix: String(e.prix), date: e.date });
+    setForm({ nom: e.nom, produits: e.produits ?? "", prix: String(e.prix), date: e.date, mode_paiement: e.mode_paiement });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setForm({ nom: "", produits: "", prix: "", date: todayIso() });
+    setForm({ nom: "", produits: "", prix: "", date: todayIso(), mode_paiement: "cash" });
   };
 
   const deleteExpense = async (id: string) => {
@@ -288,9 +299,9 @@ const AdminDepenses = () => {
 
       autoTable(doc, {
         startY: 22,
-        head: [["Nom", "Produits", "Prix (MAD)", "Date"]],
-        body: filtered.map((e) => [e.nom, e.produits || "—", e.prix.toFixed(2), formatDateFr(e.date)]),
-        foot: [["", "", "Total", `${total.toFixed(2)} MAD`]],
+        head: [["Nom", "Produits", "Prix (MAD)", "Mode", "Date"]],
+        body: filtered.map((e) => [e.nom, e.produits || "—", e.prix.toFixed(2), e.mode_paiement, formatDateFr(e.date)]),
+        foot: [["", "", "Total", "", `${total.toFixed(2)} MAD`]],
         styles: { fontSize: 9, cellPadding: 3 },
         headStyles: { fillColor: [20, 20, 20] },
         footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: "bold" },
@@ -377,8 +388,9 @@ const AdminDepenses = () => {
         </div>
 
         <div className="text-[9px] text-muted-foreground mt-2">
-          Calcul auto : commandes livrées en main propre → cash, commandes livrées via Sendit → bancaire.
-          Les ajustements manuels ci-dessous s'ajoutent à ce calcul.
+          Calcul auto : commandes livrées en main propre (produit + livraison) → cash,
+          commandes livrées via Sendit (produit seul, hors frais Sendit) → bancaire,
+          moins les dépenses selon leur mode de paiement. Les ajustements manuels s'ajoutent aussi.
         </div>
 
         {showAddMoney && (
@@ -452,6 +464,19 @@ const AdminDepenses = () => {
             onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
             className="bg-transparent border border-border px-3 py-2 text-xs"
           />
+          <select
+            value={form.mode_paiement}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                mode_paiement: e.target.value as "cash" | "bancaire",
+              }))
+            }
+            className="bg-transparent border border-border px-3 py-2 text-xs"
+          >
+            <option value="cash">Cash</option>
+            <option value="bancaire">Bancaire</option>
+          </select>
           <button
             type="button"
             onClick={saveExpense}
@@ -507,6 +532,7 @@ const AdminDepenses = () => {
               <th className="px-3 py-2 text-left">Nom</th>
               <th className="px-3 py-2 text-left">Produits</th>
               <th className="px-3 py-2 text-left">Prix (MAD)</th>
+              <th className="px-3 py-2 text-left">Mode</th>
               <th className="px-3 py-2 text-left">Date</th>
               <th className="px-3 py-2"></th>
             </tr>
@@ -514,12 +540,12 @@ const AdminDepenses = () => {
           <tbody className="divide-y divide-border">
             {fetching && (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-muted-foreground">Chargement...</td>
+                <td colSpan={6} className="p-6 text-center text-muted-foreground">Chargement...</td>
               </tr>
             )}
             {!fetching && filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                <td colSpan={6} className="p-6 text-center text-muted-foreground">
                   Aucune dépense pour ce mois.
                 </td>
               </tr>
@@ -529,6 +555,7 @@ const AdminDepenses = () => {
                 <td className="px-3 py-2">{e.nom}</td>
                 <td className="px-3 py-2 text-muted-foreground">{e.produits || "—"}</td>
                 <td className="px-3 py-2">{e.prix.toFixed(2)}</td>
+                <td className="px-3 py-2 text-muted-foreground capitalize">{e.mode_paiement}</td>
                 <td className="px-3 py-2 text-muted-foreground">{formatDateFr(e.date)}</td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   <button
@@ -554,7 +581,7 @@ const AdminDepenses = () => {
               <tr className="border-t border-border bg-muted/20 font-medium">
                 <td className="px-3 py-2" colSpan={2}>Total</td>
                 <td className="px-3 py-2 text-primary-hi">{total.toFixed(2)} MAD</td>
-                <td className="px-3 py-2" colSpan={2}></td>
+                <td className="px-3 py-2" colSpan={3}></td>
               </tr>
             </tfoot>
           )}
