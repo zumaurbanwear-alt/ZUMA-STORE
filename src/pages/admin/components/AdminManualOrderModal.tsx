@@ -40,29 +40,6 @@ type Props = {
   onCreated: () => void;
 };
 
-// Crée une commande admin en dehors du checkout public — soit une
-// "livraison manuelle" (amis/famille, remise en main propre, pas de
-// colis Sendit), soit une commande normale à qui on crée directement le
-// colis Sendit (ex: commande prise par téléphone). Elle rejoint la même
-// table `orders` que les commandes du checkout, donc elle prend un
-// display_id (#0000N) dans la même séquence — rien à faire de spécial
-// pour ça, c'est juste la table qui s'en charge.
-//
-// Écriture en 2 temps pour rester dans les clous des policies RLS
-// existantes (qui n'ont jamais été pensées pour une insertion admin
-// directe) :
-//  1) INSERT avec status "pending" / cash_on_delivery — satisfait la
-//     policy "Visitors create valid orders" (ouverte à tous, mêmes
-//     règles que le checkout public).
-//  2) UPDATE juste après vers status "confirmed" (+ shipping_provider
-//     "manual" pour le colis manuel) — satisfait "admin_update_orders"
-//     (réservée aux admins).
-//
-// Les articles doivent référencer un vrai produit du catalogue : un
-// trigger anti-fraude côté DB (mis en place pour le checkout) rejette
-// tout order_item dont le product_id ou le prix ne correspond pas
-// exactement à la table `products`. D'où le select ci-dessous plutôt
-// qu'un champ texte libre — le prix est verrouillé sur celui du produit.
 export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -122,9 +99,6 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
 
   const priceOf = (productId: string) => products.find((p) => p.id === productId)?.price ?? 0;
 
-  // Prix réellement facturé pour la ligne : le prix catalogue normalement,
-  // ou le prix promo saisi à la main si la coche PROMOTION est active et
-  // qu'un prix a été renseigné pour cette ligne.
   const effectivePriceOf = (it: ManualItem) =>
     promotion && it.customPrice !== null ? it.customPrice : priceOf(it.product_id);
 
@@ -156,10 +130,6 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
       const emailValue = trimmedEmail.length >= 5 ? trimmedEmail : "livraison-manuelle@zuma.local";
       const orderId = crypto.randomUUID();
 
-      // 1) Insert respectant la policy publique (mêmes contraintes que le checkout).
-      //    Pas de .select() ici — id généré côté client (comme dans le checkout),
-      //    ce qui évite la relecture immédiate de la ligne (soumise à une policy
-      //    différente) et les faux-positifs RLS qui en découlaient.
       const { error: orderError } = await supabase.from("orders").insert({
         id: orderId,
         customer_name: name.trim(),
@@ -181,9 +151,6 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
         return;
       }
 
-      // unit_price est fourni pour respecter la contrainte NOT NULL, mais le
-      // trigger set_order_item_unit_price() l'écrase de toute façon avec le
-      // prix réel du produit — donc toujours cohérent, jamais falsifiable.
       const { error: itemsError } = await supabase.from("order_items").insert(
         items.map((it) => ({
           id: it.id,
@@ -202,9 +169,6 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
         return;
       }
 
-      // Prix promo : le trigger anti-fraude vient de forcer unit_price au
-      // prix catalogue à l'insertion — on corrige juste après via l'action
-      // admin dédiée (RLS + endpoint réservés aux admins).
       if (promotion) {
         const overrides = items
           .filter((it) => it.customPrice !== null)
@@ -237,10 +201,6 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
         }
       }
 
-      // 2) Bascule immédiate en "confirmed" — réservé aux admins.
-      //    "manual" pose le provider "manual" (pas de colis Sendit).
-      //    "sendit" laisse shipping_provider vide, comme une commande
-      //    normale du checkout, avant de déclencher la création du colis.
       const { error: updateError } = await supabase
         .from("orders")
         .update({
@@ -330,12 +290,6 @@ export const AdminManualOrderModal = ({ onClose, onCreated }: Props) => {
           >
             Fermer
           </button>
-        </div>
-
-        <div className="text-[9px] text-muted-foreground mb-4 leading-relaxed">
-          Pour une commande prise en dehors du checkout (téléphone, en personne...). Elle
-          apparaîtra dans la même liste, avec un numéro de commande à la suite des autres. Choisis
-          en bas si c'est toi qui livres ("colis manuel") ou si Sendit doit livrer ("colis Sendit").
         </div>
 
         <div className="border border-border p-3 mb-3 space-y-2">
