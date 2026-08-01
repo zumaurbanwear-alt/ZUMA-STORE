@@ -4,12 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { signOutAdmin } from "@/lib/supabaseAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-// ---------------------------------------------------------------------------
-// Backed by the "depenses" table in Supabase (RLS: admin role only — see
-// migration 20260720000000_create_depenses_table.sql). Personal bookkeeping,
-// but it now syncs across devices and survives a cleared browser cache.
-// ---------------------------------------------------------------------------
-
 type Expense = {
   id: string;
   nom: string;
