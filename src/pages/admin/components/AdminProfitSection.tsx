@@ -29,13 +29,17 @@ export const AdminProfitSection = () => {
       const startIso = start.toISOString();
       const startDateStr = start.toISOString().slice(0, 10);
 
-      const [ordersRes, depensesRes] = await Promise.all([
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+
+      const [ordersRes, depensesRes, ajustementsRes] = await Promise.all([
         supabase
           .from("orders")
           .select("total, created_at, refunded, shipping_status, shipping_status_return, return_code, pickup_code, status, shipping_provider, shipping_fee")
           .gte("created_at", startIso)
           .limit(10000),
         supabase.from("depenses").select("prix, date").gte("date", startDateStr).limit(10000),
+        supabase.from("ca_ajustements").select("year, month, montant").eq("year", currentYear),
       ]);
 
       if (cancelled) return;
@@ -45,6 +49,9 @@ export const AdminProfitSection = () => {
       }
       if (depensesRes.error) {
         console.error(depensesRes.error);
+      }
+      if (ajustementsRes.error) {
+        console.error(ajustementsRes.error);
       }
 
       // Le CA du bénéfice brut ne compte que les commandes réellement
@@ -65,6 +72,17 @@ export const AdminProfitSection = () => {
         0
       );
 
+      // Ajustements manuels : un ajustement mensuel ne s'applique qu'à la
+      // vue "Mois" du mois concerné ; un ajustement annuel (month = null)
+      // ne s'applique qu'à la vue "Année".
+      const totalAjustements = (ajustementsRes.data ?? [])
+        .filter((a) =>
+          period === "annee" ? a.month === null : a.month === currentMonth
+        )
+        .reduce((s, a) => s + (Number(a.montant) || 0), 0);
+
+      const adjustedRevenue = totalRevenue + totalAjustements;
+
       const totalSenditFees = validOrders
         .filter((o) => o.shipping_provider === "sendit")
         .reduce((s, o) => s + (Number(o.shipping_fee) || 0), 0);
@@ -73,7 +91,7 @@ export const AdminProfitSection = () => {
         (depensesRes.data ?? []).reduce((s, d) => s + (Number(d.prix) || 0), 0) +
         totalSenditFees;
 
-      setRevenue(totalRevenue);
+      setRevenue(adjustedRevenue);
       setExpenses(totalExpenses);
       setLoading(false);
     };
