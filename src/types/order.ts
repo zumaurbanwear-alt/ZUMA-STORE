@@ -29,9 +29,6 @@ export type Order = {
   order_items: OrderItem[];
 };
 
-// admin_orders_full is a hand-written Supabase view (see recreate_admin_orders_full.sql),
-// so it isn't part of the auto-generated Database types — this row shape is the
-// single source of truth for what that view returns.
 export type LedgerRow = {
   order_id: string;
   created_at: string;
