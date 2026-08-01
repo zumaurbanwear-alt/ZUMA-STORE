@@ -1,17 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Fusion de create-sendit-return.js + request-sendit-pickup.js pour
-// rester sous la limite de 12 fonctions serverless du plan Vercel Hobby.
-// POST /api/sendit-return-pickup avec { action: "return", orderId, reason }
-// ou { action: "pickup" }.
 
-// District de destination pour les retours — même valeur que
-// pickup_district_id ailleurs dans le code (538). À vérifier /
-// ajuster si ce n'est pas le bon entrepôt pour les retours.
 const RETURN_DISTRICT_ID = 538;
 
-// HOME = Sendit livre le colis retourné à ton adresse automatiquement.
-// WAREHOUSE = tu dois aller le chercher à l'entrepôt Sendit toi-même.
 const RETURN_TYPE = "HOME";
 
 function parseReturnResponse(json) {
@@ -78,9 +69,6 @@ async function handleReturn(req, res, supabase) {
     });
   }
 
-  // Pour un retour HOME, le district de destination est celui du
-  // CLIENT (là où le livreur ramène le colis) — pas l'entrepôt.
-  // Pour WAREHOUSE, c'est bien l'entrepôt Sendit (538).
   const returnDistrictId =
     RETURN_TYPE === "HOME"
       ? order.sendit_district_id
@@ -92,7 +80,6 @@ async function handleReturn(req, res, supabase) {
     });
   }
 
-  // Idempotence : une demande de retour existe déjà pour ce colis.
   if (order.return_code) {
     return res.status(200).json({
       success: true,

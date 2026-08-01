@@ -1,9 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Fusion de sendit-invoices.js (liste) + sendit-invoice-detail.js (détail)
-// pour rester sous la limite de 12 fonctions serverless du plan Vercel
-// Hobby. Comportement inchangé : GET /api/sendit-invoices → liste,
-// GET /api/sendit-invoices?code=XXX → détail d'une facture.
 export default async function handler(req, res) {
 
   if (req.method !== "GET") {
@@ -93,7 +89,6 @@ export default async function handler(req, res) {
 
     const senditToken = loginJson.data.token;
 
-    // Détail d'une facture précise
     if (code) {
       const detailResponse = await fetch(
         `${process.env.SENDIT_API_URL}/invoices/${encodeURIComponent(code)}`,
@@ -124,7 +119,6 @@ export default async function handler(req, res) {
       return res.status(200).json(detailJson);
     }
 
-    // Liste des factures
     const params = new URLSearchParams();
 
     if (page) params.set("page", String(page));

@@ -11,10 +11,6 @@ function parseDeliveryStatus(json) {
 }
 
 function parsePickupPayload(json) {
-  // GET /pickups/{code} IS wrapped in { success, message, data } — confirmed
-  // via debug logging on 2026-07-30. The earlier comment claiming root-level
-  // fields was wrong and silently broke every sync (status/deliveries were
-  // always undefined/empty).
   const data = json.data ?? json;
 
   return {
@@ -145,8 +141,6 @@ export default async function handler(req, res) {
     let updatedCount = 0;
     const errors = [];
 
-    // Orders already attached to a pickup: batch-fetch via GET /pickups/{code},
-    // one call per unique pickup_code covers every delivery inside it.
     const withPickup = orders.filter((o) => o.pickup_code);
     const withoutPickup = orders.filter((o) => !o.pickup_code);
 
@@ -218,12 +212,6 @@ export default async function handler(req, res) {
 
         let newTrackingNumber = null;
 
-        // Le ramasseur donne parfois un nouveau tracking à Sendit sans que
-        // ça remonte ici — l'ancien code disparaît du pickup. On retrouve
-        // le colis en comparant le téléphone du destinataire (le seul champ
-        // fiable à 100% — nom/adresse/montant peuvent se ressembler entre
-        // commandes différentes) à celui des colis du pickup qui ne
-        // correspondent à aucune commande déjà connue.
         if (!deliveryInPickup && order.customer_phone) {
           const knownTrackings = new Set(
             orders.map((o) => o.tracking_number).filter(Boolean)
@@ -322,7 +310,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // Orders with no pickup yet: one GET /deliveries/{code} call each.
     for (const order of withoutPickup) {
 
       try {
@@ -415,10 +402,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // --- Retours : les commandes avec un retour en cours ne sont PAS
-    // couvertes par la requête `orders` plus haut (leur shipping_status
-    // est souvent REJECTED/CANCELED, exclu du filtre principal). On les
-    // resynchronise séparément via GET /returns/{code}.
     const {
       data: returnOrders,
       error: returnOrdersError,
