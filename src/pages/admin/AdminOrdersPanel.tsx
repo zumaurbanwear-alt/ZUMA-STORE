@@ -63,6 +63,41 @@ export const AdminOrdersPanel = () => {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [creatingReturnFor, setCreatingReturnFor] = useState<string | null>(null);
   const [expandedPickups, setExpandedPickups] = useState<Set<string>>(new Set());
+  const [expandedLedgerOrders, setExpandedLedgerOrders] = useState<Set<string>>(new Set());
+
+  const toggleLedgerOrder = (orderId: string) => {
+    setExpandedLedgerOrders((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
+
+  // Regroupe les lignes du ledger (1 ligne par produit) en 1 groupe par
+  // commande, pour n'afficher qu'une seule ligne dans le tableau et
+  // dérouler le détail par produit à la demande.
+  const ledgerOrders = useMemo(() => {
+    const groups: { order_id: string; items: LedgerRow[]; orderTotal: number }[] = [];
+    const byOrderId = new Map<string, number>();
+
+    unified.forEach((r) => {
+      const existingIndex = byOrderId.get(r.order_id);
+      if (existingIndex === undefined) {
+        byOrderId.set(r.order_id, groups.length);
+        groups.push({
+          order_id: r.order_id,
+          items: [r],
+          orderTotal: r.line_total + (Number(r.shipping_fee) || 0),
+        });
+      } else {
+        groups[existingIndex].items.push(r);
+        groups[existingIndex].orderTotal += r.line_total;
+      }
+    });
+
+    return groups;
+  }, [unified]);
   const [invoices, setInvoices] = useState<AdminInvoice[]>([]);
   const [invoicesPage, setInvoicesPage] = useState(1);
   const [invoicesLastPage, setInvoicesLastPage] = useState(1);
@@ -1433,6 +1468,7 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
               <tr>
                 {[
+                  "",
                   "Order",
                   "Date",
                   "Status",
@@ -1462,74 +1498,121 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
             <tbody className="divide-y divide-border">
 
-              {unified.map((r: LedgerRow, i) => (
+              {ledgerOrders.map((group) => {
 
-                <tr
-                  key={i}
-                  className="hover:bg-muted/20"
-                >
+                const first = group.items[0];
+                const isMulti = group.items.length > 1;
+                const isExpanded = expandedLedgerOrders.has(group.order_id);
+                const totalQty = group.items.reduce((s, it) => s + it.quantity, 0);
 
-                  <td className="px-2 py-1.5">
-                    #{r.order_id}
-                  </td>
+                return (
+                  <>
+                    <tr
+                      key={group.order_id}
+                      className="hover:bg-muted/20"
+                    >
+                      <td className="px-2 py-1.5">
+                        {isMulti && (
+                          <button
+                            onClick={() => toggleLedgerOrder(group.order_id)}
+                            className="text-muted-foreground hover:text-primary-hi"
+                          >
+                            {isExpanded ? "▾" : "▸"}
+                          </button>
+                        )}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {new Date(r.created_at).toLocaleDateString()}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        #{group.order_id}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {getLedgerStatusLabel(r)}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {new Date(first.created_at).toLocaleDateString()}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.product_name}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {getLedgerStatusLabel(first)}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.size ?? "—"}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {isMulti ? `${group.items.length} produits` : first.product_name}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.color ?? "—"}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {isMulti ? "—" : first.size ?? "—"}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.quantity}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {isMulti ? "—" : first.color ?? "—"}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.unit_price}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {totalQty}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {i > 0 && unified[i - 1].order_id === r.order_id
-                      ? r.line_total
-                      : r.line_total + (Number(r.shipping_fee) || 0)}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {isMulti ? "—" : first.unit_price}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.customer_name}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {group.orderTotal}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.customer_email}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {first.customer_name}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.customer_phone}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {first.customer_email}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.customer_city}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {first.customer_phone}
+                      </td>
 
-                  <td className="px-2 py-1.5">
-                    {r.customer_address}
-                  </td>
+                      <td className="px-2 py-1.5">
+                        {first.customer_city}
+                      </td>
 
-                </tr>
+                      <td className="px-2 py-1.5">
+                        {first.customer_address}
+                      </td>
 
-              ))}
+                    </tr>
+
+                    {isMulti && isExpanded && (
+                      <tr key={`${group.order_id}-detail`}>
+                        <td colSpan={15} className="bg-muted/10 px-4 py-2">
+                          <table className="w-full text-[9px]">
+                            <thead className="text-muted-foreground uppercase">
+                              <tr>
+                                <th className="text-left py-1 pr-4">Produit</th>
+                                <th className="text-left py-1 pr-4">Taille</th>
+                                <th className="text-left py-1 pr-4">Couleur</th>
+                                <th className="text-left py-1 pr-4">Qty</th>
+                                <th className="text-left py-1 pr-4">Prix</th>
+                                <th className="text-left py-1">Sous-total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.items.map((it, idx) => (
+                                <tr key={idx}>
+                                  <td className="py-1 pr-4">{it.product_name}</td>
+                                  <td className="py-1 pr-4">{it.size ?? "—"}</td>
+                                  <td className="py-1 pr-4">{it.color ?? "—"}</td>
+                                  <td className="py-1 pr-4">{it.quantity}</td>
+                                  <td className="py-1 pr-4">{it.unit_price}</td>
+                                  <td className="py-1">{it.line_total}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
 
             </tbody>
 
