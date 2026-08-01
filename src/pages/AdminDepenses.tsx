@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { signOutAdmin } from "@/lib/supabaseAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -334,8 +335,9 @@ const AdminDepenses = () => {
             Suivi personnel 
           </p>
         </div>
-        <button onClick={() => nav("/zm-portal-x92")} className="px-4 py-2 border border-border text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi">
-          ← Retour admin
+        <button onClick={() => nav("/zm-portal-x92")} className="flex items-center gap-1.5 px-4 py-2 border border-border text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-primary-hi">
+          <ChevronLeft className="w-3 h-3 shrink-0" />
+          Retour admin
         </button>
       </header>
 
