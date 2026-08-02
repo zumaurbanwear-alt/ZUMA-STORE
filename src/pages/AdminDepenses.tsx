@@ -384,9 +384,9 @@ const AdminDepenses = () => {
         </div>
 
         <div className="text-[9px] text-muted-foreground mt-2">
-          Calcul auto : commandes livrées en main propre (produit + livraison) → cash,
-          commandes livrées via Sendit (produit seul, hors frais Sendit) → bancaire,
-          moins les dépenses selon leur mode de paiement. Les ajustements manuels s'ajoutent aussi.
+          Calcul : commandes livrées en main propre (produit + livraison) → cash,
+          commandes livrées via Sendit (hors frais Sendit) → bancaire,
+          moins les dépenses selon leur mode de paiement.
         </div>
 
         {showAddMoney && (
