@@ -1,5 +1,6 @@
 import type { DbProduct } from "@/hooks/useProducts";
 import { AdminProductVariants } from "./components/AdminProductVariants";
+import { AdminProductImages } from "./components/AdminProductImages";
 
 export const ProductEditModal = ({
   editing, setEditing, onSave,
@@ -36,9 +37,15 @@ export const ProductEditModal = ({
         </label>
 
         {editing.id && <AdminProductVariants productId={editing.id} />}
+        {editing.id && (
+          <AdminProductImages
+            productId={editing.id}
+            productSlug={editing.slug ?? ""}
+          />
+        )}
         {!editing.id && (
           <div className="col-span-2 text-[10px] text-muted-foreground border border-border p-3">
-            Enregistre d'abord le produit pour pouvoir gérer son stock par couleur/taille.
+            Enregistre d'abord le produit pour pouvoir gérer son stock par couleur/taille et ses photos.
           </div>
         )}
       </div>
