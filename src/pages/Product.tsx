@@ -87,9 +87,13 @@ const Product = () => {
       const colorImgs = images.filter(img => img.color?.toUpperCase() === color);
       const front = colorImgs.find(img => img.side === 'front');
       const back = colorImgs.find(img => img.side === 'back');
+      const modelFront = colorImgs.find(img => img.side === 'model_front');
+      const modelBack = colorImgs.find(img => img.side === 'model_back');
       const result = [];
       if (front) result.push(front.url);
       if (back) result.push(back.url);
+      if (modelFront) result.push(modelFront.url);
+      if (modelBack) result.push(modelBack.url);
       if (result.length > 0) return result;
     }
     return product ? [resolveImage(product)] : [];
