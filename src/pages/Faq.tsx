@@ -2,9 +2,10 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { InfoPage, FaqItem } from "@/components/zuma/common/InfoPage";
 import { useLang } from "@/context/LanguageContext";
+import { useSiteContent } from "@/hooks/useSiteContent";
 import { INSTAGRAM_HANDLE, CONTACT_EMAIL } from "@/lib/contactInfo";
 
-const content = {
+const defaultContent = {
   EN: {
     title: "FAQ",
     intro: "Answers to the most common questions about ordering, shipping and returns.",
@@ -37,6 +38,7 @@ const content = {
 
 const Faq = () => {
   const { lang } = useLang();
+  const content = useSiteContent("faq", defaultContent);
   const c = content[lang];
   useEffect(() => { document.title = "ZÜMA — FAQ"; }, []);
   return (

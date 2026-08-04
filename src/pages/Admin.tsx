@@ -6,6 +6,7 @@ import { AdminProductsPanel } from "@/pages/admin/AdminProductsPanel";
 import { AdminOrdersPanel } from "@/pages/admin/AdminOrdersPanel";
 import { AdminAuditPanel } from "@/pages/admin/AdminAuditPanel";
 import { AdminExpensesSection } from "@/pages/admin/AdminExpensesSection";
+import { AdminContentPanel } from "@/pages/admin/AdminContentPanel";
 
 const Admin = () => {
   const nav = useNavigate();
@@ -44,6 +45,7 @@ const Admin = () => {
 
       <AdminProductsPanel />
       <AdminOrdersPanel />
+      <AdminContentPanel />
       <AdminAuditPanel />
       <AdminExpensesSection />
     </div>
