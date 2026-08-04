@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { InfoPage, InfoSection, InfoList } from "@/components/zuma/common/InfoPage";
 import { useLang } from "@/context/LanguageContext";
+import { useSiteContent } from "@/hooks/useSiteContent";
 import { CONTACT_EMAIL } from "@/lib/contactInfo";
 
-const content = {
+const defaultContent = {
   EN: {
     title: "Shipping Policy",
     intro: "Everything you need to know about how and when your order will arrive.",
@@ -34,6 +35,7 @@ const content = {
 
 const ShippingPolicy = () => {
   const { lang } = useLang();
+  const content = useSiteContent("shipping_policy", defaultContent);
   const c = content[lang];
   useEffect(() => { document.title = "ZÜMA — Shipping Policy"; }, []);
   return (

@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { InfoPage } from "@/components/zuma/common/InfoPage";
 import { useLang } from "@/context/LanguageContext";
+import { useSiteContent } from "@/hooks/useSiteContent";
 import { CONTACT_EMAIL, INSTAGRAM_HANDLE, INSTAGRAM_URL, WHATSAPP_LINK } from "@/lib/contactInfo";
 
-const copy = {
+const defaultCopy = {
   EN: {
     title: "Contact",
     intro: "Questions about an order, a product, or a partnership? Here's how to reach us.",
@@ -37,6 +38,7 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 
 const Contact = () => {
   const { lang } = useLang();
+  const copy = useSiteContent("contact", defaultCopy);
   const c = copy[lang];
   useEffect(() => { document.title = "ZÜMA — Contact"; }, []);
 

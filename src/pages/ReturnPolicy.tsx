@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { InfoPage, InfoSection, InfoList } from "@/components/zuma/common/InfoPage";
 import { useLang } from "@/context/LanguageContext";
+import { useSiteContent } from "@/hooks/useSiteContent";
 import { CONTACT_EMAIL } from "@/lib/contactInfo";
 
-const content = {
+const defaultContent = {
   EN: {
     title: "Return & Refund Policy",
     intro: "Our return process happens at the moment of delivery — here's how it works.",
@@ -68,6 +69,7 @@ const content = {
 
 const ReturnPolicy = () => {
   const { lang } = useLang();
+  const content = useSiteContent("return_policy", defaultContent);
   const c = content[lang];
   useEffect(() => { document.title = "ZÜMA — Return & Refund Policy"; }, []);
   return (

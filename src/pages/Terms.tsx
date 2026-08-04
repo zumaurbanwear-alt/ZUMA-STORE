@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { InfoPage, InfoSection } from "@/components/zuma/common/InfoPage";
 import { useLang } from "@/context/LanguageContext";
+import { useSiteContent } from "@/hooks/useSiteContent";
 import { CONTACT_EMAIL } from "@/lib/contactInfo";
 
-const content = {
+const defaultContent = {
   EN: {
     title: "Terms & Conditions",
     intro: "Please read these terms carefully before placing an order on ZÜMA.",
@@ -38,6 +39,7 @@ const content = {
 
 const Terms = () => {
   const { lang } = useLang();
+  const content = useSiteContent("terms", defaultContent);
   const c = content[lang];
   useEffect(() => { document.title = "ZÜMA — Terms & Conditions"; }, []);
   return (

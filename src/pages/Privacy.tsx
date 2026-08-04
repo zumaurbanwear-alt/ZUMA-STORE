@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { InfoPage, InfoSection, InfoList } from "@/components/zuma/common/InfoPage";
 import { useLang } from "@/context/LanguageContext";
+import { useSiteContent } from "@/hooks/useSiteContent";
 import { CONTACT_EMAIL } from "@/lib/contactInfo";
 
-const content = {
+const defaultContent = {
   EN: {
     title: "Privacy Policy",
     intro: "This page explains what information we collect, why, and how you can control it.",
@@ -70,6 +71,7 @@ const content = {
 
 const Privacy = () => {
   const { lang } = useLang();
+  const content = useSiteContent("privacy", defaultContent);
   const c = content[lang];
   useEffect(() => { document.title = "ZÜMA — Privacy Policy"; }, []);
   return (
