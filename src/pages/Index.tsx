@@ -11,10 +11,26 @@ import { OptimizedImage } from "@/components/zuma/common/OptimizedImage";
 import { SiteLayout } from "@/components/zuma/layout/SiteLayout";
 import { useProducts } from "@/hooks/useProducts";
 import { useLang } from "@/context/LanguageContext";
+import { useSiteContent } from "@/hooks/useSiteContent";
+
+const defaultHero = {
+  EN: {
+    tagline: "Garments documented, classified, ready for retrieval.",
+    drop001: "Documented Entries",
+    drop000: "Passive Memory",
+  },
+  FR: {
+    tagline: "Pièces documentées, classifiées, prêtes à être consultées.",
+    drop001: "Entrées Documentées",
+    drop000: "Mémoire passive",
+  },
+} as const;
 
 const Index = () => {
   const { products, loading } = useProducts();
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const hero = useSiteContent("homepage_hero", defaultHero);
+  const heroText = hero[lang];
 
   useEffect(() => {
     document.title = "ZÜMA — STORE";
@@ -59,7 +75,7 @@ const Index = () => {
             <div className="text-[8px] tracking-[0.25em] text-primary-hi mb-3 animate-fade-up" style={{ animationDelay: "0.4s" }}>001 / {t("store")}</div>
             <h1 className="font-display text-foreground animate-fade-up" style={{ animationDelay: "0.5s", fontSize: "clamp(11px,1.4vw,16px)", letterSpacing: "0.35em" }}>ZÜMA — {t("store")}</h1>
             <p className="max-w-[340px] text-[9px] leading-[1.95] tracking-[0.04em] text-muted-foreground mt-3 animate-fade-up" style={{ animationDelay: "0.6s" }}>
-              {t("storeTagline")}
+              {heroText.tagline}
             </p>
           </div>
           <a href="https://zumaurbanwear-alt.github.io/ZUMA-INDEX/" target="_blank" rel="noreferrer" className="self-start md:self-auto inline-block text-[7px] tracking-[0.22em] uppercase px-4 py-2 border border-primary text-primary-hi hover:bg-primary hover:text-primary-foreground transition-colors animate-fade-up" style={{ animationDelay: "0.7s" }}>
@@ -68,7 +84,7 @@ const Index = () => {
         </div>
       </header>
 
-      <TextureBand label={t("drop001")} right={t("arrowNew")} ghost="RECORD" />
+      <TextureBand label={heroText.drop001} right={t("arrowNew")} ghost="RECORD" />
 
       <section id="products" className="px-6 md:px-10 py-20 border-b border-border reveal">
         <div className="flex justify-between items-baseline mb-12 border-b border-border pb-3">
@@ -82,7 +98,7 @@ const Index = () => {
         <ProductGrid products={products} loading={loading} showFilters={false} limit={4} />
       </section>
 
-      <TextureBand label={t("drop000")} right={t("arrowArchive")} ghost="ARCHIVE" />
+      <TextureBand label={heroText.drop000} right={t("arrowArchive")} ghost="ARCHIVE" />
 
       <section id="archive" className="px-6 md:px-10 py-20 border-b border-border reveal">
   <div className="max-w-[1200px] mx-auto">
