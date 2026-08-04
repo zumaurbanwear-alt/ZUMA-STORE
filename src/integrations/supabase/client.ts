@@ -15,7 +15,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     // With persistSession/localStorage, a logged-in admin stays logged in
     // forever across restarts. We want the opposite: every fresh visit to
     // the admin area must re-authenticate.
-    persistSession: false,
+    persistSession: true,
     autoRefreshToken: true,
   }
 });
