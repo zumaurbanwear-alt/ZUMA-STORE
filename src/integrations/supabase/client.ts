@@ -10,12 +10,16 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    // Deliberately NOT persisted: this client is only used for admin login
-    // (see Auth.tsx / Admin.tsx — the storefront has no customer accounts).
-    // With persistSession/localStorage, a logged-in admin stays logged in
-    // forever across restarts. We want the opposite: every fresh visit to
-    // the admin area must re-authenticate.
-    persistSession: false,
+    // Session persisted to sessionStorage (not localStorage): the admin
+    // stays logged in within the current tab — surviving iOS/iPadOS Safari
+    // reloading the page in the background (e.g. after opening the native
+    // photo picker), which previously wiped the in-memory-only session and
+    // caused storage uploads to silently fall back to the anon key, tripping
+    // the "row-level security policy" error on /admin.
+    // Closing the tab/browser still clears it, so there's no indefinite
+    // login like localStorage would give.
+    persistSession: true,
+    storage: window.sessionStorage,
     autoRefreshToken: true,
   }
 });
