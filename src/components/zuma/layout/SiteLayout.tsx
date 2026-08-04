@@ -11,7 +11,7 @@ const STORAGE_KEY = "zuma_email_gate_passed";
 
 export const SiteLayout = ({ children }: { children: ReactNode }) => {
   const { cart, cartCount, cartOpen, setCartOpen, checkoutOpen, setCheckoutOpen, updateQty, clear } = useCart();
-  const [passed, setPassed] = useState(() => localStorage.getItem(STORAGE_KEY) === "1");
+  const [passed, setPassed] = useState(() => sessionStorage.getItem(STORAGE_KEY) === "1");
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
