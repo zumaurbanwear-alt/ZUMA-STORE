@@ -16,13 +16,17 @@ import { useSiteContent } from "@/hooks/useSiteContent";
 const defaultHero = {
   EN: {
     tagline: "Garments documented, classified, ready for retrieval.",
-    drop001: "Documented Entries",
-    drop000: "Passive Memory",
+    bands: [
+      { label: "Documented Entries", ghost: "RECORD" },
+      { label: "Passive Memory", ghost: "ARCHIVE" },
+    ],
   },
   FR: {
     tagline: "Pièces documentées, classifiées, prêtes à être consultées.",
-    drop001: "Entrées Documentées",
-    drop000: "Mémoire passive",
+    bands: [
+      { label: "Entrées Documentées", ghost: "RECORD" },
+      { label: "Mémoire passive", ghost: "ARCHIVE" },
+    ],
   },
 } as const;
 
@@ -84,7 +88,7 @@ const Index = () => {
         </div>
       </header>
 
-      <TextureBand label={heroText.drop001} right={t("arrowNew")} ghost="RECORD" />
+      <TextureBand label={heroText.bands[0]?.label ?? ""} right={t("arrowNew")} ghost={heroText.bands[0]?.ghost ?? "RECORD"} />
 
       <section id="products" className="px-6 md:px-10 py-20 border-b border-border reveal">
         <div className="flex justify-between items-baseline mb-12 border-b border-border pb-3">
@@ -98,7 +102,7 @@ const Index = () => {
         <ProductGrid products={products} loading={loading} showFilters={false} limit={4} />
       </section>
 
-      <TextureBand label={heroText.drop000} right={t("arrowArchive")} ghost="ARCHIVE" />
+      <TextureBand label={heroText.bands[1]?.label ?? ""} right={t("arrowArchive")} ghost={heroText.bands[1]?.ghost ?? "ARCHIVE"} />
 
       <section id="archive" className="px-6 md:px-10 py-20 border-b border-border reveal">
   <div className="max-w-[1200px] mx-auto">
