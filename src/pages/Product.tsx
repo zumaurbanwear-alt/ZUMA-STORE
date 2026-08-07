@@ -29,7 +29,7 @@ const setMeta = (selector: string, attr: "content", value: string) => {
 
 const Product = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const navigate = useNavigate();
   const location = useLocation();
   const { products, loading } = useProducts();
