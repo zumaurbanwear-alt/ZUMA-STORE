@@ -7,12 +7,20 @@ import { ProductDetailSkeleton } from "@/components/zuma/product/ProductDetailSk
 import { SiteLayout } from "@/components/zuma/layout/SiteLayout";
 import { WHATSAPP_NUMBER } from "@/lib/contactInfo";
 import { useCart } from "@/context/CartContext";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
 import { toast } from "sonner";
 
 const SIZES = ["S", "M", "L"];
 const COLORS = ["WHITE", "GREY", "BLACK"];
+
+const SIZE_CHART = {
+  rows: [
+    { label: { EN: "Width", FR: "Largeur" }, S: "49", M: "52", L: "54,5" },
+    { label: { EN: "Length", FR: "Longueur" }, S: "69", M: "70,5", L: "72" },
+    { label: { EN: "Sleeve", FR: "Manche" }, S: "24", M: "24", L: "24" },
+  ],
+};
 
 const setMeta = (selector: string, attr: "content", value: string) => {
   const el = document.querySelector(selector);
@@ -31,6 +39,7 @@ const Product = () => {
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
   const [slide, setSlide] = useState(0);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
 
   const availableColors = useMemo(() => {
     const present = new Set(
@@ -269,6 +278,52 @@ const Product = () => {
                     </button>
                   ))}
                 </div>
+
+                <button
+                  onClick={() => setShowSizeGuide((s) => !s)}
+                  className="flex items-center gap-1.5 mt-3 text-[9px] tracking-[0.22em] uppercase text-muted-foreground hover:text-foreground"
+                >
+                  {showSizeGuide ? (
+                    <ChevronDown className="w-3 h-3 shrink-0" />
+                  ) : (
+                    <ChevronRight className="w-3 h-3 shrink-0" />
+                  )}
+                  {lang === "FR" ? "Guide des tailles" : "Size Guide"}
+                </button>
+
+                {showSizeGuide && (
+                  <div className="mt-2 border border-border">
+                    <table className="w-full text-[10px]">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left px-3 py-2 uppercase tracking-[0.15em] text-muted-foreground">
+                            {lang === "FR" ? "Taille" : "Size"}
+                          </th>
+                          {SIZES.map((s) => (
+                            <th key={s} className="text-left px-3 py-2 uppercase tracking-[0.15em]">
+                              {s}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {SIZE_CHART.rows.map((row) => (
+                          <tr key={row.label.EN} className="border-b border-border last:border-b-0">
+                            <td className="px-3 py-2 uppercase tracking-[0.15em] text-muted-foreground">
+                              {row.label[lang]}
+                            </td>
+                            <td className="px-3 py-2">{row.S}</td>
+                            <td className="px-3 py-2">{row.M}</td>
+                            <td className="px-3 py-2">{row.L}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="px-3 py-2 text-[8px] text-muted-foreground uppercase tracking-[0.1em] border-t border-border">
+                      {lang === "FR" ? "Mesures en cm" : "Measurements in cm"}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {availableColors.length > 0 && (
