@@ -110,10 +110,14 @@ export const CheckoutDialog = ({
     (d) => d.district_id === form.senditDistrictId
   );
 
-  const shippingFee =
+  const shippingFeeRaw =
     selectedDistrict?.price != null
       ? Number(selectedDistrict.price)
       : shippingLookup?.getShippingFee(form.city) ?? DEFAULT_SHIPPING_FEE;
+
+  const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+  const isFreeShipping = totalQty >= 2 || shippingFeeRaw > 40;
+  const shippingFee = isFreeShipping ? 0 : shippingFeeRaw;
 
   const total = subtotal + shippingFee;
 
@@ -258,7 +262,16 @@ export const CheckoutDialog = ({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("deliveryFee")}</span>
-                <span className="text-[11px] tracking-[0.05em] text-foreground">{shippingFee} MAD</span>
+                {isFreeShipping ? (
+                  <span className="text-[11px] tracking-[0.05em] text-primary-hi flex items-center gap-1.5">
+                    {shippingFeeRaw > 0 && (
+                      <span className="line-through text-muted-foreground">{shippingFeeRaw} MAD</span>
+                    )}
+                    {t("freeShipping")}
+                  </span>
+                ) : (
+                  <span className="text-[11px] tracking-[0.05em] text-foreground">{shippingFee} MAD</span>
+                )}
               </div>
               <p className="text-[8px] tracking-[0.16em] uppercase text-muted-foreground/70">{t("deliveryFeeHint")}</p>
               <div className="flex justify-between items-center pt-1.5 mt-1 border-t border-border">
