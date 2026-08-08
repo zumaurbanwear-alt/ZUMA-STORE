@@ -58,6 +58,10 @@ export const CheckoutDialog = ({
   const [hp, setHp] = useState("");
   const [shippingLookup, setShippingLookup] = useState<ShippingLookup | null>(null);
   const openedAtRef = useRef(0);
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; percent_off: number } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [checkingPromo, setCheckingPromo] = useState(false);
 
   useEffect(() => {
     if (open) openedAtRef.current = Date.now();
@@ -121,6 +125,42 @@ export const CheckoutDialog = ({
 
   const total = subtotal + shippingFee;
 
+  const discountAmount = appliedPromo
+    ? Math.round((total * appliedPromo.percent_off) / 100)
+    : 0;
+  const finalTotal = total - discountAmount;
+
+  const applyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+
+    setCheckingPromo(true);
+    setPromoError(null);
+
+    const { data, error } = await supabase
+      .from("promo_codes")
+      .select("code, percent_off")
+      .eq("code", code)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    setCheckingPromo(false);
+
+    if (error || !data) {
+      setPromoError(t("promoInvalid"));
+      setAppliedPromo(null);
+      return;
+    }
+
+    setAppliedPromo({ code: data.code, percent_off: Number(data.percent_off) });
+  };
+
+  const removePromo = () => {
+    setAppliedPromo(null);
+    setPromoInput("");
+    setPromoError(null);
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -147,7 +187,9 @@ export const CheckoutDialog = ({
         cart,
         subtotal,
         shippingFee,
-        total,
+        total: finalTotal,
+        promoCode: appliedPromo?.code ?? null,
+        discountAmount,
         whatsappNumber,
       });
       const { error: orderErr } = await createOrderRecord(order);
@@ -164,7 +206,9 @@ export const CheckoutDialog = ({
         cart,
         subtotal,
         shippingFee,
-        total,
+        total: finalTotal,
+        promoCode: appliedPromo?.code ?? null,
+        discountAmount,
         whatsappNumber,
         shortId,
       });
@@ -255,6 +299,50 @@ export const CheckoutDialog = ({
               </p>
             </div>
 
+            <div className="border border-border p-4">
+              <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">
+                {t("promoCode")}
+              </div>
+              {appliedPromo ? (
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] text-primary-hi font-display tracking-[0.1em]">
+                    {appliedPromo.code} · -{appliedPromo.percent_off}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={removePromo}
+                    className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground hover:text-destructive"
+                  >
+                    {t("promoRemove")}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={promoInput}
+                    onChange={(e) => {
+                      setPromoInput(e.target.value);
+                      setPromoError(null);
+                    }}
+                    placeholder={t("promoPlaceholder")}
+                    className="flex-1 bg-transparent border border-border px-3 py-2 text-xs uppercase focus:border-primary outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyPromo}
+                    disabled={checkingPromo || !promoInput.trim()}
+                    className="border border-primary text-primary px-4 py-2 text-[10px] uppercase tracking-[0.15em] hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
+                  >
+                    {checkingPromo ? "..." : t("promoApply")}
+                  </button>
+                </div>
+              )}
+              {promoError && (
+                <p className="text-[9px] text-destructive mt-1.5">{promoError}</p>
+              )}
+            </div>
+
             <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
               <div className="flex justify-between items-center">
                 <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("subtotal")}</span>
@@ -273,10 +361,16 @@ export const CheckoutDialog = ({
                   <span className="text-[11px] tracking-[0.05em] text-foreground">{shippingFee} MAD</span>
                 )}
               </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("promoDiscount")}</span>
+                  <span className="text-[11px] tracking-[0.05em] text-primary-hi">-{discountAmount} MAD</span>
+                </div>
+              )}
               <p className="text-[8px] tracking-[0.16em] uppercase text-muted-foreground/70">{t("deliveryFeeHint")}</p>
               <div className="flex justify-between items-center pt-1.5 mt-1 border-t border-border">
                 <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">{t("total")}</span>
-                <span className="font-display text-sm tracking-[0.1em]">{total} MAD</span>
+                <span className="font-display text-sm tracking-[0.1em]">{finalTotal} MAD</span>
               </div>
             </div>
 
