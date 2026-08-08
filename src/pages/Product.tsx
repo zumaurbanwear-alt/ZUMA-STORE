@@ -222,6 +222,9 @@ const Product = () => {
                 <div className="font-display text-[16px] tracking-[0.18em] text-primary-hi mt-2">
                   {product.price} MAD
                 </div>
+                <div className="text-[9px] tracking-[0.1em] text-muted-foreground mt-1">
+                  {lang === "FR" ? "+ Livraison à partir de 19 DHS" : "+ Shipping from 19 DHS"}
+                </div>
               </div>
 
               {product.description && (
