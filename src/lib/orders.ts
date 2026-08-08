@@ -20,6 +20,8 @@ export type OrderSubmissionInput = {
   subtotal: number;
   shippingFee: number;
   total: number;
+  promoCode?: string | null;
+  discountAmount?: number;
   whatsappNumber: string;
   shortId?: string;
 };
@@ -31,6 +33,8 @@ export const buildOrderSubmission = ({
   subtotal,
   shippingFee,
   total,
+  promoCode = null,
+  discountAmount = 0,
   whatsappNumber,
   shortId,
 }: OrderSubmissionInput) => {
@@ -53,8 +57,15 @@ export const buildOrderSubmission = ({
     customer_address: form.address,
     sendit_district_id: form.senditDistrictId,
     customer_district: form.district,
-    subtotal,
+    // "total" est une colonne générée en base (subtotal + shipping_fee) —
+    // on impute donc la réduction sur subtotal pour que le total facturé
+    // soit correct. Le montant réel de la réduction reste tracé à part
+    // dans discount_amount pour la comptabilité (subtotal d'origine des
+    // articles = subtotal + discount_amount).
+    subtotal: Math.max(0, subtotal - discountAmount),
     shipping_fee: shippingFee,
+    promo_code: promoCode,
+    discount_amount: discountAmount,
     payment_method: "cash_on_delivery",
     status: "pending",
     notes: null,
@@ -80,6 +91,7 @@ export const buildOrderSubmission = ({
     "",
     `Subtotal: ${subtotal} MAD`,
     `Delivery Fee: ${shippingFee} MAD`,
+    ...(discountAmount > 0 ? [`Promo (${promoCode}): -${discountAmount} MAD`] : []),
     `*Total: ${total} MAD*`,
     "Payment: Cash on Delivery",
   ].join("\n");
