@@ -223,7 +223,11 @@ export const CheckoutDialog = ({
   return (
     <div className="fixed inset-0 z-[300] bg-background/90 flex items-center justify-center p-4 overflow-y-auto">
       <div className="relative w-full max-w-2xl bg-card border border-border my-10">
-        <button onClick={() => { setDone(false); onClose(); }} aria-label="Close" className="absolute top-4 right-4 text-muted-foreground hover:text-primary-hi z-10">
+        <button
+          onClick={() => { setDone(false); onClose(); }}
+          aria-label="Close"
+          className="fixed top-4 right-4 sm:top-6 sm:right-6 w-9 h-9 flex items-center justify-center bg-background border border-border text-muted-foreground hover:text-primary-hi hover:border-primary z-[310]"
+        >
           <X className="w-4 h-4" />
         </button>
 
