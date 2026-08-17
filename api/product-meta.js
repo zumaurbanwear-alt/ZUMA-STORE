@@ -15,7 +15,7 @@
 // per-product og:/twitter: tags plus a redirect for the rare case a bot
 // (or a human whose client didn't get filtered) does render the page.
 
-const { createClient } = require("@supabase/supabase-js");
+import { createClient } from "@supabase/supabase-js";
 
 const SITE_URL = "https://zumaurbanwear.store";
 
@@ -35,7 +35,7 @@ const ogImage = (url) => {
   return `https://wsrv.nl/?${params.toString()}`;
 };
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const slug = typeof req.query.slug === "string" ? req.query.slug : "";
   const productUrl = `${SITE_URL}/product/${encodeURIComponent(slug)}`;
 
@@ -90,4 +90,4 @@ module.exports = async (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
   res.status(200).send(html);
-};
+}
