@@ -17,7 +17,7 @@ export const AdminProductsPanel = () => {
 
   const save = async () => {
     if (!editing) return;
-    const { stock: _stock, ...rest } = editing;
+    const { stock: _stock, promo_codes: _promoCodes, ...rest } = editing;
     const payload = { ...rest, price: Number(editing.price), sort_order: Number(editing.sort_order ?? 0) };
     if (!payload.slug || !payload.name) { toast.error("Slug and name required"); return; }
     const { error } = editing.id
