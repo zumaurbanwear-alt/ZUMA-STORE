@@ -3,6 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { buildOptimizedImageUrl } from "@/components/zuma/common/imageUtils";
 
+export type FeaturedPromo = {
+  code: string;
+  percent_off: number;
+  is_active: boolean;
+};
+
 export type DbProduct = {
   id: string;
   slug: string;
@@ -22,6 +28,9 @@ export type DbProduct = {
   archive_url: string | null;
   badge: string | null;
   display_id: string;
+  featured_promo_code_id: string | null;
+  promo_label: string | null;
+  promo_codes: FeaturedPromo | null;
 };
 
 export type ProductImage = {
@@ -47,7 +56,10 @@ export const transformImage = (url: string, width: number, quality = 75): string
 const productsQueryKey = (adminMode: boolean) => ["products", { adminMode }] as const;
 
 const fetchProducts = async (adminMode: boolean): Promise<DbProduct[]> => {
-  let q = supabase.from("products").select("*").order("created_at", { ascending: false });
+  let q = supabase
+    .from("products")
+    .select("*, promo_codes(code, percent_off, is_active)")
+    .order("created_at", { ascending: false });
   if (!adminMode) q = q.eq("is_visible", true);
   const { data, error } = await q;
   if (error) throw error;
