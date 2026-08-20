@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { DbProduct } from "@/hooks/useProducts";
 import { AdminProductVariants } from "./components/AdminProductVariants";
 import { AdminProductImages } from "./components/AdminProductImages";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ProductEditModal = ({
   editing, setEditing, onSave,
@@ -9,7 +11,18 @@ export const ProductEditModal = ({
   editing: Partial<DbProduct>;
   setEditing: (p: Partial<DbProduct> | null) => void;
   onSave: () => void;
-}) => (
+}) => {
+  const [promoCodes, setPromoCodes] = useState<{ id: string; code: string; percent_off: number }[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("promo_codes")
+      .select("id, code, percent_off")
+      .eq("is_active", true)
+      .then(({ data }) => setPromoCodes(data ?? []));
+  }, []);
+
+  return (
   <div className="fixed inset-0 z-50 bg-background/90 grid place-items-center p-4 overflow-y-auto">
     <div className="w-full max-w-xl bg-card border border-border p-6 my-10">
       <h3 className="font-display text-xl tracking-[0.25em] mb-5">{editing.id ? "EDIT" : "NEW"} PRODUCT</h3>
@@ -56,6 +69,49 @@ export const ProductEditModal = ({
             className="bg-background border border-border px-3 py-2 text-sm focus:border-primary outline-none"
           />
         </label>
+
+        <div className="col-span-2 border border-border p-3 mt-1">
+          <div className="text-[9px] tracking-[0.22em] uppercase text-primary-hi mb-2">
+            Promo affichée sur la fiche produit
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-[9px] tracking-[0.18em] uppercase text-muted-foreground">Code promo</span>
+              <div className="relative">
+                <select
+                  value={editing.featured_promo_code_id ?? "none"}
+                  onChange={e =>
+                    setEditing({
+                      ...editing,
+                      featured_promo_code_id: e.target.value === "none" ? null : e.target.value,
+                    })
+                  }
+                  className="w-full appearance-none bg-background border border-border pl-3 pr-8 py-2 text-sm focus:border-primary outline-none"
+                >
+                  <option value="none">Aucune (prix normal)</option>
+                  {promoCodes.map(p => (
+                    <option key={p.id} value={p.id}>{p.code} (-{p.percent_off}%)</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3 h-3 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[9px] tracking-[0.18em] uppercase text-muted-foreground">Libellé (ex: END OF SUMMER SALE)</span>
+              <input
+                type="text"
+                value={editing.promo_label ?? ""}
+                onChange={e => setEditing({ ...editing, promo_label: e.target.value })}
+                placeholder="OFFRE LIMITÉE"
+                className="bg-background border border-border px-3 py-2 text-sm focus:border-primary outline-none"
+              />
+            </label>
+          </div>
+          <div className="text-[9px] text-muted-foreground mt-2">
+            Gère les codes eux-mêmes (création, %, activation) dans l'onglet Codes Promo. Ici tu choisis juste lequel afficher en barré sur cette fiche.
+          </div>
+        </div>
+
         <label className="col-span-2 flex flex-col gap-1">
           <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Description</span>
           <textarea value={editing.description ?? ""} onChange={e => setEditing({ ...editing, description: e.target.value })} className="bg-background border border-border px-3 py-2 text-sm h-20 focus:border-primary outline-none" />
@@ -84,4 +140,5 @@ export const ProductEditModal = ({
       </div>
     </div>
   </div>
-);
+  );
+};
