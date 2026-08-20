@@ -219,9 +219,30 @@ const Product = () => {
                     {product.collection}
                   </div>
                 )}
-                <div className="font-display text-[16px] tracking-[0.18em] text-primary-hi mt-2">
-                  {product.price} MAD
-                </div>
+                {product.promo_codes?.is_active ? (
+                  <div className="mt-2">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="font-display text-[20px] tracking-[0.1em] text-primary-hi">
+                        {Math.round(product.price * (1 - product.promo_codes.percent_off / 100))} MAD
+                      </span>
+                      <span className="text-[13px] tracking-[0.1em] text-muted-foreground line-through">
+                        {product.price} MAD
+                      </span>
+                    </div>
+                    <div className="text-[9px] tracking-[0.25em] uppercase text-primary-hi mt-1">
+                      {product.promo_label || (lang === "FR" ? "OFFRE LIMITÉE" : "LIMITED TIME OFFER")}
+                    </div>
+                    <div className="text-[9px] tracking-[0.05em] text-muted-foreground mt-0.5">
+                      {lang === "FR" ? "Utilise le code " : "Use code "}
+                      <span className="font-medium text-foreground">{product.promo_codes.code}</span>
+                      {lang === "FR" ? " au moment de payer" : " at checkout"}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="font-display text-[16px] tracking-[0.18em] text-primary-hi mt-2">
+                    {product.price} MAD
+                  </div>
+                )}
                 <div className="text-[9px] tracking-[0.1em] text-muted-foreground mt-1">
                   {lang === "FR" ? "+ Livraison à partir de 19 DHS" : "+ Shipping from 19 DHS"}
                 </div>
