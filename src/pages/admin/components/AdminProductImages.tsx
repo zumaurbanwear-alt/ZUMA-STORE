@@ -11,13 +11,14 @@ type ProductImage = {
   position: number;
 };
 
-type Side = "front" | "back" | "model_front" | "model_back";
+type Side = "front" | "back" | "model_front" | "model_back" | "model_profile";
 
 const SIDES: { key: Side; label: string; position: number; fileSlug: string }[] = [
   { key: "front", label: "T-shirt face", position: 0, fileSlug: "front" },
   { key: "back", label: "T-shirt dos", position: 1, fileSlug: "back" },
   { key: "model_front", label: "Mannequin face", position: 2, fileSlug: "model-front" },
   { key: "model_back", label: "Mannequin dos", position: 3, fileSlug: "model-back" },
+  { key: "model_profile", label: "Mannequin profil", position: 4, fileSlug: "model-profile" },
 ];
 
 const slugify = (s: string) =>
