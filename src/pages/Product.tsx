@@ -98,10 +98,12 @@ const Product = () => {
       const back = colorImgs.find(img => img.side === 'back');
       const modelFront = colorImgs.find(img => img.side === 'model_front');
       const modelBack = colorImgs.find(img => img.side === 'model_back');
+      const modelProfile = colorImgs.find(img => img.side === 'model_profile');
       const result = [];
       if (front) result.push(front.url);
       if (back) result.push(back.url);
       if (modelFront) result.push(modelFront.url);
+      if (modelProfile) result.push(modelProfile.url);
       if (modelBack) result.push(modelBack.url);
       if (result.length > 0) return result;
     }
