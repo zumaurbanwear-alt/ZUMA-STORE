@@ -13,6 +13,7 @@ const ALLOWED_FIELDS = [
   "customer_address",
   "customer_district",
   "sendit_district_id",
+  "tracking_number",
 ];
 
 // --- ZIP writer minimal, méthode STORE (pas de compression) ---
