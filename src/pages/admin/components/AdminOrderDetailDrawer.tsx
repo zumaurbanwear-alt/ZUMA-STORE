@@ -15,6 +15,8 @@ type AdminOrderDetailDrawerProps = {
   savingRefund: boolean;
   savingNotes: boolean;
   notesDraft: string;
+  trackingDraft: string;
+  savingTracking: boolean;
   onClose: () => void;
   onEditOrder: (order: AdminOrder) => void;
   onConfirmOrder: (order: AdminOrder) => void;
@@ -26,6 +28,8 @@ type AdminOrderDetailDrawerProps = {
   onToggleRefund: () => void;
   onSaveNotes: () => void;
   onNotesChange: (value: string) => void;
+  onSaveTracking: () => void;
+  onTrackingChange: (value: string) => void;
 };
 
 export const AdminOrderDetailDrawer = ({
@@ -40,6 +44,8 @@ export const AdminOrderDetailDrawer = ({
   savingRefund,
   savingNotes,
   notesDraft,
+  trackingDraft,
+  savingTracking,
   onClose,
   onEditOrder,
   onConfirmOrder,
@@ -51,6 +57,8 @@ export const AdminOrderDetailDrawer = ({
   onToggleRefund,
   onSaveNotes,
   onNotesChange,
+  onSaveTracking,
+  onTrackingChange,
 }: AdminOrderDetailDrawerProps) => {
   if (!selectedOrder) return null;
 
@@ -168,8 +176,22 @@ export const AdminOrderDetailDrawer = ({
               <div className="space-y-1.5">
                 <div>
                   <div className="text-[8px] uppercase text-muted-foreground">Tracking</div>
-                  <div className="mt-0.5 text-xs font-display tracking-[0.1em]">
-                    {selectedOrder.tracking_number}
+                  <div className="mt-0.5 flex items-center gap-1.5">
+                    <input
+                      value={trackingDraft}
+                      onChange={(e) => onTrackingChange(e.target.value)}
+                      className="flex-1 bg-transparent border border-border px-2 py-1 text-xs font-display tracking-[0.1em]"
+                    />
+                    <button
+                      onClick={onSaveTracking}
+                      disabled={savingTracking || trackingDraft === selectedOrder.tracking_number}
+                      className="shrink-0 border border-primary px-2 py-1 text-[8px] uppercase tracking-[0.1em] hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
+                    >
+                      {savingTracking ? "..." : "OK"}
+                    </button>
+                  </div>
+                  <div className="text-[8px] text-muted-foreground mt-0.5">
+                    Corrige ici si le code diffère de celui imprimé sur l'étiquette Sendit.
                   </div>
                 </div>
                 <div>
