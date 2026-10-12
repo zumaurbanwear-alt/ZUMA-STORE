@@ -107,6 +107,8 @@ export const AdminOrdersPanel = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<AdminInvoice | null>(null);
   const [loadingInvoiceDetail, setLoadingInvoiceDetail] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
+  const [trackingDraft, setTrackingDraft] = useState("");
+  const [savingTracking, setSavingTracking] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingRefund, setSavingRefund] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
@@ -652,6 +654,7 @@ const openDrawer = async (o: AdminOrder) => {
   setSelectedInvoice(null);
   setSelectedOrder(o);
   setNotesDraft(o.admin_notes ?? "");
+  setTrackingDraft(o.tracking_number ?? "");
   setOrderEvents([]);
   setLoadingEvents(true);
 
@@ -902,6 +905,35 @@ const handleSaveNotes = async () => {
   } finally {
 
     setSavingNotes(false);
+
+  }
+
+};
+
+const handleSaveTracking = async () => {
+
+  if (!selectedOrder) return;
+
+  const cleaned = trackingDraft.trim();
+
+  setSavingTracking(true);
+
+  try {
+
+    const updated = await updateOrderAdminFields(selectedOrder.id, {
+      tracking_number: cleaned,
+    });
+
+    if (updated) {
+      setSelectedOrder((prev) => (prev ? { ...prev, tracking_number: updated?.tracking_number ?? prev.tracking_number ?? null } : prev));
+      setTrackingDraft(cleaned);
+      toast.success("Tracking mis à jour — resynchronise pour vérifier le statut");
+      await loadOrders();
+    }
+
+  } finally {
+
+    setSavingTracking(false);
 
   }
 
@@ -1635,6 +1667,8 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         savingRefund={savingRefund}
         savingNotes={savingNotes}
         notesDraft={notesDraft}
+        trackingDraft={trackingDraft}
+        savingTracking={savingTracking}
         markingReadyFor={markingReadyFor}
         markingDeliveredFor={markingDeliveredFor}
         onClose={closeDrawer}
@@ -1648,6 +1682,8 @@ const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
         onToggleRefund={handleToggleRefund}
         onSaveNotes={handleSaveNotes}
         onNotesChange={setNotesDraft}
+        onSaveTracking={handleSaveTracking}
+        onTrackingChange={setTrackingDraft}
       />
 
       {editingOrder && (
