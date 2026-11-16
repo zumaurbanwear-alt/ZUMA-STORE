@@ -115,7 +115,7 @@ const Product = () => {
   const relatedProducts = useMemo(() => {
     if (!product?.collection) return [];
     return products
-      .filter(p => p.id !== product.id && p.collection === product.collection)
+      .filter(p => p.id !== product.id && p.collection === product.collection && (p.collab ?? null) === (product.collab ?? null))
       .sort((a, b) => {
         if ((a.stock === 0) !== (b.stock === 0)) return a.stock === 0 ? 1 : -1;
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();

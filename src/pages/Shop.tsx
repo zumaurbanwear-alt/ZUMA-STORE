@@ -5,7 +5,9 @@ import { SiteLayout } from "@/components/zuma/layout/SiteLayout";
 import { useProducts } from "@/hooks/useProducts";
 
 const Shop = () => {
-  const { products, loading } = useProducts();
+  const { products: allProducts, loading } = useProducts();
+  // Les produits de collab ont leur propre page (/collab/:slug).
+  const products = allProducts.filter(p => !p.collab);
 
   useEffect(() => {
     document.title = "ZÜMA — SHOP | All Products";
