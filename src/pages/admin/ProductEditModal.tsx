@@ -4,6 +4,7 @@ import type { DbProduct } from "@/hooks/useProducts";
 import { AdminProductVariants } from "./components/AdminProductVariants";
 import { AdminProductImages } from "./components/AdminProductImages";
 import { supabase } from "@/integrations/supabase/client";
+import { COLLABS } from "@/content/collabs";
 
 export const ProductEditModal = ({
   editing, setEditing, onSave,
@@ -68,6 +69,26 @@ export const ProductEditModal = ({
             onChange={e => setEditing({ ...editing, created_at: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
             className="bg-background border border-border px-3 py-2 text-sm focus:border-primary outline-none"
           />
+        </label>
+
+        <label className="col-span-2 flex flex-col gap-1">
+          <span className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground">Collab</span>
+          <div className="relative">
+            <select
+              value={editing.collab ?? "none"}
+              onChange={e => setEditing({ ...editing, collab: e.target.value === "none" ? null : e.target.value })}
+              className="w-full appearance-none bg-background border border-border pl-3 pr-8 py-2 text-sm focus:border-primary outline-none"
+            >
+              <option value="none">Aucune (produit 100 % ZÜMA)</option>
+              {COLLABS.map(c => (
+                <option key={c.slug} value={c.slug}>{c.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-3 h-3 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          </div>
+          <span className="text-[9px] text-muted-foreground">
+            Un produit de collab n'apparaît que dans la section de sa collab, pas dans le shop ZÜMA.
+          </span>
         </label>
 
         <div className="col-span-2 border border-border p-3 mt-1">
