@@ -21,6 +21,7 @@ const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Contact = lazy(() => import("./pages/Contact"));
+const Collab = lazy(() => import("./pages/Collab"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/product/:slug" element={<Product />} />
+              <Route path="/collab/:slug" element={<Collab />} />
               <Route path="/zm-portal-x92-login" element={<Auth />} />
               <Route path="/zm-portal-x92" element={<Admin />} />
               <Route path="/zm-portal-x92-depenses" element={<AdminDepenses />} />
