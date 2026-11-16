@@ -29,6 +29,7 @@ export type DbProduct = {
   badge: string | null;
   display_id: string;
   featured_promo_code_id: string | null;
+  collab: string | null;
   promo_label: string | null;
   promo_codes: FeaturedPromo | null;
 };
