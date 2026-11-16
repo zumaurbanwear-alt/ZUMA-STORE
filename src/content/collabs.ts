@@ -18,8 +18,8 @@ export const COLLABS: Collab[] = [
     name: "ZÜMA X BDE ASCLEPIOS",
     navLabel: "ZÜMA X BDE",
     tagline: {
-      EN: "A long-term collaboration between ZÜMA and the BDE ASCLEPIOS.",
-      FR: "Une collaboration au long cours entre ZÜMA et le BDE ASCLEPIOS.",
+      EN: "Fashion Collaboration",
+      FR: "Fashion Collaboration",
     },
     empty: {
       EN: "First pieces coming soon.",
