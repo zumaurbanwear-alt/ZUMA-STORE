@@ -35,6 +35,11 @@ const SIZE_CHART = {
   ],
 };
 
+// Le guide des tailles ne contient que les mesures des T-shirts : on ne l'affiche
+// que pour les produits dont la catégorie est T-Shirts (T-Shirt, T Shirts, Tee...).
+const isTShirt = (category: string | null | undefined) =>
+  /\bt[\s-]?shirts?\b|\btees?\b/i.test(category ?? "");
+
 const setMeta = (selector: string, attr: "content", value: string) => {
   const el = document.querySelector(selector);
   if (el) el.setAttribute(attr, value);
@@ -180,6 +185,7 @@ const Product = () => {
   }
 
   const soldOut = product.stock === 0;
+  const showGuide = isTShirt(product.category);
   const producedDate = product.created_at
     ? new Date(product.created_at)
         .toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })
@@ -341,6 +347,8 @@ const Product = () => {
                   ))}
                 </div>
 
+                {showGuide && (
+                  <>
                 <button
                   onClick={() => setShowSizeGuide((s) => !s)}
                   className="flex items-center gap-1.5 mt-3 text-[9px] tracking-[0.22em] uppercase text-muted-foreground hover:text-foreground"
@@ -385,6 +393,8 @@ const Product = () => {
                       {lang === "FR" ? "Mesures en cm" : "Measurements in cm"}
                     </div>
                   </div>
+                )}
+                  </>
                 )}
               </div>
 
