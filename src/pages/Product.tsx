@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
-import { resolveImage, transformImage, useProducts, useProductImages } from "@/hooks/useProducts";
+import { resolveImage, transformImage, useProducts, useProductImages, useProductVariants } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/zuma/product/ProductCard";
 import { ProductImg } from "@/components/zuma/product/ProductImg";
 import { ProductDetailSkeleton } from "@/components/zuma/product/ProductDetailSkeleton";
@@ -11,7 +11,15 @@ import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
 import { toast } from "sonner";
 
-const SIZES = ["S", "M", "L"];
+// Tailles proposées par défaut si un produit n'a aucune variante configurée.
+const DEFAULT_SIZES = ["S", "M", "L"];
+// Le tableau des mensurations ne contient des données que pour ces tailles.
+const GUIDE_SIZES = ["S", "M", "L"];
+const SIZE_ORDER = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "3XL"];
+const sizeRank = (s: string) => {
+  const i = SIZE_ORDER.indexOf(s);
+  return i === -1 ? SIZE_ORDER.length : i;
+};
 const COLORS = ["WHITE", "GREY", "BLACK"];
 
 const SIZE_CHART = {
@@ -35,6 +43,7 @@ const Product = () => {
   const { products, loading } = useProducts();
   const product = useMemo(() => products.find(p => p.slug === slug), [products, slug]);
   const { images } = useProductImages(product?.id);
+  const { variants } = useProductVariants(product?.id);
   const { addToCart } = useCart();
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
@@ -56,6 +65,26 @@ const Product = () => {
       setColor(null);
     }
   }, [availableColors, color]);
+
+  // Tailles facultatives : on ne propose que celles qui existent pour ce produit
+  // (ex. uniquement XL). Une taille est proposée si elle a du stock dans au moins
+  // une couleur ; si tout est épuisé on garde les tailles configurées (le produit
+  // est de toute façon en rupture) ; sans aucune variante, comportement d'origine.
+  const availableSizes = useMemo(() => {
+    if (variants.length === 0) return DEFAULT_SIZES;
+    const all = new Set(variants.map(v => v.size.trim().toUpperCase()).filter(Boolean));
+    const inStock = new Set(
+      variants.filter(v => v.stock > 0).map(v => v.size.trim().toUpperCase()).filter(Boolean)
+    );
+    const source = inStock.size > 0 ? inStock : all;
+    return Array.from(source).sort((a, b) => sizeRank(a) - sizeRank(b) || a.localeCompare(b));
+  }, [variants]);
+
+  useEffect(() => {
+    if (size && !availableSizes.includes(size)) {
+      setSize(null);
+    }
+  }, [availableSizes, size]);
 
   useEffect(() => {
     if (!product) return;
@@ -290,7 +319,7 @@ const Product = () => {
 <div>
   <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mb-2">{t("selectSize")}</div>
                 <div className="flex flex-wrap gap-2">
-                  {SIZES.map(s => (
+                  {availableSizes.map(s => (
                     <button
                       key={s}
                       onClick={() => setSize(s)}
@@ -325,7 +354,7 @@ const Product = () => {
                           <th className="text-left px-3 py-2 uppercase tracking-[0.15em] text-muted-foreground">
                             {lang === "FR" ? "Taille" : "Size"}
                           </th>
-                          {SIZES.map((s) => (
+                          {GUIDE_SIZES.map((s) => (
                             <th key={s} className="text-left px-3 py-2 uppercase tracking-[0.15em]">
                               {s}
                             </th>
