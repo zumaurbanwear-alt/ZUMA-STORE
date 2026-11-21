@@ -147,6 +147,8 @@ export const ProductEditModal = ({
           <AdminProductImages
             productId={editing.id}
             productSlug={editing.slug ?? ""}
+            mainImageUrl={editing.image_url}
+            onSelectMain={(url) => setEditing({ ...editing, image_url: url })}
           />
         )}
         {!editing.id && (
