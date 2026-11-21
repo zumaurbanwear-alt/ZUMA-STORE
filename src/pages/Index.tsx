@@ -1,18 +1,17 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import heroDesktop from "@/assets/fw000/modeled-desktop.webp";
-import heroMobile from "@/assets/fw000/modeled-mobile.webp";
 import { Countdown } from "@/components/zuma/marketing/Countdown";
 import { TextureBand } from "@/components/zuma/layout/TextureBand";
 import { ProductGrid } from "@/components/zuma/product/ProductGrid";
 import { NewsletterBand } from "@/components/zuma/marketing/NewsletterBand";
-import { OptimizedImage } from "@/components/zuma/common/OptimizedImage";
+import { HeroPicture } from "@/components/zuma/marketing/HeroPicture";
 
 import { SiteLayout } from "@/components/zuma/layout/SiteLayout";
 import { useProducts } from "@/hooks/useProducts";
 import { COLLABS } from "@/content/collabs";
 import { useLang } from "@/context/LanguageContext";
 import { useSiteContent } from "@/hooks/useSiteContent";
+import { useHeroImage } from "@/hooks/useHeroImage";
 
 const defaultHero = {
   EN: {
@@ -38,6 +37,7 @@ const Index = () => {
   const { t, lang } = useLang();
   const hero = useSiteContent("homepage_hero", defaultHero);
   const heroText = hero[lang];
+  const { hero: heroImage, ready: heroImageReady } = useHeroImage();
 
   useEffect(() => {
     document.title = "ZÜMA — STORE";
@@ -56,26 +56,7 @@ const Index = () => {
   return (
     <SiteLayout>
       <header id="hero" className="relative h-screen overflow-hidden flex flex-col justify-end px-6 md:px-10 pb-14 border-b border-border">
-        <picture>
-  <source
-    media="(max-width: 767px)"
-    srcSet={heroMobile}
-  />
-
-  <OptimizedImage
-    src={heroDesktop}
-    srcSet={`${heroMobile} 1080w, ${heroDesktop} 1920w`}
-    alt=""
-    width={1920}
-    className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
-    style={{ objectPosition: "40% 15%" }}
-    loading="eager"
-    fetchPriority="high"
-    priority
-    sizes="100vw"
-    fallbackSrc={heroDesktop}
-  />
-</picture>
+        {heroImageReady && <HeroPicture hero={heroImage} />}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="relative z-10 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
           <div>

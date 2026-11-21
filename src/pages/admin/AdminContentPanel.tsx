@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { AdminHeroImage } from "@/pages/admin/components/AdminHeroImage";
 
 const CONTENT_KEYS: { key: string; label: string }[] = [
   { key: "homepage_hero", label: "Accueil (hero)" },
@@ -104,6 +105,7 @@ export const AdminContentPanel = () => {
         </div>
 
         <div className="flex-1">
+          {selected === "homepage_hero" && <AdminHeroImage />}
           {loading ? (
             <div className="text-[10px] text-muted-foreground">Chargement...</div>
           ) : (
