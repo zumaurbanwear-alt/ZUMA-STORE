@@ -89,6 +89,9 @@ export const useProducts = (opts: { adminMode?: boolean } = {}) => {
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
         queryClient.invalidateQueries({ queryKey });
         queryClient.invalidateQueries({ queryKey: ["product-images"] });
+        // products.stock est recalculé par trigger quand les variantes changent :
+        // cet évènement sert donc aussi à rafraîchir les tailles proposées.
+        queryClient.invalidateQueries({ queryKey: ["product-variants"] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "product_images" }, () => {
         queryClient.invalidateQueries({ queryKey: ["product-images"] });
@@ -134,4 +137,28 @@ export const useProductImages = (productId: string | undefined) => {
   });
 
   return { images: data ?? [], loading: isLoading };
+};
+
+// --- Variantes (couleur / taille / stock) : sert à ne proposer sur la fiche
+// produit que les tailles réellement disponibles pour CE produit.
+export type ProductVariantRow = { color: string; size: string; stock: number };
+
+const fetchProductVariants = async (productId: string): Promise<ProductVariantRow[]> => {
+  const { data, error } = await supabase
+    .from("product_variants")
+    .select("color, size, stock")
+    .eq("product_id", productId);
+  if (error) throw error;
+  return (data ?? []) as ProductVariantRow[];
+};
+
+export const useProductVariants = (productId: string | undefined) => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["product-variants", productId],
+    queryFn: () => fetchProductVariants(productId as string),
+    enabled: !!productId,
+    staleTime: 60_000,
+  });
+
+  return { variants: data ?? [], loading: isLoading };
 };
