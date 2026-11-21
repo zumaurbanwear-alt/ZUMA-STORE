@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Trash2, ChevronDown, Upload } from "lucide-react";
+import { Trash2, ChevronDown, Upload, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type ProductImage = {
@@ -121,9 +121,15 @@ const compressImage = async (file: File): Promise<Blob> => {
 export const AdminProductImages = ({
   productId,
   productSlug,
+  mainImageUrl,
+  onSelectMain,
 }: {
   productId: string;
   productSlug: string;
+  /** URL de la photo principale actuelle du produit (products.image_url). */
+  mainImageUrl?: string | null;
+  /** Appelé quand on choisit une photo de la galerie comme photo principale. */
+  onSelectMain?: (url: string) => void;
 }) => {
   const [images, setImages] = useState<ProductImage[]>([]);
   const [colors, setColors] = useState<string[]>([]);
@@ -265,6 +271,24 @@ export const AdminProductImages = ({
         Photos par couleur
       </div>
 
+      {onSelectMain && (
+        <div className="flex items-center gap-3 border border-border p-2 mb-3">
+          <div className="w-12 h-12 border border-border bg-background overflow-hidden shrink-0 flex items-center justify-center">
+            {mainImageUrl ? (
+              <img src={mainImageUrl} alt="Photo principale" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-[7px] text-muted-foreground uppercase">Aucune</span>
+            )}
+          </div>
+          <div className="text-[9px] text-muted-foreground leading-relaxed">
+            <span className="uppercase tracking-[0.15em] text-foreground">Photo principale</span>
+            <br />
+            Celle qui s'affiche sur la boutique et les aperçus de liens. Clique sur l'étoile
+            d'une photo ci-dessous pour la choisir, puis sur Save pour valider.
+          </div>
+        </div>
+      )}
+
       {colors.length === 0 ? (
         <div className="text-[10px] text-muted-foreground mb-3">
           Ajoute d'abord une couleur dans les variantes ci-dessous pour pouvoir uploader ses photos.
@@ -279,7 +303,9 @@ export const AdminProductImages = ({
                 <div className="flex gap-2 flex-1 flex-wrap">
                   {bySide.map(({ side, img }) => (
                     <div key={side.key} className="flex flex-col items-center gap-1">
-                      <div className="w-14 h-14 border border-border bg-background flex items-center justify-center overflow-hidden">
+                      <div className={`w-14 h-14 border bg-background flex items-center justify-center overflow-hidden ${
+                        img && mainImageUrl && img.url === mainImageUrl ? "border-primary ring-1 ring-primary" : "border-border"
+                      }`}>
                         {img ? (
                           <img src={img.url} alt={`${color} ${side.label}`} className="w-full h-full object-cover" />
                         ) : (
@@ -289,13 +315,35 @@ export const AdminProductImages = ({
                         )}
                       </div>
                       {img && (
-                        <button
-                          onClick={() => removeImage(img)}
-                          className="text-muted-foreground hover:text-destructive"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          {onSelectMain && (
+                            <button
+                              onClick={() => onSelectMain(img.url)}
+                              className={
+                                mainImageUrl && img.url === mainImageUrl
+                                  ? "text-primary"
+                                  : "text-muted-foreground hover:text-primary"
+                              }
+                              title={
+                                mainImageUrl && img.url === mainImageUrl
+                                  ? "Photo principale actuelle"
+                                  : "Définir comme photo principale"
+                              }
+                            >
+                              <Star
+                                className="w-3 h-3"
+                                fill={mainImageUrl && img.url === mainImageUrl ? "currentColor" : "none"}
+                              />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => removeImage(img)}
+                            className="text-muted-foreground hover:text-destructive"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   ))}
