@@ -20,7 +20,12 @@ const sizeRank = (s: string) => {
   const i = SIZE_ORDER.indexOf(s);
   return i === -1 ? SIZE_ORDER.length : i;
 };
-const COLORS = ["WHITE", "GREY", "BLACK"];
+// Ordre d'affichage préféré ; les autres couleurs (BROWN, etc.) passent après, par ordre alphabétique.
+const COLOR_ORDER = ["WHITE", "GREY", "BLACK"];
+const colorRank = (c: string) => {
+  const i = COLOR_ORDER.indexOf(c);
+  return i === -1 ? COLOR_ORDER.length : i;
+};
 
 const SIZE_CHART = {
   rows: [
@@ -54,10 +59,12 @@ const Product = () => {
     const present = new Set(
       images
         .filter(img => !!img.url)
-        .map(img => img.color?.toUpperCase())
+        .map(img => img.color?.trim().toUpperCase())
         .filter((c): c is string => !!c)
     );
-    return COLORS.filter(c => present.has(c));
+    return Array.from(present).sort(
+      (a, b) => colorRank(a) - colorRank(b) || a.localeCompare(b)
+    );
   }, [images]);
 
   useEffect(() => {
@@ -122,7 +129,7 @@ const Product = () => {
 
   const carouselImages = useMemo(() => {
     if (color && images.length > 0) {
-      const colorImgs = images.filter(img => img.color?.toUpperCase() === color);
+      const colorImgs = images.filter(img => img.color?.trim().toUpperCase() === color);
       const front = colorImgs.find(img => img.side === 'front');
       const back = colorImgs.find(img => img.side === 'back');
       const modelFront = colorImgs.find(img => img.side === 'model_front');
