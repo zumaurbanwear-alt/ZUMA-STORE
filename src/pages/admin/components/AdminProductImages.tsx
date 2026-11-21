@@ -121,11 +121,14 @@ const compressImage = async (file: File): Promise<Blob> => {
 export const AdminProductImages = ({
   productId,
   productSlug,
+  productCollection,
   mainImageUrl,
   onSelectMain,
 }: {
   productId: string;
   productSlug: string;
+  /** Nom de la collection du produit (products.collection), ex. "SONDER", "IPSEITY". */
+  productCollection?: string | null;
   /** URL de la photo principale actuelle du produit (products.image_url). */
   mainImageUrl?: string | null;
   /** Appelé quand on choisit une photo de la galerie comme photo principale. */
@@ -195,7 +198,9 @@ export const AdminProductImages = ({
     }
 
     const sideSlug = SIDES.find((s) => s.key === uploadSide)?.fileSlug ?? uploadSide;
-    const path = `${slugify(productSlug)}-${slugify(uploadColor)}-${sideSlug}.webp`;
+    const fileName = `${slugify(productSlug)}-${slugify(uploadColor)}-${sideSlug}.webp`;
+    const collectionFolder = productCollection ? slugify(productCollection).toUpperCase() : "";
+    const path = collectionFolder ? `${collectionFolder}/${fileName}` : fileName;
 
     const { error: uploadError } = await supabase.storage
       .from("product-images")
