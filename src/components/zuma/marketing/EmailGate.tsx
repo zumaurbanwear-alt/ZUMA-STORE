@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ProductImg } from "@/components/zuma/product/ProductImg";
+import { HeroPicture } from "@/components/zuma/marketing/HeroPicture";
+import { useHeroImage } from "@/hooks/useHeroImage";
+import { EMAIL_GATE_FALLBACK_URL, EMAIL_GATE_SLOT } from "@/lib/heroImage";
 import { useLang } from "@/context/LanguageContext";
 
 const STORAGE_KEY = "zuma_email_gate_passed";
-const GATE_BG =
-  "https://drkeggribqajjuktxhrj.supabase.co/storage/v1/object/public/product-images/email-gate-bg.webp";
+const GATE_FALLBACK = { mobile: EMAIL_GATE_FALLBACK_URL, desktop: EMAIL_GATE_FALLBACK_URL, position: "50% 50%" };
 
 export const EmailGate = ({ onPass }: { onPass: () => void }) => {
   const { t } = useLang();
+  const { hero, ready } = useHeroImage(EMAIL_GATE_SLOT);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
 
@@ -33,15 +35,14 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center">
-      <ProductImg
-        src={GATE_BG}
-        width={1200}
-        alt=""
-        loading="eager"
-        fetchPriority="high"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black">
+      {ready && (
+        <HeroPicture
+          hero={hero}
+          fallback={GATE_FALLBACK}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
 
       <div className="absolute inset-0 bg-black/60" />
 

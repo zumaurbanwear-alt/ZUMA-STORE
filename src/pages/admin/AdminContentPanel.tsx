@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminHeroImage } from "@/pages/admin/components/AdminHeroImage";
+import { EMAIL_GATE_FALLBACK_URL, EMAIL_GATE_SLOT } from "@/lib/heroImage";
 
 const CONTENT_KEYS: { key: string; label: string }[] = [
   { key: "homepage_hero", label: "Accueil (hero)" },
+  { key: "email_gate_image", label: "Email gate (photo)" },
   { key: "faq", label: "FAQ" },
   { key: "contact", label: "Contact" },
   { key: "privacy", label: "Confidentialité" },
@@ -106,7 +108,15 @@ export const AdminContentPanel = () => {
 
         <div className="flex-1">
           {selected === "homepage_hero" && <AdminHeroImage />}
-          {loading ? (
+          {selected === "email_gate_image" && (
+            <AdminHeroImage
+              slot={EMAIL_GATE_SLOT}
+              title="Photo de l'email gate"
+              fallbackUrl={EMAIL_GATE_FALLBACK_URL}
+              fallbackPosition="50% 50%"
+            />
+          )}
+          {selected === "email_gate_image" ? null : loading ? (
             <div className="text-[10px] text-muted-foreground">Chargement...</div>
           ) : (
             <>

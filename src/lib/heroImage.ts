@@ -41,6 +41,32 @@ export const HERO_MEDIA = {
   tablet: "(min-width: 768px) and (max-width: 1279px) and (orientation: portrait)",
 };
 
+// Un « emplacement » = une photo modifiable depuis l'admin (hero, email gate...).
+export type SiteImageSlot = {
+  key: string; // ligne de site_content
+  queryKey: readonly string[]; // cache react-query
+  cacheKey: string; // cache localStorage
+  storageFolder: string; // dossier dans le bucket
+};
+
+export const HERO_SLOT: SiteImageSlot = {
+  key: HERO_IMAGE_KEY,
+  queryKey: HERO_QUERY_KEY,
+  cacheKey: "zuma:hero-image:v1",
+  storageFolder: HERO_STORAGE_FOLDER,
+};
+
+export const EMAIL_GATE_SLOT: SiteImageSlot = {
+  key: "email_gate_image",
+  queryKey: ["email-gate-image"],
+  cacheKey: "zuma:email-gate-image:v1",
+  storageFolder: "site/email-gate",
+};
+
+// Image de l'email gate avant toute personnalisation (fichier déjà dans Supabase).
+export const EMAIL_GATE_FALLBACK_URL =
+  "https://drkeggribqajjuktxhrj.supabase.co/storage/v1/object/public/product-images/email-gate-bg.webp";
+
 export const DEFAULT_FOCAL: HeroFocal = { x: 0.5, y: 0.5 };
 
 const clamp01 = (n: number) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0.5);
@@ -88,11 +114,9 @@ export const isHeroImageContent = (v: unknown): v is HeroImageContent => {
 
 // --- Cache local : évite que l'ancienne photo clignote avant la nouvelle chez
 // les visiteurs qui reviennent. `null` = « pas de photo personnalisée ».
-const CACHE_KEY = "zuma:hero-image:v1";
-
-export const readHeroCache = (): HeroImageContent | null | undefined => {
+export const readHeroCache = (slot: SiteImageSlot = HERO_SLOT): HeroImageContent | null | undefined => {
   try {
-    const raw = window.localStorage.getItem(CACHE_KEY);
+    const raw = window.localStorage.getItem(slot.cacheKey);
     if (raw === null) return undefined;
     const parsed = JSON.parse(raw);
     if (parsed === null) return null;
@@ -102,9 +126,9 @@ export const readHeroCache = (): HeroImageContent | null | undefined => {
   }
 };
 
-export const writeHeroCache = (value: HeroImageContent | null) => {
+export const writeHeroCache = (value: HeroImageContent | null, slot: SiteImageSlot = HERO_SLOT) => {
   try {
-    window.localStorage.setItem(CACHE_KEY, JSON.stringify(value));
+    window.localStorage.setItem(slot.cacheKey, JSON.stringify(value));
   } catch {
     /* stockage indisponible : sans importance */
   }

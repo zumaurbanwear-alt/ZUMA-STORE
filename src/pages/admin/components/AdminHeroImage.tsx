@@ -6,10 +6,8 @@ import heroDesktopBundled from "@/assets/fw000/modeled-desktop.webp";
 import { fetchHeroImage, useHeroImage } from "@/hooks/useHeroImage";
 import {
   DEFAULT_FOCAL,
-  HERO_IMAGE_KEY,
-  HERO_QUERY_KEY,
+  HERO_SLOT,
   HERO_STORAGE_BUCKET,
-  HERO_STORAGE_FOLDER,
   HERO_VARIANTS,
   HERO_VARIANT_NAMES,
   encodeVariant,
@@ -20,6 +18,7 @@ import {
   type HeroFocal,
   type HeroImageContent,
   type HeroVariantName,
+  type SiteImageSlot,
 } from "@/lib/heroImage";
 
 const MAX_SOURCE_BYTES = 30 * 1024 * 1024;
@@ -32,9 +31,20 @@ const PREVIEW: Record<HeroVariantName, { aspect: string; width: number }> = {
   desktop: { aspect: "16 / 9", width: 220 },
 };
 
-export const AdminHeroImage = () => {
+export const AdminHeroImage = ({
+  slot = HERO_SLOT,
+  title = "Photo du hero (accueil)",
+  fallbackUrl = heroDesktopBundled,
+  fallbackPosition = "40% 15%",
+}: {
+  slot?: SiteImageSlot;
+  title?: string;
+  /** Image affichée tant qu'aucune photo personnalisée n'est publiée. */
+  fallbackUrl?: string;
+  fallbackPosition?: string;
+}) => {
   const queryClient = useQueryClient();
-  const { hero: current } = useHeroImage();
+  const { hero: current } = useHeroImage(slot);
 
   const [file, setFile] = useState<File | null>(null);
   const [srcUrl, setSrcUrl] = useState<string | null>(null);
@@ -105,7 +115,7 @@ export const AdminHeroImage = () => {
       const urls = {} as Record<HeroVariantName, string>;
       for (const name of HERO_VARIANT_NAMES) {
         const { blob, ext } = encoded[name];
-        const path = `${HERO_STORAGE_FOLDER}/hero-${stamp}-${name}.${ext}`;
+        const path = `${slot.storageFolder}/img-${stamp}-${name}.${ext}`;
         const { error } = await supabase.storage
           .from(HERO_STORAGE_BUCKET)
           .upload(path, blob, { upsert: false, contentType: blob.type, cacheControl: "31536000" });
@@ -115,7 +125,7 @@ export const AdminHeroImage = () => {
       }
 
       // 3) Enregistrement dans site_content (le site la lit immédiatement)
-      const previous = await fetchHeroImage().catch(() => null);
+      const previous = await fetchHeroImage(slot).catch(() => null);
       const content: HeroImageContent = {
         mobile: urls.mobile,
         tablet: urls.tablet,
@@ -126,16 +136,16 @@ export const AdminHeroImage = () => {
       };
       const { error: saveError } = await supabase
         .from("site_content")
-        .upsert({ key: HERO_IMAGE_KEY, data: content as never }, { onConflict: "key" });
+        .upsert({ key: slot.key, data: content as never }, { onConflict: "key" });
       if (saveError) throw new Error("Enregistrement : " + saveError.message);
 
       // 4) Ménage : on supprime les anciens fichiers (sans bloquer en cas d'échec)
       await removeFiles(previous?.paths);
 
-      writeHeroCache(content);
-      queryClient.setQueryData(HERO_QUERY_KEY, content);
+      writeHeroCache(content, slot);
+      queryClient.setQueryData(slot.queryKey, content);
       setReport(encoded);
-      toast.success("Nouvelle photo publiée — visible tout de suite sur l'accueil.");
+      toast.success("Nouvelle photo publiée — visible tout de suite sur le site.");
     } catch (e) {
       await removeFiles(uploadedPaths); // annule les fichiers déjà envoyés
       console.error(e);
@@ -149,12 +159,12 @@ export const AdminHeroImage = () => {
     if (!confirm("Revenir à l'image d'origine du site ?")) return;
     setBusy(true);
     try {
-      const previous = await fetchHeroImage().catch(() => null);
-      const { error } = await supabase.from("site_content").delete().eq("key", HERO_IMAGE_KEY);
+      const previous = await fetchHeroImage(slot).catch(() => null);
+      const { error } = await supabase.from("site_content").delete().eq("key", slot.key);
       if (error) throw new Error(error.message);
       await removeFiles(previous?.paths);
-      writeHeroCache(null);
-      queryClient.setQueryData(HERO_QUERY_KEY, null);
+      writeHeroCache(null, slot);
+      queryClient.setQueryData(slot.queryKey, null);
       setReport(null);
       toast.success("Image d'origine rétablie.");
     } catch (e) {
@@ -169,16 +179,16 @@ export const AdminHeroImage = () => {
   return (
     <div className="border border-border p-3 mb-4">
       <div className="text-[9px] tracking-[0.22em] uppercase text-muted-foreground mb-3">
-        Photo du hero (accueil)
+        {title}
       </div>
 
       <div className="flex items-center gap-3 mb-3">
         <div className="w-24 h-14 border border-border bg-background overflow-hidden shrink-0">
           <img
-            src={current?.desktop ?? heroDesktopBundled}
+            src={current?.desktop ?? fallbackUrl}
             alt="Photo actuelle"
             className="w-full h-full object-cover"
-            style={{ objectPosition: current ? focalToPosition(current.focal) : "40% 15%" }}
+            style={{ objectPosition: current ? focalToPosition(current.focal) : fallbackPosition }}
           />
         </div>
         <div className="text-[10px] text-muted-foreground leading-relaxed">

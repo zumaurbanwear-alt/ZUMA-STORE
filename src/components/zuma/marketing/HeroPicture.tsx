@@ -6,20 +6,33 @@ import { HERO_MEDIA, focalToPosition, type HeroImageContent } from "@/lib/heroIm
 // Cadrage de l'image d'origine du site (celle fournie avec le code).
 const BUNDLED_POSITION = "40% 15%";
 
+type PictureFallback = { mobile: string; desktop: string; position: string };
+
+const BUNDLED_FALLBACK: PictureFallback = { mobile: heroMobile, desktop: heroDesktop, position: BUNDLED_POSITION };
+
 /**
  * Photo plein écran du hero. Utilise la photo personnalisée de l'admin si elle
  * existe (3 versions déjà recadrées : téléphone / iPad portrait / ordinateur),
  * sinon l'image d'origine. Si la photo personnalisée ne charge pas, repli
  * automatique sur l'image d'origine.
  */
-export const HeroPicture = ({ hero }: { hero: HeroImageContent | null }) => {
+export const HeroPicture = ({
+  hero,
+  fallback = BUNDLED_FALLBACK,
+  className = "absolute inset-0 w-full h-full object-cover animate-hero-reveal",
+}: {
+  hero: HeroImageContent | null;
+  /** Image affichée s'il n'y a pas de photo personnalisée (ou si elle ne charge pas). */
+  fallback?: PictureFallback;
+  className?: string;
+}) => {
   const [failedDesktopUrl, setFailedDesktopUrl] = useState<string | null>(null);
   const custom = hero && failedDesktopUrl !== hero.desktop ? hero : null;
 
-  const mobile = custom ? custom.mobile : heroMobile;
+  const mobile = custom ? custom.mobile : fallback.mobile;
   const tablet = custom ? custom.tablet : null;
-  const desktop = custom ? custom.desktop : heroDesktop;
-  const position = custom ? focalToPosition(custom.focal) : BUNDLED_POSITION;
+  const desktop = custom ? custom.desktop : fallback.desktop;
+  const position = custom ? focalToPosition(custom.focal) : fallback.position;
 
   return (
     <picture key={custom ? custom.desktop : "bundled"}>
@@ -28,7 +41,7 @@ export const HeroPicture = ({ hero }: { hero: HeroImageContent | null }) => {
       <img
         src={desktop}
         alt=""
-        className="absolute inset-0 w-full h-full object-cover animate-hero-reveal"
+        className={className}
         style={{ objectPosition: position }}
         loading="eager"
         fetchPriority="high"
