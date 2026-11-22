@@ -26,12 +26,17 @@ export const EmailGate = ({ onPass }: { onPass: () => void }) => {
     sessionStorage.setItem(STORAGE_KEY, "1");
     onPass();
 
-    // Enregistre l'email en arrière-plan
-    supabase
-      .from("waitlist")
-      .insert({ email })
-      .select()
-      .catch(() => {});
+    // Enregistre l'email en arrière-plan.
+    // Pas de .select() : un visiteur anonyme ne peut pas relire la liste d'attente
+    // (RLS), et .select() demande justement cette relecture, ce qui fait échouer
+    // l'insertion. Le builder Supabase n'est pas non plus une vraie Promise : on
+    // l'enveloppe pour être sûr que la requête part et qu'on peut gérer l'erreur.
+    void Promise.resolve(supabase.from("waitlist").insert({ email })).then(
+      ({ error }) => {
+        if (error) console.error("waitlist insert failed", error);
+      },
+      () => {}
+    );
   };
 
   return (
